@@ -8,7 +8,8 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - Base examinée : `9dd6634c5635321cf38840cc30e9b51226689128`.
 - Branche locale de préparation : `alpendata/main`.
 - Audit initial et architecture proposés disponibles ci-dessous.
-- L’application AlpenData, son branding graphique et les connexions clients ne sont pas encore implémentés. Les documents et le diagnostic de ce dossier sont préparés localement ; leur présence sur GitHub n’est pas présumée.
+- Un premier [backend AlpenData](backend/README.md) est implémenté localement : entreprises, membres, invitations, propriété des ressources et connexion Microsoft par MSAL. Les vérifications de base s’exécutent sur SQLite et PostgreSQL réel.
+- L’interface AlpenData, son branding graphique, la connexion aux données Microsoft et l’exécution isolée d’Hermes restent à réaliser. Les travaux locaux ne constituent pas encore une application utilisable par le pilote ; leur présence sur GitHub n’est pas présumée.
 
 ## Documents
 

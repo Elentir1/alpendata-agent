@@ -10,6 +10,8 @@ Résultats : révision d’origine enregistrée, diagnostic reproductible, princ
 
 ## Lot 1 — Identités et isolation
 
+État : premier backend implémenté localement. Entreprises, membres, invitations et réservations de places, onboarding individuel, autorisation des ressources personnelles et sessions révocables sont présents. La connexion Microsoft par MSAL est implémentée et testée avec un fournisseur simulé ; sa validation Entra réelle et la vérification des adresses pour les invitations restent à terminer. Les règles métier ont passé les scénarios PostgreSQL, dont les invitations concurrentes. L’isolation d’exécution Linux et le dialogue avec Hermes ne sont pas encore implémentés : ce lot reste en cours.
+
 - Créer l’API AlpenData, les entreprises, les utilisateurs, les membres et les invitations.
 - Préparer un environnement Hermes neuf par utilisateur, sans copie de connexions ou de mémoires personnelles.
 - Implémenter l’autorisation des ressources et la passerelle d’accès aux agents.

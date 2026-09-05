@@ -1,0 +1,8 @@
+*.db
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+__pycache__/
+build/
+dist/
