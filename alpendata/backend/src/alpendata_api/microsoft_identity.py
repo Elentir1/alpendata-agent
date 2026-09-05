@@ -42,14 +42,17 @@ class MicrosoftSignIn:
         self.settings = settings
         self.http_client = http_client
 
-    def client(self):
+    def client(self, *, token_cache=None, offline=False, tenant="organizations"):
+        if tenant != "organizations":
+            tenant = str(UUID(tenant))
         return msal.ConfidentialClientApplication(
             self.settings.microsoft_client_id,
             client_credential=self.settings.microsoft_client_secret,
-            authority="https://login.microsoftonline.com/organizations",
+            authority="https://login.microsoftonline.com/" + tenant,
             timeout=20,
             http_client=self.http_client,
-            exclude_scopes=["offline_access"],
+            exclude_scopes=[] if offline else ["offline_access"],
+            token_cache=token_cache,
             enable_pii_log=False,
         )
 
@@ -71,26 +74,30 @@ class MicrosoftSignIn:
         claims = result.get("id_token_claims")
         if result.get("error") or not isinstance(claims, dict):
             raise ValueError("Microsoft authentication failed")
-        # MSAL checks the token exchange and OIDC claims. We additionally constrain
-        # this product to organizational accounts with a tenant-scoped immutable ID.
-        try:
-            tenant = str(UUID(claims["tid"]))
-            subject = str(UUID(claims["oid"]))
-        except (KeyError, ValueError, TypeError, AttributeError) as error:
-            raise ValueError("Microsoft identity is incomplete") from error
-        issuer = f"https://login.microsoftonline.com/{tenant}/v2.0"
-        current = now()
-        if (
-            claims.get("iss") != issuer
-            or claims.get("aud") != self.settings.microsoft_client_id
-            or tenant == PERSONAL_MICROSOFT_TENANT
-            or type(claims.get("exp")) is not int
-            or claims["exp"] <= current
-            or type(claims.get("iat")) is not int
-            or claims["iat"] > current + 120
-            or type(claims.get("nbf", current)) is not int
-            or claims.get("nbf", current) > current + 120
-        ):
-            raise ValueError("Microsoft identity is not supported")
-        name = claims.get("name")
-        return MicrosoftIdentity(issuer, subject, name[:160] if isinstance(name, str) else "Microsoft user")
+        return validated_identity(claims, self.settings.microsoft_client_id)
+
+
+def validated_identity(claims: dict, client_id: str) -> MicrosoftIdentity:
+    # MSAL checks the token exchange and OIDC claims. We additionally constrain
+    # this product to organizational accounts with a tenant-scoped immutable ID.
+    try:
+        tenant = str(UUID(claims["tid"]))
+        subject = str(UUID(claims["oid"]))
+    except (KeyError, ValueError, TypeError, AttributeError) as error:
+        raise ValueError("Microsoft identity is incomplete") from error
+    issuer = f"https://login.microsoftonline.com/{tenant}/v2.0"
+    current = now()
+    if (
+        claims.get("iss") != issuer
+        or claims.get("aud") != client_id
+        or tenant == PERSONAL_MICROSOFT_TENANT
+        or type(claims.get("exp")) is not int
+        or claims["exp"] <= current
+        or type(claims.get("iat")) is not int
+        or claims["iat"] > current + 120
+        or type(claims.get("nbf", current)) is not int
+        or claims.get("nbf", current) > current + 120
+    ):
+        raise ValueError("Microsoft identity is not supported")
+    name = claims.get("name")
+    return MicrosoftIdentity(issuer, subject, name[:160] if isinstance(name, str) else "Microsoft user")

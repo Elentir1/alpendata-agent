@@ -1,13 +1,13 @@
 # Vérification du premier backend
 
-5 septembre 2026. Périmètre : `alpendata/backend`, migrations `0001` à `0003`.
+5 septembre 2026. Périmètre : `alpendata/backend`, migrations `0001` à `0004`.
 
 ## Résultats
 
 | Environnement | Résultat du lanceur officiel |
 |---|---|
-| Windows, Python 3.11.15, SQLite | 11 réussites, 0 échec, 1 scénario Linux ignoré. |
-| Debian 13 sous WSL, Python 3.13.5, PostgreSQL 17.11 | 12 réussites, 0 échec, aucun scénario ignoré. |
+| Windows, Python 3.11.15, SQLite | 14 réussites, 0 échec, 2 scénarios Linux ignorés. |
+| Debian 13 sous WSL, Python 3.13.5, PostgreSQL 17.11 | 16 réussites, 0 échec, aucun scénario ignoré. |
 | Ruff | Aucun problème de lint restant. |
 
 Les dépendances des deux environnements sont issues du même `uv.lock`. Les tests passent par `scripts/run_tests.sh`, qui crée les processus de test avec un environnement nettoyé. Chaque scénario reconstruit une base temporaire à partir des migrations et vérifie leur cohérence avec les modèles SQLAlchemy.
@@ -38,3 +38,8 @@ Le démon Docker Desktop local a rencontré une erreur d’accès à son socket 
 La procédure reproductible est décrite dans le [README du backend](../backend/README.md). Aucun déploiement Infomaniak n’a été réalisé à ce stade.
 
 Après ajout des lectures administrateur (noms des membres et invitations en attente) et du retour HTML après interruption de connexion, les deux fichiers de tests concernés ont de nouveau passé 7 scénarios sous Windows et PostgreSQL Linux. Les lectures restent refusées aux collaborateurs et ne renvoient pas de jetons.
+
+
+Les connexions Microsoft 365 sont exercées avec MSAL réel et des transports HTTP Microsoft/Graph synthétiques : consentement limité aux choix, identité identique au compte connecté, cache chiffré par propriétaire, lecture avec le bon jeton, refus des accès non accordés, recherche de métadonnées, absence de suivi des redirections/pagination, limitation de débit, renouvellement du cache et révocation. Une panne temporaire du service de jetons conserve le consentement. Un scénario PostgreSQL bloque l’échange de code pendant qu’une déconnexion réelle via l’API intervient ; son retour ne peut pas réactiver les jetons.
+
+L’interface dispose de sept scénarios JSDOM réussis et d’un build TypeScript/Vite réussi. Cela vérifie ses appels et son rendu DOM, pas sa présentation dans un navigateur réel ni le consentement sur le tenant du pilote.

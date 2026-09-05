@@ -145,6 +145,7 @@ dependencies = [
     { name = "msal" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
+    { name = "requests" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
 ]
@@ -167,6 +168,7 @@ requires-dist = [
     { name = "msal", specifier = ">=1.37,<2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "pydantic", specifier = "==2.13.4" },
+    { name = "requests", specifier = ">=2.32,<3" },
     { name = "sqlalchemy", specifier = "==2.0.51" },
     { name = "uvicorn", specifier = "==0.41.0" },
 ]

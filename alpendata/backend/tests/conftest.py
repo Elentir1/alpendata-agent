@@ -106,7 +106,7 @@ def service_factory(database_url, mail_outbox):
             mail_outbox.append(message)
 
     @contextmanager
-    def build(settings=None, provider=None, mailer=None):
+    def build(settings=None, provider=None, mailer=None, *, microsoft_provider=None, graph=None):
         settings = settings or Settings(
             database_url=database_url,
             smtp_sender="noreply@example.com",
@@ -114,7 +114,13 @@ def service_factory(database_url, mail_outbox):
             smtp_username="synthetic",
             smtp_password="synthetic",
         )
-        app = create_app(settings, signin_provider=provider, mailer=mailer or RecordingMailer())
+        app = create_app(
+            settings,
+            signin_provider=provider,
+            mailer=mailer or RecordingMailer(),
+            microsoft_provider=microsoft_provider,
+            graph=graph,
+        )
         configuration = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
         with app.state.engine.begin() as connection:
             configuration.attributes["connection"] = connection

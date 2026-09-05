@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from . import organizations
 from .access import lock_organization, member, owned
 from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
+from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .mail import SMTPMailer
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
@@ -27,7 +28,9 @@ from .settings import Settings
 from .signin import signin_router
 
 
-def create_app(settings: Settings, *, signin_provider=None, mailer=None) -> FastAPI:
+def create_app(
+    settings: Settings, *, signin_provider=None, mailer=None, microsoft_provider=None, graph=None
+) -> FastAPI:
     engine, factory = database_factory(settings.database_url)
     if mailer is None and settings.smtp_enabled:
         mailer = SMTPMailer(settings)
@@ -40,18 +43,22 @@ def create_app(settings: Settings, *, signin_provider=None, mailer=None) -> Fast
     app = FastAPI(title="AlpenData API", version="0.1.0", lifespan=lifespan)
     app.state.engine, app.state.session_factory = engine, factory
     app.include_router(signin_router(settings, factory, signin_provider))
+    app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
 
     @app.exception_handler(HTTPException)
     async def browser_signin_error(request: Request, error: HTTPException):
-        if request.url.path == "/api/auth/microsoft/callback" and "text/html" in request.headers.get(
-            "accept", ""
-        ):
+        callbacks = {
+            "/api/auth/microsoft/callback": ("signin_error", BROWSER_COOKIE),
+            "/api/integrations/microsoft/callback": ("connection_error", CONNECT_COOKIE),
+        }
+        if request.url.path in callbacks and "text/html" in request.headers.get("accept", ""):
             # A browser must return to a comprehensible sign-in screen, never a
             # raw API error. This fixed code carries no token or provider details.
+            parameter, cookie = callbacks[request.url.path]
             response = RedirectResponse(
-                settings.public_origin + "/?signin_error=interrupted", status_code=303
+                settings.public_origin + f"/?{parameter}=interrupted", status_code=303
             )
-            response.delete_cookie(BROWSER_COOKIE, secure=True, httponly=True, samesite="none")
+            response.delete_cookie(cookie, secure=True, httponly=True, samesite="none")
             return response
         return await http_exception_handler(request, error)
 

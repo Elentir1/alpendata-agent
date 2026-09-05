@@ -26,8 +26,9 @@ class MicrosoftHTTP:
 
     root = "https://login.microsoftonline.com/organizations"
 
-    def __init__(self, client_id):
+    def __init__(self, client_id, scopes=("openid", "profile")):
         self.client_id = client_id
+        self.scopes = set(scopes)
         self.tenant, self.subject = str(uuid4()), str(uuid4())
         self.codes = {}
         self.exchanges = 0
@@ -55,7 +56,7 @@ class MicrosoftHTTP:
         query = {key: values[0] for key, values in parse_qs(parsed.query).items()}
         assert query["client_id"] == self.client_id
         assert query["code_challenge_method"] == "S256"
-        assert set(query["scope"].split()) == {"openid", "profile"}
+        assert set(query["scope"].split()) == self.scopes
         code = secrets.token_urlsafe(32)
         self.codes[code] = query, overrides or {}
         return {"state": query["state"], "code": code}
@@ -86,17 +87,24 @@ class MicrosoftHTTP:
         }
         # MSAL trusts tokens received directly from its TLS token endpoint; this
         # synthetic transport replaces that endpoint, not MSAL or the application.
-        return self.response(
-            {
-                "access_token": "synthetic-unused-access-token",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "scope": query["scope"],
-                "id_token": jwt.encode(
-                    claims, "synthetic-test-key-with-at-least-thirty-two-bytes", algorithm="HS256"
-                ),
-            }
-        )
+        result = {
+            "access_token": "synthetic-unused-access-token",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": query["scope"],
+            "id_token": jwt.encode(
+                claims, "synthetic-test-key-with-at-least-thirty-two-bytes", algorithm="HS256"
+            ),
+        }
+        if "offline_access" in self.scopes:
+            result.update(
+                access_token="synthetic-access-" + claims["oid"],
+                refresh_token="synthetic-refresh-" + claims["oid"],
+                client_info=base64.urlsafe_b64encode(
+                    json.dumps({"uid": claims["oid"], "utid": claims["tid"]}).encode()
+                ).decode(),
+            )
+        return self.response(result)
 
 
 @pytest.fixture

@@ -139,3 +139,32 @@ class PersonalResource(OwnedMixin, Base):
         ownership_constraint(),
         CheckConstraint("kind IN ('memory', 'conversation')", name="ck_personal_resource_kind"),
     )
+
+
+class MicrosoftConnection(OwnedMixin, Base):
+    __tablename__ = "alpendata_microsoft_connections"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    generation: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(24), default="disconnected")
+    capabilities: Mapped[list] = mapped_column(JSON, default=list)
+    encrypted_cache: Mapped[str | None] = mapped_column(Text)
+    connected_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ownership_constraint(),
+        UniqueConstraint("organization_id", "owner_id"),
+        CheckConstraint(
+            "status IN ('disconnected', 'connected', 'reconnect_required')", name="ck_microsoft_status"
+        ),
+    )
+
+
+class MicrosoftConnectionFlow(OwnedMixin, Base):
+    __tablename__ = "alpendata_microsoft_connection_flows"
+    state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    connection_id: Mapped[str] = mapped_column(ForeignKey("alpendata_microsoft_connections.id"))
+    generation: Mapped[int] = mapped_column(Integer)
+    session_hash: Mapped[str] = mapped_column(ForeignKey("alpendata_auth_sessions.token_hash"))
+    browser_hash: Mapped[str] = mapped_column(String(64))
+    encrypted_flow: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[int] = mapped_column(Integer, index=True)
+    __table_args__ = (ownership_constraint(),)

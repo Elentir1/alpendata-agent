@@ -2,6 +2,8 @@ import { ApiError } from './api';
 
 export const copy = {
   fr: {
+    connectionFailed: 'La connexion à vos outils n’a pas abouti. Réessayez avec le même compte Microsoft que pour AlpenData.',
+    reconnect: 'Reconnectez votre compte Microsoft pour retrouver cet accès.', permission: 'Cet accès n’est pas autorisé. Vérifiez vos choix et les droits de votre compte Microsoft.', microsoftRate: 'Microsoft demande de patienter avant de réessayer.',
     language: 'Langue', loading: 'Ouverture de votre espace…', retry: 'Réessayer', support: 'Contacter AlpenData',
     welcome: 'Un assistant qui connaît votre travail.', welcomeText: 'Commencez avec votre compte professionnel. Votre espace et vos connexions vous appartiennent.',
     signIn: 'Continuer avec Microsoft', signingIn: 'Connexion en cours…', signInFailed: 'La connexion n’a pas abouti. Réessayez avec votre compte professionnel.', unavailable: 'La connexion n’est pas encore disponible dans cet environnement.',
@@ -17,7 +19,7 @@ export const copy = {
     activityExample: 'Ex. Accompagner des dirigeants et préparer des ateliers', needs: 'Qu’aimeriez-vous simplifier en premier ?',
     needsExample: 'Ex. Retrouver les échanges et documents avant chaque séance client', continue: 'Enregistrer et continuer', saving: 'Enregistrement…',
     saved: 'Vos réponses sont enregistrées.', nextTitle: 'La prochaine étape : vos outils.',
-    nextText: 'La connexion à la messagerie, à l’agenda et aux documents est en préparation. Vos réponses sont conservées ; vous pourrez reprendre ici.',
+    nextText: 'Choisissez les outils utiles à votre travail. Vous pourrez vérifier vos accès dès la connexion.',
     edit: 'Modifier mes réponses', privateNote: 'Ces réponses sont personnelles. Elles ne sont pas copiées à vos collaborateurs.',
     license: 'Votre accès à l’assistant est suspendu. Contactez l’administrateur de votre entreprise.',
     joinTitle: 'Rejoignez votre entreprise.', joinText: 'Confirmez que vous avez accès à la boîte mail destinataire de l’invitation.',
@@ -38,6 +40,8 @@ export const copy = {
     rate: 'Patientez avant de demander un nouveau lien.', fields: 'Vérifiez les informations saisies.', sessionExpired: 'Votre session a expiré. Reconnectez-vous.',
   },
   en: {
+    connectionFailed: 'Your tools could not be connected. Try again with the same Microsoft account you use for AlpenData.',
+    reconnect: 'Reconnect your Microsoft account to restore access.', permission: 'This access is not allowed. Check your choices and your Microsoft account permissions.', microsoftRate: 'Microsoft asks you to wait before trying again.',
     language: 'Language', loading: 'Opening your workspace…', retry: 'Try again', support: 'Contact AlpenData',
     welcome: 'An assistant that understands your work.', welcomeText: 'Start with your work account. Your workspace and connections belong to you.',
     signIn: 'Continue with Microsoft', signingIn: 'Signing in…', signInFailed: 'Sign-in did not complete. Please try again with your work account.', unavailable: 'Sign-in is not available in this environment yet.',
@@ -53,7 +57,7 @@ export const copy = {
     activityExample: 'E.g. Support business leaders and prepare workshops', needs: 'What would you like to simplify first?',
     needsExample: 'E.g. Find the conversations and documents I need before each client session', continue: 'Save and continue', saving: 'Saving…',
     saved: 'Your answers have been saved.', nextTitle: 'Next: your tools.',
-    nextText: 'Connections to email, calendars and documents are being prepared. Your answers are saved; you can continue here later.',
+    nextText: 'Choose the tools you need for your work. You can check your access as soon as you connect.',
     edit: 'Edit my answers', privateNote: 'These answers are personal. They are not copied to your colleagues.',
     license: 'Your assistant access is suspended. Contact your company administrator.',
     joinTitle: 'Join your company.', joinText: 'Confirm that you have access to the email address receiving this invitation.',
@@ -82,12 +86,13 @@ export function errorText(error: unknown, t: Text): string {
   if (error.status === 0) return t.network;
   if (error.status === 401) return t.sessionExpired;
   if (error.status === 422) return t.fields;
-  if (error.status === 429) return `${t.rate}${error.retryAfter ? ` (${error.retryAfter} s)` : ''}`;
+  if (error.status === 429) return `${error.code === 'microsoft_rate_limited' ? t.microsoftRate : t.rate}${error.retryAfter ? ` (${error.retryAfter} s)` : ''}`;
   const messages: Record<string, string> = {
     invitation_not_found: t.expired, invitation_email_verification_required: t.proofRequired,
     no_available_license: t.full, already_member_or_invited: t.duplicate,
     microsoft_signin_not_configured: t.unavailable, transactional_mail_not_configured: t.noMail,
-    license_required: t.license,
+    license_required: t.license, microsoft_reconnect_required: t.reconnect,
+    microsoft_permission_required: t.permission, microsoft_access_denied: t.permission,
   };
   return messages[error.code] || t.error;
 }

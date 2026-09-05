@@ -5,22 +5,8 @@ import { api, ApiError, readInvitation, rememberInvitation } from './api';
 import type { Company, Membership, Onboarding, Options, PendingInvitation, Person } from './api';
 import { copy, errorText } from './locale';
 import type { Language, Text } from './locale';
-
-function useAction(t: Text) {
-  const [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const pending = useRef(false);
-  async function run(action: () => Promise<void>) {
-    if (pending.current) return;
-    pending.current = true; setBusy(true); setError('');
-    try { await action(); } catch (cause) { setError(errorText(cause, t)); }
-    finally { pending.current = false; setBusy(false); }
-  }
-  return { busy, error, run };
-}
-
-function Notice({ children, success = false }: { children: React.ReactNode; success?: boolean }) {
-  return children ? <div className={`notice ${success ? 'success' : 'error'}`} role={success ? 'status' : 'alert'}>{children}</div> : null;
-}
+import { Notice, useAction } from './feedback';
+import { Tools } from './Tools';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -112,7 +98,7 @@ function PersonalWorkspace({ company, membership, language, t }: { company: Comp
     <div className="profile-main">
       <div className="eyebrow">{company.name}</div>
       <h1>{saved ? t.nextTitle : t.profileTitle}</h1><p className="lead">{saved ? t.nextText : t.profileText}</p>
-      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button></> :
+      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button><Tools companyId={company.id} language={language} /></> :
         <form onSubmit={save}>
           <label htmlFor="role">{t.role}</label><input id="role" value={role} onChange={e => setRole(e.target.value)} required maxLength={160} placeholder={t.roleExample} autoComplete="organization-title" />
           <label htmlFor="activity">{t.activity}</label><textarea id="activity" value={activity} onChange={e => setActivity(e.target.value)} maxLength={500} rows={2} placeholder={t.activityExample} />
@@ -161,6 +147,12 @@ function Team({ company, user, t }: { company: Company; user: Person; t: Text })
 }
 
 export default function App() {
+  const [connectionInterrupted] = useState(() => {
+    const query = new URLSearchParams(location.search);
+    const interrupted = query.get('connection_error') === 'interrupted';
+    if (query.has('connection_error')) { query.delete('connection_error'); history.replaceState(null, '', location.pathname + (query.size ? '?' + query : '') + location.hash); }
+    return interrupted;
+  });
   const [signinInterrupted] = useState(() => {
     const query = new URLSearchParams(location.search);
     const interrupted = query.get('signin_error') === 'interrupted';
@@ -182,7 +174,8 @@ export default function App() {
       const organizations = person ? await Promise.all(person.memberships.map(m => api<Company>(`/api/organizations/${m.organization_id}`))) : [];
       if (request !== generation.current) return;
       setOptions(configuration); setUser(person); setCompanies(organizations);
-      setCompanyId(organizations.find(item => item.id === preferred)?.id || organizations[0]?.id || '');
+      const returnCompany = sessionStorage.getItem('alpendata.return-company'); sessionStorage.removeItem('alpendata.return-company');
+      setCompanyId(organizations.find(item => item.id === (preferred || returnCompany))?.id || organizations[0]?.id || '');
       setPendingInvitation(readInvitation());
     } catch (cause) { if (request === generation.current) setError(errorText(cause, t)); }
     finally { if (request === generation.current) setLoading(false); }
@@ -205,6 +198,7 @@ export default function App() {
     </aside>}
     <main id="main"><Notice>{signOutAction.error}</Notice>
       {signinInterrupted && <Notice>{t.signInFailed}</Notice>}
+      {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
           section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} company={company} membership={membership} language={language} t={t} />

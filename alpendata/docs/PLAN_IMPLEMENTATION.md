@@ -22,6 +22,8 @@ Sortie attendue : un utilisateur authentifié parle à son agent, retrouve son h
 
 ## Lot 2 — Connexion Microsoft personnelle
 
+État : consentement, coffre, renouvellement, déconnexion et premières lectures implémentés. Les scénarios SQLite/PostgreSQL utilisent MSAL réel avec HTTP simulé. L’interface permet de choisir les accès et de vérifier mails, agenda ou métadonnées de fichiers. L’enregistrement Entra, les droits SharePoint réels et la lecture du contenu des fichiers restent à terminer.
+
 - Enregistrer l’application Microsoft et ses URL de retour sur les environnements de développement puis de test.
 - Implémenter le consentement individuel, le coffre de jetons, le renouvellement et la déconnexion.
 - Ajouter lecture d’e-mails, agenda et recherche/lecture SharePoint avec les permissions nécessaires.
@@ -31,7 +33,7 @@ Sortie attendue : deux collaborateurs utilisent leurs propres connexions ; la d�
 
 ## Lot 3 — Première expérience AlpenData
 
-État : première interface React/Vite locale implémentée et compilée, avec cinq scénarios fonctionnels JSDOM. Connexion, création d’entreprise, vérification d’invitation, onboarding personnel et gestion des invitations sont reliés à l’API. Les réponses restent présentes lors du changement de langue. L’interface indique que les connexions métier sont encore en préparation ; aucun résultat IA n’est simulé. Le parcours complet dans un navigateur avec Entra et Graph réels reste à vérifier.
+État : première interface React/Vite locale implémentée et compilée, avec sept scénarios fonctionnels JSDOM. Connexion, création d’entreprise, vérification d’invitation, onboarding personnel et gestion des invitations sont reliés à l’API. Les réponses restent présentes lors du changement de langue. Le consentement personnel Microsoft et les premières lectures sont reliés au backend ; aucun résultat IA n’est simulé. Le parcours complet dans un navigateur avec Entra et Graph réels reste à vérifier.
 
 - Extraire et appliquer les éléments visuels de la marque.
 - Créer les écrans en français et anglais et l’onboarding combinant questions et conversation.

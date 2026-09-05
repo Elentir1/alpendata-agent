@@ -38,6 +38,7 @@ test('personal onboarding keeps unsaved answers when language changes and persis
     if (path === '/api/auth/options') return json({ microsoft: true, invitation_email: true });
     if (path === '/api/me') return json(person);
     if (path === '/api/organizations/company-a') return json(company);
+    if (path === '/api/organizations/company-a/microsoft') return json({ available: false, status: 'disconnected', capabilities: [] });
     if (path === '/api/organizations/company-a/onboarding') {
       if (init?.method === 'PUT') {
         const payload = JSON.parse(String(init.body)); saved = payload;
