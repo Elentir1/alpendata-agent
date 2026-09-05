@@ -126,6 +126,13 @@ def test_queue_recovery_preserves_unknown_usage_and_database_owner_keys(service,
     org = client.post("/api/organizations", headers=admin, json={"name": "Coaches"}).json()["id"]
     base = f"/api/organizations/{org}"
     join(client, verification, base, admin, peer, "peer@example.com")
+    assert (
+        client.post(base + "/chat/conversations", headers=admin, json={}).json()["detail"]
+        == "onboarding_required"
+    )
+    client.put(
+        base + "/onboarding", headers=admin, json={"language": "fr", "role": "Coach", "needs": "Briefing"}
+    )
     identifier = client.post(base + "/chat/conversations", headers=admin, json={}).json()["id"]
     personal = base + "/chat/conversations/" + identifier
     queued = client.post(
@@ -186,6 +193,11 @@ def test_concurrent_chat_submission_and_claim_have_one_execution(service, accoun
     app, client = service
     _, admin = account("admin@example.com")
     org = client.post("/api/organizations", headers=admin, json={"name": "Coaches"}).json()["id"]
+    client.put(
+        f"/api/organizations/{org}/onboarding",
+        headers=admin,
+        json={"language": "fr", "role": "Coach", "needs": "Briefing"},
+    )
     path = f"/api/organizations/{org}/chat/conversations"
     identifier = client.post(path, headers=admin, json={}).json()["id"]
     payload = {"request_id": str(uuid4()), "message": "One execution only"}

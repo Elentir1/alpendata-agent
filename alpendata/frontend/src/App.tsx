@@ -8,6 +8,7 @@ import type { Language, Text } from './locale';
 import { Notice, useAction } from './feedback';
 import { Tools } from './Tools';
 import { Chat } from './Chat';
+import { FirstTasks } from './FirstTasks';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -74,7 +75,7 @@ function Steps({ t, current }: { t: Text; current: number }) {
   </li>)}</ol>;
 }
 
-function PersonalWorkspace({ company, membership, language, t }: { company: Company; membership: Membership; language: Language; t: Text }) {
+function PersonalWorkspace({ company, membership, language, t, onOpen }: { company: Company; membership: Membership; language: Language; t: Text; onOpen: (id: string) => void }) {
   const [profile, setProfile] = useState<Onboarding | null>(null), [loadError, setLoadError] = useState('');
   const [role, setRole] = useState(''), [activity, setActivity] = useState(''), [needs, setNeeds] = useState('');
   const [editing, setEditing] = useState(false); const action = useAction(t);
@@ -95,11 +96,11 @@ function PersonalWorkspace({ company, membership, language, t }: { company: Comp
       setProfile(next); setEditing(false);
     });
   }
-  return <><Steps t={t} current={saved ? 1 : 0} /><section className="onboarding-grid">
+  return <><Steps t={t} current={saved ? profile.step === 'first_result' ? 2 : 1 : 0} /><section className="onboarding-grid">
     <div className="profile-main">
       <div className="eyebrow">{company.name}</div>
       <h1>{saved ? t.nextTitle : t.profileTitle}</h1><p className="lead">{saved ? t.nextText : t.profileText}</p>
-      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button><Tools companyId={company.id} language={language} /></> :
+      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button><Tools companyId={company.id} language={language} /><FirstTasks organizationId={company.id} language={language} onOpen={onOpen} /></> :
         <form onSubmit={save}>
           <label htmlFor="role">{t.role}</label><input id="role" value={role} onChange={e => setRole(e.target.value)} required maxLength={160} placeholder={t.roleExample} autoComplete="organization-title" />
           <label htmlFor="activity">{t.activity}</label><textarea id="activity" value={activity} onChange={e => setActivity(e.target.value)} maxLength={500} rows={2} placeholder={t.activityExample} />
@@ -164,6 +165,7 @@ export default function App() {
   const t = copy[language]; const [pendingInvitation, setPendingInvitation] = useState(readInvitation);
   const [user, setUser] = useState<Person | null>(null), [options, setOptions] = useState<Options | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]), [companyId, setCompanyId] = useState('');
+  const [chatId, setChatId] = useState('');
   const [section, setSection] = useState<'personal' | 'team' | 'chat'>('personal'), [loading, setLoading] = useState(true), [error, setError] = useState('');
   const generation = useRef(0); const signOutAction = useAction(t);
   async function refresh(preferred?: string) {
@@ -193,7 +195,7 @@ export default function App() {
       })}><LogOut size={19} /><span>{pendingInvitation ? t.anotherAccount : t.signOut}</span></button>}
     </div></header>
     {user && company && membership && !pendingInvitation && <aside className="sidebar">
-      <label className="company-selector"><span>{t.company}</span><select aria-label={t.company} value={companyId} onChange={e => { setCompanyId(e.target.value); setSection('personal'); }}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="company-selector"><span>{t.company}</span><select aria-label={t.company} value={companyId} onChange={e => { setCompanyId(e.target.value); setChatId(''); setSection('personal'); }}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <nav aria-label={t.workspace}><button className={section === 'personal' ? 'selected' : ''} onClick={() => setSection('personal')}><UserRound size={19} />{t.workspace}</button><button className={section === 'chat' ? 'selected' : ''} onClick={() => setSection('chat')}><MessageSquare size={19} />Assistant</button>{membership.role === 'admin' && <button className={section === 'team' ? 'selected' : ''} onClick={() => setSection('team')}><UsersRound size={19} />{t.company}</button>}</nav>
       <div className="sidebar-person"><div className="avatar"><UserRound size={19} /></div><div><strong>{user.display_name}</strong><span>{t.personal}</span></div></div>
     </aside>}
@@ -202,7 +204,7 @@ export default function App() {
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
-          section === 'chat' ? <Chat key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} company={company} membership={membership} language={language} t={t} />
+          section === 'chat' ? <Chat key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
         : null}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>

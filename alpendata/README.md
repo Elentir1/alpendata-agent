@@ -10,7 +10,9 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - Audit initial et architecture proposés disponibles ci-dessous.
 - Un premier [backend AlpenData](backend/README.md) est implémenté localement : entreprises, membres, invitations, propriété des ressources et connexion Microsoft par MSAL. Les vérifications de base s’exécutent sur SQLite et PostgreSQL réel.
 - Une première [interface AlpenData](frontend/README.md) en français et anglais est présente : connexion, entreprise, invitations et onboarding individuel. Elle reprend les actifs publics de la marque et dialogue avec le backend.
-- Le [chat personnel](docs/CHAT_PERSONNEL.md) relie maintenant l’interface, les conversations durables, le [runtime Hermes isolé](runtime/README.md), les droits Microsoft et la passerelle Mistral/OpenRouter. Les tests utilisent PostgreSQL et des conteneurs réels, avec réponses externes synthétiques. L’interface a aussi été contrôlée dans un navigateur avec des données fictives. Les connexions réelles, les routines, les documents, la facturation et le déploiement restent à terminer avant le pilote.
+- Le [chat personnel](docs/CHAT_PERSONNEL.md) relie maintenant l’interface, les conversations durables, le [runtime Hermes isolé](runtime/README.md), les droits Microsoft et la passerelle Mistral/OpenRouter. Les tests utilisent PostgreSQL et des conteneurs réels, avec réponses externes synthétiques. L’interface a aussi été contrôlée dans un navigateur avec des données fictives. Les connexions réelles, les récurrences, les documents, la facturation et le déploiement restent à terminer avant le pilote.
+
+- Le [premier résultat personnel](docs/PREMIER_RESULTAT.md) relie désormais le besoin exprimé à deux ou trois propositions Hermes, puis à un essai explicite avec références aux sources consultées. Les accès restent propres à chaque utilisateur. La planification récurrente reste à implémenter.
 
 ## Documents
 
@@ -19,6 +21,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
 - [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
 - [Chat personnel et exécutions durables](docs/CHAT_PERSONNEL.md)
+- [Onboarding et premier résultat](docs/PREMIER_RESULTAT.md)
 - [Révision d’origine et référence du cahier des charges](upstream.lock.json)
 - [Diagnostic reproductible des profils](audit/probe_profiles.py)
 - [Résultats du diagnostic](audit/results.json)

@@ -18,7 +18,7 @@ from alpendata_api.auth import issue_session
 from alpendata_api.connections import context
 from alpendata_api.graph import GraphReader
 from alpendata_api.microsoft_data import CALLBACK, MicrosoftData
-from alpendata_api.models import Membership, MicrosoftConnection, User
+from alpendata_api.models import Membership, MicrosoftConnection, Onboarding, User
 from alpendata_api.settings import Settings
 from alpendata_api.vault import Vault
 
@@ -148,6 +148,8 @@ def connected_service(database_url, service_factory):
         org = client.post("/api/organizations", headers=alice[2], json={"name": "Coaches"}).json()["id"]
         with app.state.session_factory.begin() as db:
             db.add(Membership(organization_id=org, user_id=bob[0], role="member"))
+            db.flush()
+            db.add(Onboarding(organization_id=org, owner_id=bob[0]))
         yield app, client, settings, server, graph, org, alice, bob
 
 

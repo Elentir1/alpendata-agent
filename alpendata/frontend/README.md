@@ -41,3 +41,7 @@ npm run build
 Dix scénarios d’interface passent dans JSDOM avec une API simulée : les parcours existants de connexion, onboarding, invitations et Microsoft, plus création/envoi de conversation, rendu texte sans HTML, maintien du brouillon lors d’un changement de langue, nouvelle tentative avec la même clé et arrêt sans licence. Le build vérifie les types et produit le bundle statique. Un contrôle visuel distinct dans le navigateur intégré utilise le build et des données fictives explicitement signalées ; il vérifie la présentation, l’envoi et le changement de langue. Il ne constitue pas une connexion Entra ou une validation métier avec un modèle réel.
 
 L’aperçu local a été démarré et a répondu HTTP 200. Les actifs de marque publics sont référencés dans `public/brand/README.md`, avec la licence de la police Inter.
+
+## Premier résultat
+
+Après son profil et ses connexions, l’utilisateur précise son besoin dans `FirstTasks`. Le formulaire ouvre une conversation qui reçoit les propositions enregistrées par Hermes. Chaque carte lance un essai explicite et ouvre son résultat personnel. Le chat affiche les références retournées par le broker et distingue un essai avec sources vérifiées d’un résultat sans lectures confirmées. Les essais ne programment aucune répétition. Douze scénarios JSDOM passent, ainsi que le build TypeScript/Vite ; les réponses externes des tests sont synthétiques.

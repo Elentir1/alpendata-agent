@@ -14,7 +14,8 @@ from sqlalchemy import select, update
 from .connections import MicrosoftReader, SearchInput, lock_member
 from .database import database_factory
 from .model_gateway import ModelError, ModelGateway
-from .models import ChatTurn, Conversation, Membership, ModelCall, User, now
+from .models import ChatTurn, Conversation, Membership, ModelCall, RoutineProposal, ToolRead, User, now
+from .routine_service import record_proposals, source_references
 from .runtime import ContainerRuntime, RuntimeFailure
 from .settings import Settings
 
@@ -110,6 +111,11 @@ class ChatWorker:
                     update(ModelCall)
                     .where(ModelCall.turn_id == turn.id, ModelCall.status == "started")
                     .values(status="failed", error_code="model_result_unknown", finished_at=now())
+                )
+                db.execute(
+                    update(ToolRead)
+                    .where(ToolRead.turn_id == turn.id, ToolRead.status == "started")
+                    .values(status="failed", error_code="tool_result_unknown", finished_at=now())
                 )
         # No automatic replay: an interrupted tool may already have taken effect.
 
@@ -245,6 +251,15 @@ class ChatWorker:
         with self.factory.begin() as db:
             authorize_job(db, job)
         try:
+            if isinstance(payload, dict) and payload.get("kind") == "routine_proposals":
+                if set(payload) != {"kind", "proposals"}:
+                    raise HTTPException(400, "agent_tool_arguments_invalid")
+                with self.factory.begin() as db:
+                    authorize_job(db, job)
+                    result = record_proposals(
+                        db, db.get(ChatTurn, job.id), {"proposals": payload["proposals"]}
+                    )
+                return {"status": 200, "body": result}
             request = ToolRequest.model_validate(payload)
             if request.capability not in capabilities:
                 raise HTTPException(403, "microsoft_permission_required")
@@ -253,9 +268,36 @@ class ChatWorker:
                 arguments = SearchInput.model_validate(arguments).model_dump()
             elif arguments:
                 raise HTTPException(400, "agent_tool_arguments_invalid")
-            result = self.microsoft.read(
-                job.organization_id, lambda db: authorize_job(db, job), request.capability, **arguments
-            )
+            with self.factory.begin() as db:
+                authorize_job(db, job)
+                receipt = ToolRead(
+                    organization_id=job.organization_id,
+                    owner_id=job.owner_id,
+                    turn_id=job.id,
+                    capability=request.capability,
+                )
+                db.add(receipt)
+                db.flush()
+                receipt_id = receipt.id
+            try:
+                result = self.microsoft.read(
+                    job.organization_id, lambda db: authorize_job(db, job), request.capability, **arguments
+                )
+            except HTTPException as error:
+                with self.factory.begin() as db:
+                    receipt = db.get(ToolRead, receipt_id)
+                    receipt.status, receipt.error_code, receipt.finished_at = (
+                        "failed",
+                        str(error.detail),
+                        now(),
+                    )
+                raise
+            with self.factory.begin() as db:
+                receipt = db.get(ToolRead, receipt_id)
+                receipt.status, receipt.error_code, receipt.finished_at = "completed", None, now()
+                receipt.sources = source_references(request.capability, result)
+            with self.factory.begin() as db:
+                authorize_job(db, job)
             return {"status": 200, "body": result}
         except ValidationError:
             return {"status": 400, "body": {"error": "agent_tool_arguments_invalid"}}
@@ -275,7 +317,18 @@ class ChatWorker:
                 error = "agent_access_revoked"
             if turn.cancel_requested:
                 error = "agent_cancelled"
+            if not error and db.get(Conversation, turn.conversation_id).purpose == "onboarding":
+                proposals = db.scalars(
+                    select(RoutineProposal.id).where(RoutineProposal.conversation_id == turn.conversation_id)
+                ).all()
+                if len(proposals) < 2:
+                    error = "routine_proposals_missing"
             turn.finished_at, turn.lease_expires_at = now(), None
+            db.execute(
+                update(ToolRead)
+                .where(ToolRead.turn_id == turn.id, ToolRead.status == "started")
+                .values(status="failed", error_code="tool_result_unknown", finished_at=now())
+            )
             if error:
                 turn.status = "cancelled" if error == "agent_cancelled" else "failed"
                 turn.error_code = error
@@ -308,6 +361,7 @@ class ChatWorker:
                     "system_prompt": conversation.system_prompt,
                     "capabilities": conversation.capabilities,
                     "message": turn.message,
+                    "purpose": conversation.purpose,
                 }
             handlers = {
                 "model": lambda body: self.model(job, body),

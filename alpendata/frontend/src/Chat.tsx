@@ -4,10 +4,13 @@ import { api, ApiError } from './api';
 import type { Language, Text } from './locale';
 import { errorText } from './locale';
 import { Notice } from './feedback';
+import { RoutineCards, TrialEvidence } from './FirstTasks';
+import type { Proposal, Trial } from './FirstTasks';
 
 type Conversation = { id: string; title: string; language: Language; created_at: number };
-type Turn = { id: string; request_id: string; sequence: number; message: string; response: string | null; status: string; error_code: string | null; cancel_requested: boolean };
-type Detail = Conversation & { turns: Turn[]; next_after: number | null };
+type Source = { kind: string; label: string; url: string | null };
+type Turn = { sources?: Source[]; id: string; request_id: string; sequence: number; message: string; response: string | null; status: string; error_code: string | null; cancel_requested: boolean };
+type Detail = Conversation & { proposals?: Proposal[]; trials?: Trial[]; turns: Turn[]; next_after: number | null };
 type Listing = { available: boolean; conversations: Conversation[]; next_offset: number | null };
 
 const words = {
@@ -41,7 +44,7 @@ const words = {
   },
 };
 
-export function Chat({ organizationId, licensed, language, t }: { organizationId: string; licensed: boolean; language: Language; t: Text }) {
+export function Chat({ organizationId, licensed, language, t, initialConversationId = '' }: { initialConversationId?: string; organizationId: string; licensed: boolean; language: Language; t: Text }) {
   const c = words[language], base = `/api/organizations/${organizationId}/chat`;
   const [listing, setListing] = useState<Listing | null>(null), [selected, setSelected] = useState('');
   const [detail, setDetail] = useState<Detail | null>(null), [draft, setDraft] = useState('');
@@ -52,9 +55,9 @@ export function Chat({ organizationId, licensed, language, t }: { organizationId
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => {
     let active = true;
-    api<Listing>(base).then(value => { if (active) { setListing(value); setSelected(value.conversations[0]?.id || ''); } }).catch(cause => { if (active) setError(cause); });
+    api<Listing>(base).then(value => { if (active) { setListing(value); setSelected(initialConversationId || value.conversations[0]?.id || ''); } }).catch(cause => { if (active) setError(cause); });
     return () => { active = false; };
-  }, [base]);
+  }, [base, initialConversationId]);
   useEffect(() => {
     if (!selected) return;
     let active = true, timer: ReturnType<typeof setTimeout>;
@@ -115,7 +118,7 @@ export function Chat({ organizationId, licensed, language, t }: { organizationId
     if (alive.current) setListing(list);
   }
   const running = detail?.turns.find(turn => ['queued', 'running'].includes(turn.status));
-  const messages: Record<string, string> = { chat_not_configured: c.unavailable, agent_already_running: c.busy, chat_model_changed: c.changed, agent_recovery_required: c.recovery };
+  const messages: Record<string, string> = { chat_not_configured: c.unavailable, agent_already_running: c.busy, chat_model_changed: c.changed, agent_recovery_required: c.recovery, onboarding_required: language === 'fr' ? 'Complétez votre profil dans « Mon espace » pour commencer.' : 'Complete your profile in “My workspace” to get started.' };
   const failureText = error instanceof ApiError ? messages[error.code] || errorText(error, t) : error ? errorText(error, t) : '';
   const labels: Record<string, string> = { queued: c.queued, running: c.running, cancelled: c.cancelled, interrupted: c.interrupted, failed: c.failed };
   return <section className="chat-page">
@@ -142,10 +145,15 @@ export function Chat({ organizationId, licensed, language, t }: { organizationId
         {selected && !detail ? <p role="status">{t.loading}</p> : !detail?.turns.length ? <div className="chat-empty"><MessageSquare size={32} /><h2>{c.empty}</h2><p>{c.emptyText}</p></div> : <div className="chat-messages" aria-label={c.conversations}>
           {detail.turns.map(turn => <div className="chat-turn" key={turn.id}>
             <article className="chat-message from-user"><strong>{c.you}</strong><p>{turn.message}</p></article>
-            {turn.response !== null && <article className="chat-message from-assistant"><strong>{c.assistant}</strong><p>{turn.response}</p></article>}
+            {turn.response !== null && <article className="chat-message from-assistant"><strong>{c.assistant}</strong><p>{turn.response}</p>{!!turn.sources?.length && <div className="chat-sources"><strong>{language === 'fr' ? 'Sources consultées' : 'Sources consulted'}</strong><ul>{turn.sources.map((source, index) => <li key={index}>{source.url && source.url.startsWith('https://') ? <a href={source.url} target="_blank" rel="noreferrer">{source.label || source.kind}</a> : <span>{source.label || source.kind}</span>}</li>)}</ul></div>}</article>}
             {turn.status !== 'completed' && <p className="chat-status" role="status">{turn.error_code ? messages[turn.error_code] || labels[turn.status] : labels[turn.status]}</p>}
           </div>)}
         </div>}
+        {!!detail?.proposals?.length && <RoutineCards key={selected} proposals={detail.proposals} organizationId={organizationId} language={language} disabled={busy || uncertain || !!running || !licensed || !listing?.available} onOpen={id => {
+          setSelected(id); setDraft(''); setError(null);
+          void api<Listing>(base).then(value => { if (alive.current) setListing(value); }).catch(cause => { if (alive.current) setError(cause); });
+        }} />}
+        <TrialEvidence trials={detail?.trials || []} language={language} />
         {selected && <form className="chat-composer" onSubmit={event => { event.preventDefault(); void action(send); }}>
           {uncertain && <Notice>{c.uncertain}</Notice>}
           <label htmlFor="chat-message">{c.message}</label>

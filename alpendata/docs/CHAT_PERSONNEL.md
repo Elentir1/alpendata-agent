@@ -71,3 +71,7 @@ L’API est démarrée séparément comme documenté dans son README. En product
 Le test de bout en bout utilise PostgreSQL, MSAL, un serveur HTTP de modèle et des conteneurs Hermes réels. Les réponses Microsoft/Graph et du modèle sont synthétiques. Il vérifie un redémarrage d’API avant exécution, les jetons du propriétaire, la reprise du même contexte, la déconnexion Microsoft, l’annulation pendant un appel et la conservation de sa consommation, puis le retrait des droits avant un travail en attente.
 
 L’interface dispose de tests JSDOM et a été contrôlée dans le navigateur intégré avec un build réel et des données fictives explicitement signalées : navigation vers le chat, rendu d’un historique, saisie/envoi et changement français/anglais. Aucun service client réel n’a été connecté dans cette vérification visuelle. Le pilote réel, la disponibilité du processus de travail, la supervision et le déploiement Infomaniak restent à valider.
+
+## Extension du premier résultat
+
+La migration `0006` et le [parcours d’onboarding](PREMIER_RESULTAT.md) ajoutent les conversations de planification, les propositions et les essais personnels. Les nouveaux chats exigent un profil personnel renseigné. Les sources affichées proviennent des lectures confirmées par le broker. Le type de conversation, le contexte et les permissions sont figés à sa création ; l’outil de proposition reste propre aux conversations d’onboarding.

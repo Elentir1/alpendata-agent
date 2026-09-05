@@ -33,7 +33,7 @@ Sortie attendue : deux collaborateurs utilisent leurs propres connexions ; la d�
 
 ## Lot 3 — Première expérience AlpenData
 
-État : interface React/Vite compilée avec dix scénarios JSDOM réussis. Connexion, invitations, onboarding, outils personnels et chat sont reliés à l’API. Le chat dispose de l’historique, de l’envoi idempotent et de l’arrêt ; son rendu a été contrôlé dans un navigateur sur des données fictives. Aucun résultat IA n’est simulé dans l’application. Les propositions personnalisées de routines et le parcours complet avec Entra, Graph et un modèle réel restent à réaliser.
+État : interface React/Vite compilée avec douze scénarios JSDOM réussis. Connexion, invitations, onboarding, outils personnels et chat sont reliés à l’API. Le chat dispose de l’historique, de l’envoi idempotent et de l’arrêt ; son rendu a été contrôlé dans un navigateur sur des données fictives. Aucun résultat IA n’est simulé dans l’application. Les propositions personnalisées et les essais explicites avec sources sont implémentés et testés avec Hermes réel et des réponses externes synthétiques. La planification après essai et le parcours complet avec Entra, Graph et un modèle commercial restent à réaliser.
 
 - Extraire et appliquer les éléments visuels de la marque.
 - Créer les écrans en français et anglais et l’onboarding combinant questions et conversation.

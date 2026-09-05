@@ -40,7 +40,12 @@ class Channel:
     def exchange(self, operation, payload):
         with self.lock:
             identifier = str(uuid4())
-            self.send({"type": "request", "id": identifier, "operation": operation, "payload": payload})
+            self.send({
+                "type": "request",
+                "id": identifier,
+                "operation": operation,
+                "payload": payload,
+            })
             response = self.receive()
             if response.get("id") != identifier or response.get("type") != "response":
                 raise ValueError("Unexpected broker response")
@@ -84,8 +89,62 @@ def model_proxy(channel):
     return server
 
 
-def register_tools(channel, capabilities):
+def register_tools(channel, capabilities, *, planning=False):
     from tools.registry import registry
+
+    if planning:
+
+        def propose(arguments, **_):
+            response = channel.exchange(
+                "tool", {"kind": "routine_proposals", **arguments}
+            )
+            return json.dumps(
+                {"status": response["status"], "result": response["body"]},
+                ensure_ascii=False,
+            )
+
+        name = "alpendata_propose_routines"
+        description = "Save 2 or 3 personalized task proposals from the catalog. This does not run or schedule them."
+        registry.register(
+            name=name,
+            toolset="alpendata",
+            description=description,
+            handler=propose,
+            schema={
+                "name": name,
+                "description": description,
+                "parameters": {
+                    "type": "object",
+                    "required": ["proposals"],
+                    "additionalProperties": False,
+                    "properties": {
+                        "proposals": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 3,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["template", "title", "benefit", "focus"],
+                                "properties": {
+                                    key: {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": limit,
+                                    }
+                                    for key, limit in {
+                                        "template": 40,
+                                        "title": 160,
+                                        "benefit": 1000,
+                                        "focus": 2000,
+                                    }.items()
+                                },
+                            },
+                        }
+                    },
+                },
+            },
+        )
 
     definitions = {
         "mail": ("alpendata_mail", "Read the signed-in user's ten latest emails.", {}),
@@ -104,8 +163,13 @@ def register_tools(channel, capabilities):
         name, description, properties = definitions[capability]
 
         def handler(arguments, *, _capability=capability, **_):
-            response = channel.exchange("tool", {"capability": _capability, "arguments": arguments})
-            return json.dumps({"status": response["status"], "result": response["body"]}, ensure_ascii=False)
+            response = channel.exchange(
+                "tool", {"capability": _capability, "arguments": arguments}
+            )
+            return json.dumps(
+                {"status": response["status"], "result": response["body"]},
+                ensure_ascii=False,
+            )
 
         registry.register(
             name=name,
@@ -140,17 +204,15 @@ def run(channel, request):
 
     # Configuration is operator-owned, renewed before each process starts.
     (home / "config.yaml").write_text(
-        yaml.safe_dump(
-            {
-                "model": {"streaming": False, "context_length": 131072},
-                "terminal": {"backend": "local", "cwd": str(workspace)},
-                "background_review": {"enabled": False},
-                # AlpenData names conversations from their first message. The
-                # upstream daemon title task must not outlive this one-turn worker.
-                "auxiliary": {"title_generation": {"enabled": False}},
-                "tools": {"tool_search": {"enabled": "off"}},
-            }
-        ),
+        yaml.safe_dump({
+            "model": {"streaming": False, "context_length": 131072},
+            "terminal": {"backend": "local", "cwd": str(workspace)},
+            "background_review": {"enabled": False},
+            # AlpenData names conversations from their first message. The
+            # upstream daemon title task must not outlive this one-turn worker.
+            "auxiliary": {"title_generation": {"enabled": False}},
+            "tools": {"tool_search": {"enabled": "off"}},
+        }),
         encoding="utf-8",
     )
     (home / "SOUL.md").write_text(
@@ -164,7 +226,9 @@ def run(channel, request):
     from run_agent import AIAgent
 
     capabilities = request.get("capabilities", [])
-    register_tools(channel, capabilities)
+    register_tools(
+        channel, capabilities, planning=request.get("purpose") == "onboarding"
+    )
     session_db = SessionDB()
     agent = AIAgent(
         base_url=f"http://127.0.0.1:{server.server_port}/v1",
@@ -180,7 +244,8 @@ def run(channel, request):
         load_soul_identity=True,
         skip_background_review=True,
         save_trajectories=False,
-        enabled_toolsets=["memory", "file", "terminal"] + (["alpendata"] if capabilities else []),
+        enabled_toolsets=["memory", "file", "terminal"]
+        + (["alpendata"] if capabilities else []),
         max_iterations=20,
         run_budget_seconds=240,
     )
@@ -193,16 +258,14 @@ def run(channel, request):
             system_message=request["system_prompt"],
             conversation_history=history or None,
         )
-        channel.send(
-            {
-                "type": "result",
-                "response": result.get("final_response", ""),
-                "messages": result.get("messages", []),
-                "completed": bool(result.get("completed")),
-                "failed": bool(result.get("failed")),
-                "interrupted": bool(result.get("interrupted")),
-            }
-        )
+        channel.send({
+            "type": "result",
+            "response": result.get("final_response", ""),
+            "messages": result.get("messages", []),
+            "completed": bool(result.get("completed")),
+            "failed": bool(result.get("failed")),
+            "interrupted": bool(result.get("interrupted")),
+        })
     finally:
         agent.close()
         session_db.close()

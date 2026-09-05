@@ -175,6 +175,7 @@ class Conversation(OwnedMixin, Base):
     __tablename__ = "alpendata_conversations"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(160))
+    purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
     language: Mapped[str] = mapped_column(String(2))
     provider: Mapped[str] = mapped_column(String(24))
     model: Mapped[str] = mapped_column(String(200))
@@ -250,5 +251,71 @@ class ModelCall(OwnedMixin, Base):
         CheckConstraint(
             "prompt_tokens >= 0 AND completion_tokens >= 0 AND total_tokens >= 0",
             name="ck_model_call_tokens",
+        ),
+    )
+
+
+def turn_ownership_constraint(column="turn_id"):
+    return ForeignKeyConstraint(
+        [column, "organization_id", "owner_id"],
+        ["alpendata_chat_turns.id", "alpendata_chat_turns.organization_id", "alpendata_chat_turns.owner_id"],
+    )
+
+
+class ToolRead(OwnedMixin, Base):
+    __tablename__ = "alpendata_tool_reads"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    capability: Mapped[str] = mapped_column(String(24))
+    status: Mapped[str] = mapped_column(String(24), default="started")
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    sources: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    finished_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        CheckConstraint("status IN ('started', 'completed', 'failed')", name="ck_tool_read_status"),
+    )
+
+
+class RoutineProposal(OwnedMixin, Base):
+    __tablename__ = "alpendata_routine_proposals"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    conversation_id: Mapped[str] = mapped_column(String(36), index=True)
+    template: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(160))
+    benefit: Mapped[str] = mapped_column(Text)
+    focus: Mapped[str] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(String(2))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["conversation_id", "organization_id", "owner_id"],
+            [
+                "alpendata_conversations.id",
+                "alpendata_conversations.organization_id",
+                "alpendata_conversations.owner_id",
+            ],
+        ),
+        UniqueConstraint("conversation_id", "template"),
+        UniqueConstraint("id", "organization_id", "owner_id"),
+    )
+
+
+class RoutineTrial(OwnedMixin, Base):
+    __tablename__ = "alpendata_routine_trials"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    proposal_id: Mapped[str] = mapped_column(String(36), index=True)
+    turn_id: Mapped[str] = mapped_column(String(36), unique=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        ForeignKeyConstraint(
+            ["proposal_id", "organization_id", "owner_id"],
+            [
+                "alpendata_routine_proposals.id",
+                "alpendata_routine_proposals.organization_id",
+                "alpendata_routine_proposals.owner_id",
+            ],
         ),
     )

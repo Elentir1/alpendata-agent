@@ -36,6 +36,11 @@ def test_chat_runs_with_own_microsoft_access_resumes_and_cancels(connected_servi
     for account in (alice, bob):
         flow = start(original, microsoft_http, org, account, capabilities=("mail",))
         assert original.post(CALLBACK, data=flow, follow_redirects=False).status_code == 303
+    original.put(
+        f"/api/organizations/{org}/onboarding",
+        headers=bob[2],
+        json={"language": "en", "role": "Coach", "needs": "Briefing"},
+    )
     entered, release = Event(), Event()
     prefixes = []
 

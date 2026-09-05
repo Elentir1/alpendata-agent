@@ -157,3 +157,13 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .chat-composer textarea { resize: vertical; min-height: 95px; }
 .chat-send-actions { display: flex; justify-content: end; gap: 10px; }
 @media (max-width: 1000px) { .chat-layout { grid-template-columns: 1fr; } .conversation-list { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 15px; } .conversation-link { max-width: 100%; } .chat-privacy { margin-top: 14px; } }
+
+.first-tasks { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+.routine-proposals { padding: 1.25rem; }
+.routine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; }
+.routine-card { padding: 1.2rem; border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow-wrap: anywhere; }
+.routine-card h3 { margin-top: 0; font-size: 1rem; }
+.routine-card p { font-size: .9rem; line-height: 1.55; }
+.chat-sources { border-top: 1px solid #e5e7eb; margin-top: 1rem; padding-top: .75rem; font-size: .85rem; overflow-wrap: anywhere; }
+.chat-sources ul { padding-left: 1.2rem; }
+.chat-sources li { margin-top: .35rem; }
