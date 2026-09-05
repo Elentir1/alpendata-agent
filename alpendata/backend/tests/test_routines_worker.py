@@ -15,7 +15,9 @@ from test_routines import routine_service as routine_service
 from alpendata_api.chat_worker import ChatWorker
 from alpendata_api.connections import MicrosoftReader
 from alpendata_api.model_gateway import ModelGateway
+from alpendata_api.models import RoutineSchedule, now
 from alpendata_api.runtime import RuntimeSettings
+from alpendata_api.schedule_worker import ScheduleWorker
 
 pytestmark = pytest.mark.linux_only
 
@@ -45,6 +47,8 @@ def test_hermes_onboarding_and_trial_use_actual_registered_tools(routine_service
         names = {item["function"]["name"] for item in body.get("tools", [])}
         planning = "alpendata_propose_routines" in names
         assert "alpendata_mail" in names and "alpendata_files" not in names
+        if any(item.get("content") == "Execute the scheduled task once." for item in body["messages"]):
+            assert "memory" not in names
         if any(item["role"] == "tool" for item in body["messages"]):
             if not planning:
                 assert "synthetic-access-" + bob[1] in json.dumps(body)
@@ -93,3 +97,30 @@ def test_hermes_onboarding_and_trial_use_actual_registered_tools(routine_service
         assert result["trials"][0]["sources_verified"] is True
         assert result["turns"][0]["sources"]
         assert len(received) == 4
+        scheduled = client.post(
+            base + "/schedules",
+            headers=bob[2],
+            json={
+                "request_id": str(uuid4()),
+                "reviewed_trial_id": trial["id"],
+                "reviewed": True,
+                "frequency": "daily",
+                "local_time": "09:00",
+                "timezone": "Europe/Zurich",
+            },
+        ).json()
+        with app.state.session_factory.begin() as db:
+            db.get(RoutineSchedule, scheduled["id"]).next_run_at = now() - 1
+        assert ScheduleWorker(settings, app.state.session_factory).tick() == 1
+        assert worker.run_once()
+        runs = client.get(base + "/schedules/" + scheduled["id"] + "/occurrences", headers=bob[2]).json()
+        assert runs["occurrences"][0]["status"] == "completed", runs
+        scheduled_result = client.get(
+            base + "/chat/conversations/" + runs["occurrences"][0]["conversation_id"], headers=bob[2]
+        ).json()
+        assert scheduled_result["turns"][0]["sources"]
+        assert (
+            client.get(base + "/schedules/" + scheduled["id"] + "/occurrences", headers=alice[2]).status_code
+            == 404
+        )
+        assert len(received) == 6

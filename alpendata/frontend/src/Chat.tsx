@@ -6,6 +6,7 @@ import { errorText } from './locale';
 import { Notice } from './feedback';
 import { RoutineCards, TrialEvidence } from './FirstTasks';
 import type { Proposal, Trial } from './FirstTasks';
+import { ScheduleActivation } from './Schedules';
 
 type Conversation = { id: string; title: string; language: Language; created_at: number };
 type Source = { kind: string; label: string; url: string | null };
@@ -44,7 +45,7 @@ const words = {
   },
 };
 
-export function Chat({ organizationId, licensed, language, t, initialConversationId = '' }: { initialConversationId?: string; organizationId: string; licensed: boolean; language: Language; t: Text }) {
+export function Chat({ organizationId, licensed, language, t, initialConversationId = '', onManage }: { onManage?: () => void; initialConversationId?: string; organizationId: string; licensed: boolean; language: Language; t: Text }) {
   const c = words[language], base = `/api/organizations/${organizationId}/chat`;
   const [listing, setListing] = useState<Listing | null>(null), [selected, setSelected] = useState('');
   const [detail, setDetail] = useState<Detail | null>(null), [draft, setDraft] = useState('');
@@ -118,7 +119,7 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
     if (alive.current) setListing(list);
   }
   const running = detail?.turns.find(turn => ['queued', 'running'].includes(turn.status));
-  const messages: Record<string, string> = { chat_not_configured: c.unavailable, agent_already_running: c.busy, chat_model_changed: c.changed, agent_recovery_required: c.recovery, onboarding_required: language === 'fr' ? 'Complétez votre profil dans « Mon espace » pour commencer.' : 'Complete your profile in “My workspace” to get started.' };
+  const messages: Record<string, string> = { routine_sources_missing: language === 'fr' ? 'Les sources nécessaires n’ont pas été consultées. Vérifiez vos connexions.' : 'The required sources were not consulted. Check your connections.', routine_occurrence_expired: language === 'fr' ? 'Le créneau de cette occurrence est dépassé.' : 'This occurrence is past its execution window.', chat_not_configured: c.unavailable, agent_already_running: c.busy, chat_model_changed: c.changed, agent_recovery_required: c.recovery, onboarding_required: language === 'fr' ? 'Complétez votre profil dans « Mon espace » pour commencer.' : 'Complete your profile in “My workspace” to get started.' };
   const failureText = error instanceof ApiError ? messages[error.code] || errorText(error, t) : error ? errorText(error, t) : '';
   const labels: Record<string, string> = { queued: c.queued, running: c.running, cancelled: c.cancelled, interrupted: c.interrupted, failed: c.failed };
   return <section className="chat-page">
@@ -154,6 +155,7 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
           void api<Listing>(base).then(value => { if (alive.current) setListing(value); }).catch(cause => { if (alive.current) setError(cause); });
         }} />}
         <TrialEvidence trials={detail?.trials || []} language={language} />
+        {detail?.trials?.map(trial => <ScheduleActivation key={trial.id} trial={trial} organizationId={organizationId} language={language} disabled={busy || !!running || !licensed} onManage={onManage} />)}
         {selected && <form className="chat-composer" onSubmit={event => { event.preventDefault(); void action(send); }}>
           {uncertain && <Notice>{c.uncertain}</Notice>}
           <label htmlFor="chat-message">{c.message}</label>

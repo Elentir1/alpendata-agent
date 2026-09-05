@@ -226,6 +226,7 @@ def run(channel, request):
     from run_agent import AIAgent
 
     capabilities = request.get("capabilities", [])
+    scheduled = request.get("purpose") == "scheduled"
     register_tools(
         channel, capabilities, planning=request.get("purpose") == "onboarding"
     )
@@ -243,11 +244,14 @@ def run(channel, request):
         skip_context_files=True,
         load_soul_identity=True,
         skip_background_review=True,
+        skip_memory=scheduled,
         save_trajectories=False,
-        enabled_toolsets=["memory", "file", "terminal"]
+        enabled_toolsets=(
+            ["file", "terminal"] if scheduled else ["memory", "file", "terminal"]
+        )
         + (["alpendata"] if capabilities else []),
         max_iterations=20,
-        run_budget_seconds=240,
+        run_budget_seconds=180 if scheduled else 240,
     )
     try:
         # Resume the canonical active history, including a partially persisted

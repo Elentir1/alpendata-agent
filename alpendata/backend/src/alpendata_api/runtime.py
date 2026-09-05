@@ -10,7 +10,9 @@ import os
 import selectors
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import Future
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -168,9 +170,22 @@ class ContainerRuntime:
                     stream.close()
 
     def communicate(self, process, payload, exchange, *, check=None):
-        deadline = time.monotonic() + self.settings.timeout_seconds
+        budget = (
+            min(self.settings.timeout_seconds, 180)
+            if payload.get("purpose") == "scheduled"
+            else self.settings.timeout_seconds
+        )
+        deadline = time.monotonic() + budget
         output, pending = bytearray(), bytearray(frame(payload))
         used = set()
+        in_flight = None
+
+        def broker_reply(future, operation, body):
+            try:
+                future.set_result(exchange(operation, body))
+            except Exception as error:
+                future.set_exception(error)
+
         with selectors.DefaultSelector() as selector:
             os.set_blocking(process.stdout.fileno(), False)
             os.set_blocking(process.stdin.fileno(), False)
@@ -182,6 +197,11 @@ class ContainerRuntime:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise RuntimeFailure("agent_timed_out")
+                if in_flight is not None and in_flight[1].done():
+                    identifier, future = in_flight
+                    pending.extend(frame({"type": "response", "id": identifier, **future.result()}))
+                    in_flight = None
+                    selector.register(process.stdin, selectors.EVENT_WRITE)
                 events = selector.select(min(remaining, 1))
                 for key, _ in events:
                     if key.fileobj is process.stdin:
@@ -214,12 +234,13 @@ class ContainerRuntime:
                             if kind == "result":
                                 if (
                                     pending
+                                    or in_flight is not None
                                     or not isinstance(message.get("response"), str)
                                     or not isinstance(message.get("messages"), list)
                                 ):
                                     raise ValueError()
                                 return message
-                            if kind != "request" or pending or len(used) >= 80:
+                            if kind != "request" or pending or in_flight is not None or len(used) >= 80:
                                 raise ValueError()
                             identifier = str(UUID(message["id"]))
                             if (
@@ -231,6 +252,13 @@ class ContainerRuntime:
                             used.add(identifier)
                         except (ValueError, TypeError, KeyError):
                             raise RuntimeFailure("agent_protocol_invalid") from None
-                        reply = exchange(message["operation"], message["payload"])
-                        pending.extend(frame({"type": "response", "id": identifier, **reply}))
-                        selector.register(process.stdin, selectors.EVENT_WRITE)
+                        future = Future()
+                        in_flight = (identifier, future)
+                        # Accepted calls may return late; their receipts remain tied
+                        # to this job while the controller enforces its deadline.
+                        threading.Thread(
+                            target=broker_reply,
+                            args=(future, message["operation"], message["payload"]),
+                            name="alpendata-broker-reply",
+                            daemon=True,
+                        ).start()

@@ -189,4 +189,8 @@ def update_membership(db: Session, actor: User, organization_id: str, user_id: s
             raise HTTPException(409, "no_available_license")
     target.role, target.active, target.licensed = body.role, body.active, body.licensed
     db.flush()
+    if not body.active or not body.licensed:
+        from .schedule_state import block_owner_schedules
+
+        block_owner_schedules(db, organization_id, user_id, "agent_access_revoked")
     return target

@@ -5,7 +5,15 @@ from pydantic import Field
 from sqlalchemy import select
 
 from .graph import web_link
-from .models import ChatTurn, Conversation, MicrosoftConnection, RoutineProposal, RoutineTrial, ToolRead
+from .models import (
+    ChatTurn,
+    Conversation,
+    MicrosoftConnection,
+    RoutineProposal,
+    RoutineSchedule,
+    RoutineTrial,
+    ToolRead,
+)
 from .routine_catalog import RECIPES, available_recipes
 from .schemas import Input
 
@@ -96,11 +104,20 @@ def trial_view(db, trial):
     turn = db.get(ChatTurn, trial.turn_id)
     proposal = db.get(RoutineProposal, trial.proposal_id)
     reads, _ = read_evidence(db, turn)
+    schedule = db.scalar(
+        select(RoutineSchedule).where(
+            RoutineSchedule.proposal_id == trial.proposal_id, RoutineSchedule.status != "archived"
+        )
+    )
     return {
         "id": trial.id,
         "proposal_id": trial.proposal_id,
         "conversation_id": turn.conversation_id,
         "turn_id": turn.id,
+        "schedule_id": schedule.id if schedule else None,
+        "can_replace_schedule": bool(
+            schedule and schedule.status == "blocked" and schedule.reviewed_turn_id != trial.turn_id
+        ),
         "status": turn.status,
         "sources_verified": turn.status == "completed"
         and set(RECIPES[proposal.template].capabilities) <= reads,

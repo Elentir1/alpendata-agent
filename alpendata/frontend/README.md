@@ -44,4 +44,6 @@ L’aperçu local a été démarré et a répondu HTTP 200. Les actifs de marque
 
 ## Premier résultat
 
-Après son profil et ses connexions, l’utilisateur précise son besoin dans `FirstTasks`. Le formulaire ouvre une conversation qui reçoit les propositions enregistrées par Hermes. Chaque carte lance un essai explicite et ouvre son résultat personnel. Le chat affiche les références retournées par le broker et distingue un essai avec sources vérifiées d’un résultat sans lectures confirmées. Les essais ne programment aucune répétition. Douze scénarios JSDOM passent, ainsi que le build TypeScript/Vite ; les réponses externes des tests sont synthétiques.
+Après son profil et ses connexions, l’utilisateur précise son besoin dans `FirstTasks`. Le formulaire ouvre une conversation qui reçoit les propositions enregistrées par Hermes. Chaque carte lance un essai explicite et ouvre son résultat personnel. Le chat affiche les références retournées par le broker et distingue un essai avec sources vérifiées d’un résultat sans lectures confirmées. Les essais ne programment aucune répétition. Quatorze scénarios JSDOM passent, ainsi que le build TypeScript/Vite ; les réponses externes des tests sont synthétiques.
+
+L’utilisateur peut ensuite confirmer la revue de l’essai et choisir son horaire. L’écran Automatisations permet de consulter les résultats, modifier l’horaire, suspendre, reprendre, refaire un essai et retirer une tâche. Les données restent celles de l’utilisateur connecté.

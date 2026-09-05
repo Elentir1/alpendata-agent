@@ -84,3 +84,11 @@ Image utilisée : `sha256:6f706d2d9556dfcbb4cdf8927fdfc9621cdddbbac655ec1007a75f
 Le contrôle ajouté ensuite pour refuser un onboarding sans propositions enregistrées a été vérifié séparément sur les scénarios concernés. Les pages compilées ont été parcourues dans un aperçu local explicitement fictif : saisie du besoin, cartes, essai, références et changement anglais/français ; aucune erreur JavaScript observée. L’aperçu fictif a été fermé et arrêté. La base de prévisualisation normale a été sauvegardée, migrée en `0006`, puis son API redémarrée. Aucun service commercial réel ni compte pilote n’a été connecté.
 
 Le [document du premier résultat](PREMIER_RESULTAT.md) décrit les limites, notamment la lecture de métadonnées de fichiers et l’absence actuelle d’activation récurrente.
+
+## Automatisations personnelles — 6 septembre 2026
+
+La suite complète passe **34 scénarios sous Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image `sha256:4031b65db47e83b5216fc4d0b882472c351221da012590006be02868a8e30fa0`. Elle couvre désormais deux activations et deux tickers concurrents, les changements d’heure suisses, les récurrences, leur suspension et les occurrences manquées. Les contrôles ajoutés pour le nouvel essai, la réactivation, l’édition et le retrait de licence ont également passé les tests concernés. Le frontend passe **14 scénarios JSDOM** et sa compilation TypeScript/Vite ; Ruff passe.
+
+Le test complet Hermes exécute successivement la proposition, l’essai et l’occurrence planifiée dans trois conteneurs réels. L’occurrence consulte la messagerie du bon propriétaire ; l’administrateur ne peut pas voir son historique. Un vrai sous-processus avec des pipes vérifie que l’attente du broker n’empêche pas le respect du délai du contrôleur. Les appels Microsoft et modèle restent synthétiques.
+
+Le build a été contrôlé dans le navigateur sur une démonstration locale signalée comme fictive : case de revue, activation, prochain horaire affiché, gestion des automatisations, historique, suspension et changement français/anglais. Aucune erreur JavaScript observée. Cette démonstration ne valide pas une exécution à heure réelle sur les services du client. Les exercices de production et le déploiement Infomaniak restent à réaliser.

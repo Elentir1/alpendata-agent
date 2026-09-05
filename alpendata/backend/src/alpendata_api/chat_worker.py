@@ -15,8 +15,9 @@ from .connections import MicrosoftReader, SearchInput, lock_member
 from .database import database_factory
 from .model_gateway import ModelError, ModelGateway
 from .models import ChatTurn, Conversation, Membership, ModelCall, RoutineProposal, ToolRead, User, now
-from .routine_service import record_proposals, source_references
+from .routine_service import read_evidence, record_proposals, source_references
 from .runtime import ContainerRuntime, RuntimeFailure
+from .schedule_state import finish_occurrence, occurrence_for_turn, scheduled_turn_error
 from .settings import Settings
 
 # A credential refresh followed by a Graph read holds the authorization locks.
@@ -78,6 +79,9 @@ def authorize_job(db, job):
         raise RuntimeFailure("agent_lease_lost")
     if turn.cancel_requested:
         raise RuntimeFailure("agent_cancelled")
+    scheduled_error = scheduled_turn_error(db, turn)
+    if scheduled_error:
+        raise RuntimeFailure(scheduled_error)
     return user
 
 
@@ -107,6 +111,7 @@ class ChatWorker:
                     now(),
                 )
                 turn.lease_expires_at = None
+                finish_occurrence(db, turn, "agent_worker_interrupted")
                 db.execute(
                     update(ModelCall)
                     .where(ModelCall.turn_id == turn.id, ModelCall.status == "started")
@@ -323,6 +328,10 @@ class ChatWorker:
                 ).all()
                 if len(proposals) < 2:
                     error = "routine_proposals_missing"
+            if not error and occurrence_for_turn(db, turn.id):
+                capabilities = db.get(Conversation, turn.conversation_id).capabilities
+                if not set(capabilities) <= read_evidence(db, turn)[0]:
+                    error = "routine_sources_missing"
             turn.finished_at, turn.lease_expires_at = now(), None
             db.execute(
                 update(ToolRead)
@@ -339,6 +348,7 @@ class ChatWorker:
                 )
             else:
                 turn.status, turn.response = "completed", result["response"]
+            finish_occurrence(db, turn, error)
 
     def run_once(self):
         self.recover_expired()

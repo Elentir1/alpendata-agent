@@ -319,3 +319,71 @@ class RoutineTrial(OwnedMixin, Base):
             ],
         ),
     )
+
+
+class RoutineSchedule(OwnedMixin, Base):
+    __tablename__ = "alpendata_routine_schedules"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    proposal_id: Mapped[str] = mapped_column(String(36), unique=True)
+    reviewed_turn_id: Mapped[str] = mapped_column(String(36))
+    activation_request_id: Mapped[str] = mapped_column(String(36))
+    frequency: Mapped[str] = mapped_column(String(16))
+    local_time: Mapped[str] = mapped_column(String(5))
+    timezone: Mapped[str] = mapped_column(String(100))
+    weekday: Mapped[int] = mapped_column(Integer, default=0)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    next_run_at: Mapped[int | None] = mapped_column(Integer, index=True)
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    failure_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint("reviewed_turn_id"),
+        ForeignKeyConstraint(
+            ["proposal_id", "organization_id", "owner_id"],
+            [
+                "alpendata_routine_proposals.id",
+                "alpendata_routine_proposals.organization_id",
+                "alpendata_routine_proposals.owner_id",
+            ],
+        ),
+        UniqueConstraint("id", "organization_id", "owner_id"),
+        UniqueConstraint("organization_id", "owner_id", "activation_request_id"),
+        CheckConstraint(
+            "status IN ('active', 'paused', 'blocked', 'archived')", name="ck_routine_schedule_status"
+        ),
+        CheckConstraint("frequency IN ('daily', 'weekdays', 'weekly')", name="ck_routine_schedule_frequency"),
+        CheckConstraint(
+            "weekday >= 0 AND weekday <= 6 AND version > 0 AND failure_count >= 0",
+            name="ck_routine_schedule_values",
+        ),
+    )
+
+
+class RoutineOccurrence(OwnedMixin, Base):
+    __tablename__ = "alpendata_routine_occurrences"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    schedule_id: Mapped[str] = mapped_column(String(36), index=True)
+    schedule_version: Mapped[int] = mapped_column(Integer)
+    scheduled_for: Mapped[int] = mapped_column(Integer)
+    outcome: Mapped[str] = mapped_column(String(24))
+    turn_id: Mapped[str | None] = mapped_column(String(36), unique=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        ForeignKeyConstraint(
+            ["schedule_id", "organization_id", "owner_id"],
+            [
+                "alpendata_routine_schedules.id",
+                "alpendata_routine_schedules.organization_id",
+                "alpendata_routine_schedules.owner_id",
+            ],
+        ),
+        UniqueConstraint("schedule_id", "scheduled_for"),
+        CheckConstraint("outcome IN ('queued', 'missed')", name="ck_routine_occurrence_outcome"),
+        CheckConstraint(
+            "(outcome = 'queued' AND turn_id IS NOT NULL) OR (outcome = 'missed' AND turn_id IS NULL)",
+            name="ck_routine_occurrence_turn",
+        ),
+    )

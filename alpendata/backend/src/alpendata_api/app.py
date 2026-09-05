@@ -17,6 +17,7 @@ from .database import database_factory
 from .mail import SMTPMailer
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
 from .routines import routines_router
+from .schedules import schedules_router
 from .schemas import (
     AcceptInvitation,
     InviteInput,
@@ -48,6 +49,7 @@ def create_app(
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
     app.include_router(routines_router(settings, factory))
+    app.include_router(schedules_router(settings, factory))
 
     @app.exception_handler(HTTPException)
     async def browser_signin_error(request: Request, error: HTTPException):

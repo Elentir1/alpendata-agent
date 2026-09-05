@@ -136,7 +136,7 @@ def request_turn(db, user, organization_id, request_id):
     )
 
 
-def queue_turn(db, settings, user, conversation, request_id, message):
+def queue_turn(db, settings, user, conversation, request_id, message, *, allow_waiting=False):
     previous = request_turn(db, user, conversation.organization_id, request_id)
     if previous:
         if previous.conversation_id != conversation.id or previous.message != message:
@@ -152,7 +152,7 @@ def queue_turn(db, settings, user, conversation, request_id, message):
         )
         .limit(1)
     )
-    if active:
+    if active and not allow_waiting:
         raise HTTPException(409, "agent_already_running")
     if (conversation.provider, conversation.model) != (settings.model.provider, settings.model.model):
         raise HTTPException(409, "chat_model_changed")

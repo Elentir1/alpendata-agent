@@ -5,7 +5,7 @@ import { Notice } from './feedback';
 import type { Language } from './locale';
 
 export type Proposal = { id: string; title: string; benefit: string; focus: string };
-export type Trial = { id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
+export type Trial = { can_replace_schedule?: boolean; schedule_id?: string | null; id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
 
 const words = {
   fr: {

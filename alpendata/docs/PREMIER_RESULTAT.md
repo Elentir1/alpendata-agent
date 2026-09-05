@@ -41,4 +41,4 @@ Les tests de contrat utilisent l’API, les migrations, MSAL et SQLite/PostgreSQ
 
 Le navigateur a été contrôlé sur un aperçu séparé et explicitement fictif : saisie du besoin, cartes, lancement d’un essai, sources et passage anglais/français. Cette vérification visuelle ne constitue pas un test avec Entra, un modèle commercial ou le tenant du pilote.
 
-L’activation explicite de récurrences après revue d’un essai reste à implémenter, avec suspension, suivi et droits revérifiés à chaque exécution. La génération de documents, les écritures externes et le déploiement Infomaniak restent également à réaliser.
+L’[activation explicite des récurrences](AUTOMATISATIONS.md) est désormais implémentée après revue d’un essai, avec suspension, suivi et droits revérifiés à chaque exécution. La génération de documents, les écritures externes et le déploiement Infomaniak restent également à réaliser.

@@ -97,7 +97,7 @@ Les copies téléchargées, résumés déjà produits et souvenirs dérivés d�
 
 ## Planification, validations et doublons
 
-Au pilote, conserver un seul propriétaire de planification : le scheduler Hermes dans l’environnement de l’utilisateur. L’API AlpenData en conserve une projection de gestion et réconcilie les changements avec le magasin de l’agent. Avant chaque appel métier, la passerelle revérifie les droits courants, même si la tâche a été créée auparavant.
+Décision actualisée le 6 septembre 2026 : PostgreSQL est l’unique autorité de planification et inscrit chaque occurrence dans la file AlpenData. Le véritable Hermes exécute chaque occurrence dans une session et un conteneur du propriétaire. Le magasin cron modifiable par l’agent ne porte pas le consentement de l’utilisateur. Cette évolution de la proposition initiale, ses motifs et ses garanties sont détaillés dans [Automatisations](AUTOMATISATIONS.md). Avant chaque appel métier, la passerelle revérifie les droits courants, même si la tâche a été créée auparavant.
 
 L’activation d’une routine passe par : proposition, essai, lecture du résultat, choix de fréquence et activation. Une autorisation d’action est liée à une définition et à des paramètres explicites ; une modification significative exige de réévaluer la validation.
 

@@ -24,6 +24,7 @@ from .models import (
     User,
     now,
 )
+from .schedule_state import block_owner_schedules
 from .settings import Settings
 from .signin import FLOW_SECONDS, callback_parameters
 from .vault import Vault
@@ -144,6 +145,7 @@ class MicrosoftReader:
                 failure = error
             if failure and failure.code == "microsoft_reconnect_required":
                 clear_connection(connection, "reconnect_required")
+                block_owner_schedules(db, organization_id, user.id, "microsoft_reconnect_required")
         # Persist cache refresh/revocation even when the operation returns an error.
         if failure:
             headers = {"Retry-After": str(failure.retry_after)} if failure.retry_after else None
@@ -259,6 +261,13 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
             connection.encrypted_cache = vault.seal(context(connection), {"cache": grant.cache})
             connection.capabilities = grant.capabilities
             connection.status, connection.connected_at = "connected", now()
+            block_owner_schedules(
+                db,
+                pending.organization_id,
+                user.id,
+                "microsoft_reconnect_required",
+                available=grant.capabilities,
+            )
             onboarding = db.scalar(
                 select(Onboarding).where(
                     Onboarding.organization_id == pending.organization_id, Onboarding.owner_id == user.id
@@ -277,6 +286,7 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
             connection = connection_for(db, user, organization_id)
             if connection is not None:
                 clear_connection(connection)
+                block_owner_schedules(db, organization_id, user.id, "microsoft_reconnect_required")
                 db.execute(
                     delete(MicrosoftConnectionFlow).where(
                         MicrosoftConnectionFlow.connection_id == connection.id

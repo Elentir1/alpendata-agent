@@ -4,7 +4,7 @@
 
 ## Parcours
 
-L’entrée « Assistant » ouvre les conversations du seul utilisateur connecté dans l’entreprise sélectionnée. L’interface française/anglaise permet de créer une conversation, envoyer un message, consulter le résultat et arrêter une demande. Elle affiche les états d’attente, d’exécution et d’interruption. Les réponses sont rendues comme du texte, sans interprétation HTML. Les propositions de routines et la production des documents restent les étapes suivantes.
+L’entrée « Assistant » ouvre les conversations du seul utilisateur connecté dans l’entreprise sélectionnée. L’interface française/anglaise permet de créer une conversation, envoyer un message, consulter le résultat et arrêter une demande. Elle affiche les états d’attente, d’exécution et d’interruption. Les réponses sont rendues comme du texte, sans interprétation HTML. Les propositions, essais et automatisations personnelles sont maintenant reliés au chat ; la production des documents reste à réaliser.
 
 Un envoi HTTP crée un travail en base puis répond `202`. Un processus distinct, `alpendata_api.chat_worker`, prend ce travail et exécute Hermes. Le rechargement du navigateur ou le redémarrage de l’API ne perdent donc pas la demande. Une clé UUID fournie par le navigateur rend le même envoi idempotent ; réutiliser cette clé avec un autre contenu est refusé. Une réponse réseau incertaine garde la même demande pour sa vérification, sans produire un second travail.
 
@@ -18,9 +18,9 @@ L’historique technique de reprise est lu dans la base SessionDB du volume pers
 
 ## File de travail et interruptions
 
-PostgreSQL verrouille l’adhésion avant les tours et connexions. Une seule demande peut être active par propriétaire dans une entreprise. Plusieurs processus de travail peuvent réclamer des propriétaires différents grâce à `SKIP LOCKED`. Le superviseur conserve également son verrou de fichiers par propriétaire.
+PostgreSQL verrouille l’adhésion avant les tours et connexions. Une seule exécution Hermes peut être active par propriétaire dans une entreprise. Les demandes interactives refusent une file déjà occupée ; les occurrences planifiées peuvent y attendre, puis sont exécutées successivement. Plusieurs processus de travail peuvent réclamer des propriétaires différents grâce à `SKIP LOCKED`. Le superviseur conserve également son verrou de fichiers par propriétaire.
 
-Un travail actif possède un bail de 120 secondes, renouvelé toutes les trois secondes. Ce délai laisse passer un renouvellement de jeton suivi d’une lecture Graph tenant les verrous d’autorisation. La perte du bail, la désactivation de l’utilisateur ou du membre, le retrait de licence et l’annulation empêchent de continuer ou livrer le résultat. L’annulation d’une requête réseau déjà partie attend son retour ou son délai réseau avant le nettoyage du conteneur ; elle ne peut pas retirer une requête déjà reçue par le fournisseur.
+Un travail actif possède un bail de 120 secondes, renouvelé toutes les trois secondes. Ce délai laisse passer un renouvellement de jeton suivi d’une lecture Graph tenant les verrous d’autorisation. La perte du bail, la désactivation de l’utilisateur ou du membre, le retrait de licence et l’annulation empêchent de continuer ou livrer le résultat. Le contrôle d’annulation et du délai continue pendant l’attente des appels du broker. Le conteneur peut être arrêté pendant cette attente ; une requête déjà reçue par le fournisseur ne peut pas être retirée, et son éventuel reçu tardif reste lié au tour d’origine.
 
 Au redémarrage, un bail expiré devient une interruption visible. Le travail n’est jamais rejoué automatiquement. Une consommation commencée sans réponse reste inconnue. Si un conteneur orphelin existe encore, le superviseur refuse de lancer un second écrivain et signale `agent_recovery_required`. La procédure opérateur de récupération contrôlée et les exercices de restauration restent à compléter avant exploitation.
 
@@ -75,3 +75,5 @@ L’interface dispose de tests JSDOM et a été contrôlée dans le navigateur i
 ## Extension du premier résultat
 
 La migration `0006` et le [parcours d’onboarding](PREMIER_RESULTAT.md) ajoutent les conversations de planification, les propositions et les essais personnels. Les nouveaux chats exigent un profil personnel renseigné. Les sources affichées proviennent des lectures confirmées par le broker. Le type de conversation, le contexte et les permissions sont figés à sa création ; l’outil de proposition reste propre aux conversations d’onboarding.
+
+Les [automatisations](AUTOMATISATIONS.md) utilisent des sessions distinctes, un budget maximal de 180 secondes et aucun fournisseur de mémoire en arrière-plan.
