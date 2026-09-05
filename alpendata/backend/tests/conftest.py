@@ -17,6 +17,7 @@ from alpendata_api.settings import Settings
 
 
 def pytest_addoption(parser):
+    parser.addoption("--runtime-image", help="Pinned Podman image ID for real Linux Hermes runtime tests")
     parser.addoption(
         "--postgresql-bin", help="PostgreSQL bin directory for disposable Unix-socket test servers"
     )

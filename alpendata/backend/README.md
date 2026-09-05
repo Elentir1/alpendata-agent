@@ -16,7 +16,7 @@ Premier socle de gestion des entreprises et des espaces personnels, indépendant
 
 Les sessions sont émises uniquement par le serveur après le parcours Microsoft. Aucun endpoint ne permet de déclarer librement son identité ou son rôle ; aucun compte de démonstration n’est intégré. Les tests emploient des identités synthétiques et un transport Microsoft simulé en conservant la véritable bibliothèque MSAL. Aucune connexion à un compte Microsoft réel n’a encore été validée.
 
-Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le moteur Hermes, les automatisations et Stripe restent à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
+Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le runtime isolé du moteur Hermes est implémenté et décrit dans `../runtime/README.md` ; son raccordement aux conversations, les automatisations et Stripe restent à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
 
 **Invitations :** après connexion, le collaborateur demande une vérification avec `POST /api/invitations/verify`. Le serveur envoie un lien à la seule adresse enregistrée par l’administrateur. La preuve expire après 15 minutes et ne fonctionne que pour le compte demandeur et cette invitation. `POST /api/invitations/accept` demande le jeton d’invitation et `verification_token`. Une adresse précédemment vérifiée ou déclarée par Microsoft ne contourne jamais cette preuve. Le lien initial est encore retourné à l’administrateur pour partage manuel ; son envoi automatique reste à intégrer. L’écran `/join` est maintenant présent dans `alpendata/frontend`.
 
@@ -86,7 +86,7 @@ Cette seconde commande crée des serveurs PostgreSQL temporaires, accessibles ex
 
 Les scénarios couvrent les accès croisés entre entreprises, la confidentialité vis-à-vis de l’administrateur, la révocation de session, la désactivation d’un membre, les licences et invitations. Ils exercent également MSAL avec un serveur Microsoft simulé : liaison au navigateur, PKCE, usage unique, identité stable, refus des réponses invalides et protection des cookies. Le scénario Linux supplémentaire exerce simultanément deux invitations pour la dernière place et deux acceptations du même lien.
 
-Ces tests portent sur l’API et sa base. La séparation des processus Hermes et de leurs fichiers devra être vérifiée séparément lors de leur intégration.
+Ces tests portent sur l’API et sa base. La séparation des processus Hermes et de leurs fichiers est vérifiée séparément par `test_runtime.py`, avec une image réelle et `--runtime-image`. Ce scénario ne valide pas encore le chat web ni le fournisseur IA réel.
 
 ## Connexions Microsoft 365 personnelles
 
