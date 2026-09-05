@@ -1,0 +1,33 @@
+{
+  "revision": "9dd6634c5635321cf38840cc30e9b51226689128",
+  "python": "3.11.15",
+  "platform": "win32",
+  "synthetic_data_only": true,
+  "observations": [
+    {
+      "profile": "user-a",
+      "home_matches": true,
+      "own_memory_matches": true,
+      "unscoped_secret_denied": true,
+      "interleaved_scopes": [
+        {"home_matches": true, "secret_matches": true},
+        {"home_matches": true, "secret_matches": true}
+      ],
+      "home_restored": true,
+      "peer_synthetic_memory_readable_under_same_os_account": true
+    },
+    {
+      "profile": "user-b",
+      "home_matches": true,
+      "own_memory_matches": true,
+      "unscoped_secret_denied": true,
+      "interleaved_scopes": [
+        {"home_matches": true, "secret_matches": true},
+        {"home_matches": true, "secret_matches": true}
+      ],
+      "home_restored": true,
+      "peer_synthetic_memory_readable_under_same_os_account": true
+    }
+  ],
+  "limit": "No HTTP server, Graph call, LLM call or container isolation was exercised."
+}

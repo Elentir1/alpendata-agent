@@ -1,0 +1,30 @@
+# AlpenData Agent
+
+Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous identité AlpenData.
+
+## État au 5 septembre 2026
+
+- Fork GitHub créé : [Elentir1/alpendata-agent](https://github.com/Elentir1/alpendata-agent), public, issu de NousResearch/hermes-agent.
+- Base examinée : `9dd6634c5635321cf38840cc30e9b51226689128`.
+- Branche locale de préparation : `alpendata/main`.
+- Audit initial et architecture proposés disponibles ci-dessous.
+- L’application AlpenData, son branding graphique et les connexions clients ne sont pas encore implémentés. Les documents et le diagnostic de ce dossier sont préparés localement ; leur présence sur GitHub n’est pas présumée.
+
+## Documents
+
+- [Audit technique Hermes](docs/AUDIT_HERMES.md)
+- [Architecture AlpenData](docs/ARCHITECTURE.md)
+- [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
+- [Révision d’origine et référence du cahier des charges](upstream.lock.json)
+- [Diagnostic reproductible des profils](audit/probe_profiles.py)
+- [Résultats du diagnostic](audit/results.json)
+
+Le cahier des charges validé 1.0 est conservé dans le dossier de travail parent, sous `CAHIER_DES_CHARGES.md`. Son empreinte est enregistrée dans `upstream.lock.json`.
+
+## Principes du fork
+
+Conserver le moteur d’Hermes et son historique, isoler les adaptations AlpenData dans des modules identifiables, conserver les notices de licence et reprendre les corrections amont après vérification. La copie locale initiale est superficielle (`--depth 1`) ; l’historique complet reste disponible sur le fork GitHub.
+
+Les utilisateurs AlpenData disposent chacun de leur onboarding, de leurs connexions, de leur mémoire et de leurs tâches. Les autorisations d’administration de l’entreprise ne confèrent pas l’accès aux contenus privés d’un collaborateur.
+
+Le dossier `alpendata/` contient les travaux propres au produit. L’interface client à développer sera une surface web adaptée au cahier des charges. Le chat terminal de `web/` reste une référence technique d’Hermes, sans déterminer l’expérience du produit AlpenData.
