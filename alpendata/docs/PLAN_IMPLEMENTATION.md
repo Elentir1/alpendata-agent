@@ -4,7 +4,7 @@
 
 ## Lot 0 — Base du fork et architecture
 
-État : fork GitHub créé, copie locale et branche AlpenData préparées ; audit initial réalisé ; architecture proposée. Les documents sont locaux à ce stade.
+État : fork GitHub créé, copie locale et branche AlpenData préparées ; audit initial réalisé ; architecture proposée. Les documents et le premier code AlpenData sont publiés sur la branche `alpendata/main` du fork.
 
 Résultats : révision d’origine enregistrée, diagnostic reproductible, principaux composants à réutiliser et adaptations identifiés.
 

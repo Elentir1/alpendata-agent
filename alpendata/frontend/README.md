@@ -39,4 +39,4 @@ npm run build
 
 Cinq scénarios d’interface passent dans JSDOM avec une API simulée : disponibilité de connexion, conservation et sauvegarde des réponses, invitation suivie de l’onboarding, gestion des invitations par l’administrateur et sortie d’une session expirée. Le build vérifie les types et produit le bundle statique. Ces tests ne sont pas une validation visuelle dans un navigateur ni une connexion Entra réelle.
 
-L’aperçu local a été démarré et a répondu HTTP 200 ; son ouverture dans Codex a été mise en attente pour cette tâche. Les actifs de marque publics sont référencés dans `public/brand/README.md`, avec la licence de la police Inter.
+L’aperçu local a été démarré et a répondu HTTP 200. Les actifs de marque publics sont référencés dans `public/brand/README.md`, avec la licence de la police Inter.

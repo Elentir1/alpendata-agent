@@ -6,11 +6,11 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 
 - Fork GitHub créé : [Elentir1/alpendata-agent](https://github.com/Elentir1/alpendata-agent), public, issu de NousResearch/hermes-agent.
 - Base examinée : `9dd6634c5635321cf38840cc30e9b51226689128`.
-- Branche locale de préparation : `alpendata/main`.
+- Branche de développement publiée : [alpendata/main](https://github.com/Elentir1/alpendata-agent/tree/alpendata/main).
 - Audit initial et architecture proposés disponibles ci-dessous.
 - Un premier [backend AlpenData](backend/README.md) est implémenté localement : entreprises, membres, invitations, propriété des ressources et connexion Microsoft par MSAL. Les vérifications de base s’exécutent sur SQLite et PostgreSQL réel.
 - Une première [interface AlpenData](frontend/README.md) en français et anglais est présente : connexion, entreprise, invitations et onboarding individuel. Elle reprend les actifs publics de la marque et dialogue avec le backend.
-- La connexion aux données Microsoft et l’exécution isolée d’Hermes restent à réaliser. Les travaux locaux ne constituent pas encore une application utilisable par le pilote ; leur présence sur GitHub n’est pas présumée.
+- La connexion aux données Microsoft et l’exécution isolée d’Hermes restent à réaliser. Cette première version est publiée sur la branche de développement ; elle ne constitue pas encore une application utilisable par le pilote.
 
 ## Documents
 
