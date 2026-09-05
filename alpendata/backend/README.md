@@ -108,3 +108,7 @@ La déconnexion retire l’accès d’AlpenData pour cette entreprise ; elle ne 
 La recherche retourne les métadonnées et liens web des fichiers accessibles. Elle ne télécharge pas encore leur contenu et ne remplace pas une validation des droits SharePoint sur un tenant réel. Les liens de téléchargement préautorisés ne sont pas transmis au navigateur. Le chat et les tâches planifiées n’utilisent pas encore ces routes.
 
 Références : [mails Graph](https://learn.microsoft.com/en-us/graph/api/user-list-messages?view=graph-rest-1.0), [calendrier Graph](https://learn.microsoft.com/en-us/graph/api/calendar-list-calendarview?view=graph-rest-1.0), [recherche Microsoft](https://learn.microsoft.com/en-us/graph/api/search-query?view=graph-rest-1.0), [permissions](https://learn.microsoft.com/en-us/graph/permissions-reference).
+
+## Passerelle Mistral/OpenRouter
+
+La [passerelle de modèles](../docs/PASSERELLE_MODELES.md) est implémentée et exercée avec Hermes réel et un fournisseur HTTP local synthétique. Les clés et le routage sont contrôlés par le serveur ; la consommation vient de la réponse du fournisseur. Cette brique interne ne constitue pas encore une route de chat, un registre de facturation ou une validation avec des modèles commerciaux réels.

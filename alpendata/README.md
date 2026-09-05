@@ -17,6 +17,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Audit technique Hermes](docs/AUDIT_HERMES.md)
 - [Architecture AlpenData](docs/ARCHITECTURE.md)
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
+- [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
 - [Révision d’origine et référence du cahier des charges](upstream.lock.json)
 - [Diagnostic reproductible des profils](audit/probe_profiles.py)
 - [Résultats du diagnostic](audit/results.json)

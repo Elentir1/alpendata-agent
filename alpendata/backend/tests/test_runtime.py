@@ -9,7 +9,9 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from model_http import model_http
 
+from alpendata_api.model_gateway import ModelGateway, ModelSettings
 from alpendata_api.runtime import ContainerRuntime, RuntimeFailure, RuntimeSettings
 
 pytestmark = pytest.mark.linux_only
@@ -126,7 +128,28 @@ print(json.dumps(result))
             "message": "Remember my preferred language and prepare a briefing.",
             "history": None,
         }
-        result = runtime.run(org, alice, payload, exchange)
+        def provider_response(body):
+            response = exchange("model", body)
+            return response["status"], response["body"], {}
+
+        with model_http(provider_response) as (transport, received, destinations):
+            gateway = ModelGateway(
+                ModelSettings("mistral", "synthetic-model", "synthetic-host-credential"), session=transport
+            )
+            usages = []
+
+            def broker(operation, body):
+                if operation == "tool":
+                    return exchange(operation, body)
+                completed = gateway.complete(body)
+                usages.append(completed.usage)
+                return completed.reply()
+
+            result = runtime.run(org, alice, payload, broker)
+            assert received and len(usages) == len(received)
+            assert all(usage.total_tokens == 120 for usage in usages)
+            assert all(url == "https://api.mistral.ai/v1/chat/completions" for url in destinations)
+            assert "synthetic-host-credential" not in json.dumps(result)
         assert result["completed"] and not result["failed"]
         assert result["response"] == "Synthetic verified briefing"
         assert len(tool_calls) == 1
