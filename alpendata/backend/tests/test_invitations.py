@@ -1,22 +1,24 @@
 from alpendata_api.models import Invitation, now
 
 
-def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_data(service, account):
+def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_data(
+    service, account, verification
+):
     app, client = service
-    _, admin = account("admin@example.test")
-    _, second = account("second@example.test")
-    _, third = account("third@example.test")
+    _, admin = account("admin@example.com")
+    _, second = account("second@example.com")
+    _, third = account("third@example.com")
     organization = client.post("/api/organizations", headers=admin, json={"name": "Coaching"}).json()["id"]
     base = f"/api/organizations/{organization}"
 
     def invite(email, **extras):
         return client.post(f"{base}/invitations", headers=admin, json={"email": email, **extras})
 
-    assert invite("second@example.test", role="admin").status_code == 422
-    invitation = invite("second@example.test").json()
-    assert invite("SECOND@example.test").status_code == 409
-    third_invitation = invite("third@example.test").json()
-    assert invite("fourth@example.test").status_code == 409
+    assert invite("second@example.com", role="admin").status_code == 422
+    invitation = invite("second@example.com").json()
+    assert invite("SECOND@example.com").status_code == 409
+    third_invitation = invite("third@example.com").json()
+    assert invite("fourth@example.com").status_code == 409
 
     with app.state.session_factory.begin() as db:
         record = db.get(Invitation, invitation["id"])
@@ -33,7 +35,7 @@ def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_dat
         == 404
     )
 
-    renewed = invite("second@example.test")
+    renewed = invite("second@example.com")
     assert renewed.status_code == 201
     assert client.delete(f"{base}/invitations/{third_invitation['id']}", headers=admin).status_code == 204
     assert (
@@ -52,6 +54,7 @@ def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_dat
             headers=second,
             json={
                 "token": renewed.json()["token"],
+                "verification_token": verification(second, renewed.json()["token"]),
             },
         ).status_code
         == 200

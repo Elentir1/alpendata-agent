@@ -97,6 +97,17 @@ class OwnedMixin:
     owner_id: Mapped[str] = mapped_column(String(36), index=True)
 
 
+class InvitationProof(Base):
+    __tablename__ = "alpendata_invitation_proofs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    invitation_id: Mapped[str] = mapped_column(ForeignKey("alpendata_invitations.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("alpendata_users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    expires_at: Mapped[int] = mapped_column(Integer)
+    consumed_at: Mapped[int | None] = mapped_column(Integer)
+
+
 def ownership_constraint():
     return ForeignKeyConstraint(
         ["organization_id", "owner_id"],

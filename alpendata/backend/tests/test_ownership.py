@@ -1,8 +1,10 @@
-def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_every_call(service, account):
+def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_every_call(
+    service, account, verification
+):
     _, client = service
-    admin_id, admin = account("admin@example.test")
-    colleague_id, colleague = account("colleague@example.test")
-    _, outsider = account("outsider@example.test")
+    admin_id, admin = account("admin@example.com")
+    colleague_id, colleague = account("colleague@example.com")
+    _, outsider = account("outsider@example.com")
 
     organization = client.post("/api/organizations", headers=admin, json={"name": "Company A"}).json()["id"]
     foreign = client.post("/api/organizations", headers=outsider, json={"name": "Company B"}).json()["id"]
@@ -13,11 +15,17 @@ def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_ev
 
     answers = {"language": "en", "role": "Manager", "needs": "Prepare meetings"}
     assert client.put(f"{base}/onboarding", headers=admin, json=answers).status_code == 200
-    invite = client.post(f"{base}/invitations", headers=admin, json={"email": "colleague@example.test"})
+    invite = client.post(f"{base}/invitations", headers=admin, json={"email": "colleague@example.com"})
     assert invite.status_code == 201
     token = invite.json()["token"]
     assert client.post("/api/invitations/accept", headers=outsider, json={"token": token}).status_code == 403
-    assert client.post("/api/invitations/accept", headers=colleague, json={"token": token}).status_code == 200
+    proof = verification(colleague, token)
+    assert (
+        client.post(
+            "/api/invitations/accept", headers=colleague, json={"token": token, "verification_token": proof}
+        ).status_code
+        == 200
+    )
     assert client.post("/api/invitations/accept", headers=colleague, json={"token": token}).status_code == 404
     assert client.get(f"{base}/onboarding", headers=colleague).json() == {
         "language": "fr",

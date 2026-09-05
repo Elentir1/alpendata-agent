@@ -1,5 +1,6 @@
 from typing import Literal
 
+from email_validator import EmailNotValidError, validate_email
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -17,16 +18,22 @@ class InviteInput(Input):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value):
-        if value.count("@") != 1 or any(character.isspace() for character in value):
-            raise ValueError("Invalid email address")
-        local, domain = value.split("@")
-        if not local or not domain:
-            raise ValueError("Invalid email address")
-        return value.casefold()
+        try:
+            return validate_email(
+                value, check_deliverability=False, allow_smtputf8=False
+            ).ascii_email.casefold()
+        except EmailNotValidError:
+            raise ValueError("Invalid email address") from None
 
 
 class AcceptInvitation(Input):
     token: str = Field(min_length=32, max_length=512)
+    verification_token: str | None = Field(default=None, min_length=32, max_length=512)
+
+
+class VerifyInvitation(Input):
+    token: str = Field(min_length=32, max_length=512)
+    language: Literal["fr", "en"] = "fr"
 
 
 class MembershipInput(Input):

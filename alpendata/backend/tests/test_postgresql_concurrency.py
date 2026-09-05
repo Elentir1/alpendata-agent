@@ -6,15 +6,17 @@ import pytest
 pytestmark = pytest.mark.linux_only
 
 
-def test_concurrent_invites_cannot_overbook_and_acceptance_cannot_be_replayed(service, account, request):
+def test_concurrent_invites_cannot_overbook_and_acceptance_cannot_be_replayed(
+    service, account, request, verification
+):
     if not request.config.getoption("--postgresql-bin"):
         pytest.skip("Use --postgresql-bin to exercise real PostgreSQL row locks")
     _, client = service
-    _, admin = account("admin@example.test")
-    _, invitee = account("reserved@example.test")
+    _, admin = account("admin@example.com")
+    _, invitee = account("reserved@example.com")
     organization = client.post("/api/organizations", headers=admin, json={"name": "Concurrency"}).json()["id"]
     url = f"/api/organizations/{organization}/invitations"
-    reserved = client.post(url, headers=admin, json={"email": "reserved@example.test"}).json()["token"]
+    reserved = client.post(url, headers=admin, json={"email": "reserved@example.com"}).json()["token"]
     barrier = Barrier(2)
 
     def invite(email):
@@ -22,14 +24,18 @@ def test_concurrent_invites_cannot_overbook_and_acceptance_cannot_be_replayed(se
         return client.post(url, headers=admin, json={"email": email}).status_code
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(invite, ["first@example.test", "second@example.test"]))
+        results = list(pool.map(invite, ["first@example.com", "second@example.com"]))
     assert sorted(results) == [201, 409]
 
     barrier = Barrier(2)
 
+    proof = verification(invitee, reserved)
+
     def accept(_):
         barrier.wait(timeout=10)
-        return client.post("/api/invitations/accept", headers=invitee, json={"token": reserved}).status_code
+        return client.post(
+            "/api/invitations/accept", headers=invitee, json={"token": reserved, "verification_token": proof}
+        ).status_code
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(accept, range(2)))

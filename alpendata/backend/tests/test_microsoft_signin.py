@@ -80,8 +80,8 @@ class MicrosoftHTTP:
             "iat": now(),
             "nonce": query["nonce"],
             "name": "Synthetic coach",
-            "preferred_username": "coach@example.test",
-            "email": "coach@example.test",
+            "preferred_username": "coach@example.com",
+            "email": "coach@example.com",
             **overrides,
         }
         # MSAL trusts tokens received directly from its TLS token endpoint; this
@@ -107,6 +107,10 @@ def signin_service(database_url, service_factory):
         microsoft_client_id=str(uuid4()),
         microsoft_client_secret="synthetic-client-secret",
         credential_keys=(Fernet.generate_key().decode(),),
+        smtp_host="smtp.example.test",
+        smtp_sender="noreply@example.com",
+        smtp_username="synthetic",
+        smtp_password="synthetic",
     )
     server = MicrosoftHTTP(settings.microsoft_client_id)
     with service_factory(settings, MicrosoftSignIn(settings, http_client=server)) as (app, client):
@@ -171,7 +175,7 @@ def test_identity_uses_tenant_and_object_id_and_never_merges_matching_emails(sig
     assert client.post("/api/auth/microsoft/callback", data=first, follow_redirects=False).status_code == 303
     user_id = client.get("/api/me").json()["id"]
     old_session = client.cookies.get(SESSION_COOKIE)
-    second = begin(client, settings, server, {"email": "changed@example.test", "name": "New name"})
+    second = begin(client, settings, server, {"email": "changed@example.com", "name": "New name"})
     assert client.post("/api/auth/microsoft/callback", data=second, follow_redirects=False).status_code == 303
     assert client.get("/api/me").json()["id"] == user_id
     assert client.get("/api/me", headers={"Authorization": f"Bearer {old_session}"}).status_code == 401
@@ -200,7 +204,7 @@ def test_invalid_provider_identity_never_creates_a_session(signin_service, overr
         client.post("/api/auth/microsoft/callback", data=callback, follow_redirects=False).status_code == 401
     )
     assert client.cookies.get(SESSION_COOKIE) is None
-    assert "coach@example.test" not in caplog.text
+    assert "coach@example.com" not in caplog.text
     assert "Synthetic coach" not in caplog.text
     with app.state.session_factory() as db:
         assert db.scalars(select(User)).all() == []

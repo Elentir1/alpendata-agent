@@ -13,6 +13,11 @@ class Settings:
     microsoft_client_id: str = ""
     microsoft_client_secret: str = field(default="", repr=False)
     credential_keys: tuple[str, ...] = field(default=(), repr=False)
+    smtp_host: str = ""
+    smtp_port: int = 465
+    smtp_sender: str = ""
+    smtp_username: str = field(default="", repr=False)
+    smtp_password: str = field(default="", repr=False)
 
     def __post_init__(self):
         if not self.database_url:
@@ -38,6 +43,20 @@ class Settings:
         )
         if any(configured) and not all(configured):
             raise ValueError("Microsoft sign-in requires client ID, client credential and encryption keys")
+        mail = (
+            bool(self.smtp_host),
+            bool(self.smtp_sender),
+            bool(self.smtp_username),
+            bool(self.smtp_password),
+        )
+        if any(mail) and not all(mail):
+            raise ValueError("Transactional mail requires SMTP host, sender and credentials")
+        if not 1 <= self.smtp_port <= 65535:
+            raise ValueError("Invalid SMTP port")
+
+    @property
+    def smtp_enabled(self) -> bool:
+        return bool(self.smtp_host and self.smtp_sender and self.smtp_username and self.smtp_password)
 
     @property
     def microsoft_enabled(self) -> bool:
@@ -51,4 +70,9 @@ class Settings:
             microsoft_client_id=os.environ.get("ALPENDATA_MICROSOFT_CLIENT_ID", ""),
             microsoft_client_secret=os.environ.get("ALPENDATA_MICROSOFT_CLIENT_SECRET", ""),
             credential_keys=tuple(filter(None, os.environ.get("ALPENDATA_CREDENTIAL_KEYS", "").split(","))),
+            smtp_host=os.environ.get("ALPENDATA_SMTP_HOST", ""),
+            smtp_port=int(os.environ.get("ALPENDATA_SMTP_PORT", "465")),
+            smtp_sender=os.environ.get("ALPENDATA_SMTP_SENDER", ""),
+            smtp_username=os.environ.get("ALPENDATA_SMTP_USERNAME", ""),
+            smtp_password=os.environ.get("ALPENDATA_SMTP_PASSWORD", ""),
         )

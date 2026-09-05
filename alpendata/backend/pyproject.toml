@@ -12,10 +12,11 @@ dependencies = [
   "alembic>=1.16,<2",
   "msal>=1.37,<2",
   "cryptography>=46,<49",
+  "email-validator>=2.2,<3",
 ]
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "pytest-timeout>=2.3,<3", "httpx==0.28.1", "ruff>=0.11,<1"]
+dev = ["pytest==9.1.1", "pytest-timeout>=2.3,<3", "httpx==0.28.1", "ruff>=0.11,<1", "aiosmtpd>=1.4.6,<2"]
 
 [build-system]
 requires = ["setuptools>=77,<83"]

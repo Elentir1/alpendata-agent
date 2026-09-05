@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 
 from .access import lock_organization, member
 from .auth import token_digest
-from .models import Invitation, Membership, Onboarding, Organization, User, now
+from .mail import invitation_message
+from .models import Invitation, InvitationProof, Membership, Onboarding, Organization, User, now
 from .schemas import MembershipInput
+from .settings import Settings
 
 
 def add_member(db: Session, organization_id: str, user_id: str, role: str):
@@ -82,7 +84,7 @@ def invite(db: Session, user: User, organization_id: str, email: str, lifetime: 
     return invitation, token
 
 
-def accept(db: Session, user: User, token: str) -> str:
+def locked_invitation(db: Session, token: str) -> Invitation:
     invitation = db.scalar(select(Invitation).where(Invitation.token_hash == token_digest(token)))
     if invitation is None:
         raise HTTPException(404, "invitation_not_found")
@@ -91,13 +93,74 @@ def accept(db: Session, user: User, token: str) -> str:
     db.refresh(invitation)
     if invitation.revoked or invitation.consumed_at is not None or invitation.expires_at <= now():
         raise HTTPException(404, "invitation_not_found")
-    if not user.verified_email or user.verified_email.casefold() != invitation.recipient_email:
-        raise HTTPException(403, "invitation_recipient_mismatch")
     inviter = db.get(Membership, (invitation.organization_id, invitation.inviter_id))
     if inviter is None or not inviter.active or inviter.role != "admin":
         raise HTTPException(404, "invitation_not_found")
+    return invitation
+
+
+def request_proof(db: Session, user: User, token: str, language: str, settings: Settings, mailer):
+    invitation = locked_invitation(db, token)
     if db.get(Membership, (invitation.organization_id, user.id)) is not None:
         raise HTTPException(409, "already_member")
+    if mailer is None:
+        raise HTTPException(503, "transactional_mail_not_configured")
+    recent = db.scalars(
+        select(InvitationProof).where(
+            InvitationProof.invitation_id == invitation.id,
+            InvitationProof.created_at > now() - 3600,
+        )
+    ).all()
+    wait_until = max((item.created_at + 60 for item in recent), default=0)
+    if len(recent) >= 5:
+        wait_until = max(wait_until, min(item.created_at for item in recent) + 3600)
+    if wait_until > now():
+        raise HTTPException(
+            429, "verification_rate_limited", headers={"Retry-After": str(wait_until - now())}
+        )
+    proof_token = secrets.token_urlsafe(48)
+    proof = InvitationProof(
+        invitation_id=invitation.id,
+        user_id=user.id,
+        token_hash=token_digest(proof_token),
+        expires_at=now() + 900,
+    )
+    db.add(proof)
+    db.flush()
+    message = invitation_message(settings, invitation.recipient_email, token, proof_token, language)
+    try:
+        mailer.send(message)
+    except OSError:
+        # The request transaction rolls back, invalidating a possibly delivered
+        # proof. The caller must explicitly retry; we never duplicate SMTP DATA.
+        raise HTTPException(502, "verification_delivery_failed") from None
+    local, domain = invitation.recipient_email.rsplit("@", 1)
+    return {
+        "status": "verification_sent",
+        "expires_at": proof.expires_at,
+        "recipient_hint": local[:1] + "***@" + domain,
+    }
+
+
+def accept(db: Session, user: User, token: str, verification_token: str | None = None) -> str:
+    invitation = locked_invitation(db, token)
+    # A remembered email or a Microsoft claim is never sufficient. The proof
+    # must be fresh and bound to BOTH this invitation and the authenticated user.
+    proof = db.scalar(
+        select(InvitationProof).where(
+            InvitationProof.invitation_id == invitation.id,
+            InvitationProof.user_id == user.id,
+            InvitationProof.token_hash == token_digest(verification_token or ""),
+            InvitationProof.consumed_at.is_(None),
+            InvitationProof.expires_at > now(),
+        )
+    )
+    if proof is None:
+        raise HTTPException(403, "invitation_email_verification_required")
+    if db.get(Membership, (invitation.organization_id, user.id)) is not None:
+        raise HTTPException(409, "already_member")
+    proof.consumed_at = now()
+    user.verified_email = invitation.recipient_email
     invitation.consumed_at = now()
     add_member(db, invitation.organization_id, user.id, "member")
     return invitation.organization_id

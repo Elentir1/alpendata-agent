@@ -10,6 +10,7 @@ from . import organizations
 from .access import lock_organization, member, owned
 from .auth import SESSION_COOKIE, authenticate, request_authorization, token_digest
 from .database import database_factory
+from .mail import SMTPMailer
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
 from .schemas import (
     AcceptInvitation,
@@ -18,13 +19,16 @@ from .schemas import (
     OnboardingInput,
     OrganizationInput,
     ResourceInput,
+    VerifyInvitation,
 )
 from .settings import Settings
 from .signin import signin_router
 
 
-def create_app(settings: Settings, *, signin_provider=None) -> FastAPI:
+def create_app(settings: Settings, *, signin_provider=None, mailer=None) -> FastAPI:
     engine, factory = database_factory(settings.database_url)
+    if mailer is None and settings.smtp_enabled:
+        mailer = SMTPMailer(settings)
 
     @asynccontextmanager
     async def lifespan(_app):
@@ -137,7 +141,11 @@ def create_app(settings: Settings, *, signin_provider=None) -> FastAPI:
 
     @app.post("/api/invitations/accept")
     def accept_invitation(body: AcceptInvitation, actor: Actor, db: DB):
-        return {"organization_id": organizations.accept(db, actor, body.token)}
+        return {"organization_id": organizations.accept(db, actor, body.token, body.verification_token)}
+
+    @app.post("/api/invitations/verify", status_code=202)
+    def verify_invitation(body: VerifyInvitation, actor: Actor, db: DB):
+        return organizations.request_proof(db, actor, body.token, body.language, settings, mailer)
 
     @app.get("/api/organizations/{organization_id}/onboarding")
     def get_onboarding(organization_id: str, actor: Actor, db: DB):
