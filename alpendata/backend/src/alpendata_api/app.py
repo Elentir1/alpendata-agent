@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import organizations
 from .access import lock_organization, member, owned
-from .auth import SESSION_COOKIE, authenticate, request_authorization, token_digest
+from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
 from .database import database_factory
 from .mail import SMTPMailer
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
@@ -38,6 +40,20 @@ def create_app(settings: Settings, *, signin_provider=None, mailer=None) -> Fast
     app = FastAPI(title="AlpenData API", version="0.1.0", lifespan=lifespan)
     app.state.engine, app.state.session_factory = engine, factory
     app.include_router(signin_router(settings, factory, signin_provider))
+
+    @app.exception_handler(HTTPException)
+    async def browser_signin_error(request: Request, error: HTTPException):
+        if request.url.path == "/api/auth/microsoft/callback" and "text/html" in request.headers.get(
+            "accept", ""
+        ):
+            # A browser must return to a comprehensible sign-in screen, never a
+            # raw API error. This fixed code carries no token or provider details.
+            response = RedirectResponse(
+                settings.public_origin + "/?signin_error=interrupted", status_code=303
+            )
+            response.delete_cookie(BROWSER_COOKIE, secure=True, httponly=True, samesite="none")
+            return response
+        return await http_exception_handler(request, error)
 
     @app.middleware("http")
     async def private_responses(request: Request, call_next):
@@ -101,9 +117,23 @@ def create_app(settings: Settings, *, signin_provider=None, mailer=None) -> Fast
         member(db, actor, organization_id, admin=True, licensed=False)
         return {
             "members": [
-                membership_view(item)
+                {**membership_view(item), "display_name": name}
+                for item, name in db.execute(
+                    select(Membership, User.display_name)
+                    .join(User)
+                    .where(Membership.organization_id == organization_id)
+                )
+            ]
+        }
+
+    @app.get("/api/organizations/{organization_id}/invitations")
+    def list_invitations(organization_id: str, actor: Actor, db: DB):
+        member(db, actor, organization_id, admin=True, licensed=False)
+        return {
+            "invitations": [
+                {"id": item.id, "email": item.recipient_email, "expires_at": item.expires_at}
                 for item in db.scalars(
-                    select(Membership).where(Membership.organization_id == organization_id)
+                    select(Invitation).where(*organizations.active_invites(organization_id))
                 )
             ]
         }

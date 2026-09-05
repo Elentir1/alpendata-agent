@@ -18,6 +18,15 @@ def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_ev
     invite = client.post(f"{base}/invitations", headers=admin, json={"email": "colleague@example.com"})
     assert invite.status_code == 201
     token = invite.json()["token"]
+    pending = client.get(f"{base}/invitations", headers=admin).json()["invitations"]
+    assert pending == [
+        {
+            "id": invite.json()["id"],
+            "email": "colleague@example.com",
+            "expires_at": invite.json()["expires_at"],
+        }
+    ]
+    assert client.get(f"{base}/invitations", headers=outsider).status_code == 404
     assert client.post("/api/invitations/accept", headers=outsider, json={"token": token}).status_code == 403
     proof = verification(colleague, token)
     assert (
@@ -34,6 +43,10 @@ def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_ev
     }
     assert client.get(f"{base}/onboarding", headers=admin).json()["answers"]["role"] == "Manager"
     assert client.get(f"{base}/members", headers=colleague).status_code == 403
+    assert client.get(f"{base}/invitations", headers=colleague).status_code == 403
+    assert client.get(f"{base}/invitations", headers=admin).json()["invitations"] == []
+    roster = client.get(f"{base}/members", headers=admin).json()["members"]
+    assert any(item["user_id"] == colleague_id and item["display_name"] == "colleague" for item in roster)
 
     payload = {"kind": "memory", "title": "Private note", "content": "Synthetic private content"}
     response = client.post(f"{base}/personal-resources", headers=colleague, json=payload)

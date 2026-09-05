@@ -204,6 +204,11 @@ def test_invalid_provider_identity_never_creates_a_session(signin_service, overr
         client.post("/api/auth/microsoft/callback", data=callback, follow_redirects=False).status_code == 401
     )
     assert client.cookies.get(SESSION_COOKIE) is None
+    browser_error = client.post(
+        "/api/auth/microsoft/callback", data=callback, headers={"Accept": "text/html"}, follow_redirects=False
+    )
+    assert browser_error.status_code == 303
+    assert browser_error.headers["Location"] == settings.public_origin + "/?signin_error=interrupted"
     assert "coach@example.com" not in caplog.text
     assert "Synthetic coach" not in caplog.text
     with app.state.session_factory() as db:

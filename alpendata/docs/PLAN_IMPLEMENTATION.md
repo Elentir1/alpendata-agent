@@ -31,6 +31,8 @@ Sortie attendue : deux collaborateurs utilisent leurs propres connexions ; la d�
 
 ## Lot 3 — Première expérience AlpenData
 
+État : première interface React/Vite locale implémentée et compilée, avec cinq scénarios fonctionnels JSDOM. Connexion, création d’entreprise, vérification d’invitation, onboarding personnel et gestion des invitations sont reliés à l’API. Les réponses restent présentes lors du changement de langue. L’interface indique que les connexions métier sont encore en préparation ; aucun résultat IA n’est simulé. Le parcours complet dans un navigateur avec Entra et Graph réels reste à vérifier.
+
 - Extraire et appliquer les éléments visuels de la marque.
 - Créer les écrans en français et anglais et l’onboarding combinant questions et conversation.
 - Produire deux ou trois propositions réalisables à partir des permissions réellement disponibles.
