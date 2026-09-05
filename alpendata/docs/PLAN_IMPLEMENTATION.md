@@ -10,7 +10,7 @@ Résultats : révision d’origine enregistrée, diagnostic reproductible, princ
 
 ## Lot 1 — Identités et isolation
 
-État : premier backend implémenté localement. Entreprises, membres, invitations et réservations de places, onboarding individuel, autorisation des ressources personnelles et sessions révocables sont présents. La connexion Microsoft par MSAL est implémentée et testée avec un fournisseur simulé ; la preuve de boîte mail pour les invitations est implémentée avec SMTP TLS. La validation Entra et SMTP sur les services réels reste à terminer. Les règles métier ont passé les scénarios PostgreSQL, dont les invitations concurrentes. Un superviseur Podman sans privilèges exécute maintenant le véritable AIAgent dans un volume personnel sans réseau externe. Le scénario réel vérifie les outils, la mémoire, la reprise du contexte et le refus des fichiers voisins. La passerelle Mistral/OpenRouter est implémentée et reliée à ce scénario avec un fournisseur HTTP local synthétique. Les conversations durables, les routes du chat et la validation des modèles réels restent à réaliser : ce lot reste en cours.
+État : identités, invitations avec preuve de boîte mail, licences locales et onboarding individuel implémentés. Les conversations durables sont reliées à l’interface, à la passerelle Mistral/OpenRouter et au véritable Hermes dans des conteneurs personnels. Les tests PostgreSQL vérifient la propriété, l’envoi concurrent, les interruptions et la consommation. La reprise conserve le contexte système et les droits sont revérifiés à l’exécution. Entra, SMTP et les modèles commerciaux réels, ainsi que la récupération opérationnelle des conteneurs orphelins, restent à valider : ce lot reste en cours.
 
 - Créer l’API AlpenData, les entreprises, les utilisateurs, les membres et les invitations.
 - Préparer un environnement Hermes neuf par utilisateur, sans copie de connexions ou de mémoires personnelles.
@@ -33,7 +33,7 @@ Sortie attendue : deux collaborateurs utilisent leurs propres connexions ; la d�
 
 ## Lot 3 — Première expérience AlpenData
 
-État : première interface React/Vite locale implémentée et compilée, avec sept scénarios fonctionnels JSDOM. Connexion, création d’entreprise, vérification d’invitation, onboarding personnel et gestion des invitations sont reliés à l’API. Les réponses restent présentes lors du changement de langue. Le consentement personnel Microsoft et les premières lectures sont reliés au backend ; aucun résultat IA n’est simulé. Le parcours complet dans un navigateur avec Entra et Graph réels reste à vérifier.
+État : interface React/Vite compilée avec dix scénarios JSDOM réussis. Connexion, invitations, onboarding, outils personnels et chat sont reliés à l’API. Le chat dispose de l’historique, de l’envoi idempotent et de l’arrêt ; son rendu a été contrôlé dans un navigateur sur des données fictives. Aucun résultat IA n’est simulé dans l’application. Les propositions personnalisées de routines et le parcours complet avec Entra, Graph et un modèle réel restent à réaliser.
 
 - Extraire et appliquer les éléments visuels de la marque.
 - Créer les écrans en français et anglais et l’onboarding combinant questions et conversation.

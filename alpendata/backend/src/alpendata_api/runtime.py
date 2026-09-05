@@ -104,7 +104,7 @@ class ContainerRuntime:
             self.settings.image,
         ]
 
-    def run(self, organization_id, owner_id, payload, exchange):
+    def run(self, organization_id, owner_id, payload, exchange, *, check=None):
         """Exchange is bound by the caller to one authorized execution, never its payload."""
         with self.owner_state(organization_id, owner_id) as state:
             owner_key = f"{UUID(organization_id)}:{UUID(owner_id)}"
@@ -138,7 +138,7 @@ class ContainerRuntime:
                 start_new_session=True,
             )
             try:
-                result = self.communicate(process, payload, exchange)
+                result = self.communicate(process, payload, exchange, check=check)
                 try:
                     code = process.wait(timeout=10)
                 except subprocess.TimeoutExpired:
@@ -167,7 +167,7 @@ class ContainerRuntime:
                 for stream in (process.stdin, process.stdout):
                     stream.close()
 
-    def communicate(self, process, payload, exchange):
+    def communicate(self, process, payload, exchange, *, check=None):
         deadline = time.monotonic() + self.settings.timeout_seconds
         output, pending = bytearray(), bytearray(frame(payload))
         used = set()
@@ -177,6 +177,8 @@ class ContainerRuntime:
             selector.register(process.stdout, selectors.EVENT_READ)
             selector.register(process.stdin, selectors.EVENT_WRITE)
             while True:
+                if check is not None:
+                    check()
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise RuntimeFailure("agent_timed_out")

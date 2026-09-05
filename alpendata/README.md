@@ -2,7 +2,7 @@
 
 Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous identité AlpenData.
 
-## État au 5 septembre 2026
+## État au 6 septembre 2026
 
 - Fork GitHub créé : [Elentir1/alpendata-agent](https://github.com/Elentir1/alpendata-agent), public, issu de NousResearch/hermes-agent.
 - Base examinée : `9dd6634c5635321cf38840cc30e9b51226689128`.
@@ -10,7 +10,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - Audit initial et architecture proposés disponibles ci-dessous.
 - Un premier [backend AlpenData](backend/README.md) est implémenté localement : entreprises, membres, invitations, propriété des ressources et connexion Microsoft par MSAL. Les vérifications de base s’exécutent sur SQLite et PostgreSQL réel.
 - Une première [interface AlpenData](frontend/README.md) en français et anglais est présente : connexion, entreprise, invitations et onboarding individuel. Elle reprend les actifs publics de la marque et dialogue avec le backend.
-- Le consentement Microsoft 365 personnel et les premières lectures sont implémentés et testés avec des échanges HTTP simulés. Un [runtime Hermes isolé](runtime/README.md) fonctionne maintenant dans des conteneurs Linux réels, avec mémoire privée et reprise du contexte. Son raccordement au chat web et la validation Microsoft réelle restent à réaliser. Cette première version est publiée sur la branche de développement ; elle ne constitue pas encore une application utilisable par le pilote.
+- Le [chat personnel](docs/CHAT_PERSONNEL.md) relie maintenant l’interface, les conversations durables, le [runtime Hermes isolé](runtime/README.md), les droits Microsoft et la passerelle Mistral/OpenRouter. Les tests utilisent PostgreSQL et des conteneurs réels, avec réponses externes synthétiques. L’interface a aussi été contrôlée dans un navigateur avec des données fictives. Les connexions réelles, les routines, les documents, la facturation et le déploiement restent à terminer avant le pilote.
 
 ## Documents
 
@@ -18,6 +18,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Architecture AlpenData](docs/ARCHITECTURE.md)
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
 - [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
+- [Chat personnel et exécutions durables](docs/CHAT_PERSONNEL.md)
 - [Révision d’origine et référence du cahier des charges](upstream.lock.json)
 - [Diagnostic reproductible des profils](audit/probe_profiles.py)
 - [Résultats du diagnostic](audit/results.json)

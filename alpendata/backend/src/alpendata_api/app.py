@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from . import organizations
 from .access import lock_organization, member, owned
 from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
+from .chat import chat_router
 from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .mail import SMTPMailer
@@ -44,6 +45,7 @@ def create_app(
     app.state.engine, app.state.session_factory = engine, factory
     app.include_router(signin_router(settings, factory, signin_provider))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
+    app.include_router(chat_router(settings, factory))
 
     @app.exception_handler(HTTPException)
     async def browser_signin_error(request: Request, error: HTTPException):

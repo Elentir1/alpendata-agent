@@ -145,6 +145,9 @@ def run(channel, request):
                 "model": {"streaming": False, "context_length": 131072},
                 "terminal": {"backend": "local", "cwd": str(workspace)},
                 "background_review": {"enabled": False},
+                # AlpenData names conversations from their first message. The
+                # upstream daemon title task must not outlive this one-turn worker.
+                "auxiliary": {"title_generation": {"enabled": False}},
                 "tools": {"tool_search": {"enabled": "off"}},
             }
         ),
@@ -182,10 +185,13 @@ def run(channel, request):
         run_budget_seconds=240,
     )
     try:
+        # Resume the canonical active history, including a partially persisted
+        # earlier execution. Never regrow messages removed by context compression.
+        history, _ = session_db.get_resume_conversations(request["session_id"])
         result = agent.run_conversation(
             request["message"],
             system_message=request["system_prompt"],
-            conversation_history=request.get("history"),
+            conversation_history=history or None,
         )
         channel.send(
             {

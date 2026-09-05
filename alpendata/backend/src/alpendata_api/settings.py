@@ -1,6 +1,10 @@
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import urlsplit
+
+from .model_gateway import ModelSettings
+from .runtime import RuntimeSettings
 
 
 @dataclass(frozen=True)
@@ -18,6 +22,8 @@ class Settings:
     smtp_sender: str = ""
     smtp_username: str = field(default="", repr=False)
     smtp_password: str = field(default="", repr=False)
+    model: ModelSettings | None = None
+    runtime: RuntimeSettings | None = None
 
     def __post_init__(self):
         if not self.database_url:
@@ -53,6 +59,12 @@ class Settings:
             raise ValueError("Transactional mail requires SMTP host, sender and credentials")
         if not 1 <= self.smtp_port <= 65535:
             raise ValueError("Invalid SMTP port")
+        if bool(self.model) != bool(self.runtime):
+            raise ValueError("Chat requires both model and runtime settings")
+
+    @property
+    def chat_enabled(self) -> bool:
+        return self.model is not None and self.runtime is not None
 
     @property
     def smtp_enabled(self) -> bool:
@@ -64,6 +76,27 @@ class Settings:
 
     @classmethod
     def from_environment(cls):
+        model, runtime = None, None
+        names = ("MODEL_PROVIDER", "MODEL_ID", "MODEL_API_KEY", "RUNTIME_STATE_ROOT", "RUNTIME_IMAGE")
+        values = {name: os.environ.get("ALPENDATA_" + name, "") for name in names}
+        if any(values.values()):
+            if not all(values.values()):
+                raise ValueError("Chat requires model provider, model ID, credential, state root and image")
+            model = ModelSettings(
+                values["MODEL_PROVIDER"],
+                values["MODEL_ID"],
+                values["MODEL_API_KEY"],
+                allowed_providers=tuple(
+                    filter(
+                        None,
+                        (
+                            name.strip()
+                            for name in os.environ.get("ALPENDATA_MODEL_ALLOWED_PROVIDERS", "").split(",")
+                        ),
+                    )
+                ),
+            )
+            runtime = RuntimeSettings(Path(values["RUNTIME_STATE_ROOT"]), values["RUNTIME_IMAGE"])
         return cls(
             database_url=os.environ.get("ALPENDATA_DATABASE_URL", ""),
             public_origin=os.environ.get("ALPENDATA_PUBLIC_ORIGIN", "https://localhost"),
@@ -75,4 +108,6 @@ class Settings:
             smtp_sender=os.environ.get("ALPENDATA_SMTP_SENDER", ""),
             smtp_username=os.environ.get("ALPENDATA_SMTP_USERNAME", ""),
             smtp_password=os.environ.get("ALPENDATA_SMTP_PASSWORD", ""),
+            model=model,
+            runtime=runtime,
         )

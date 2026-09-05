@@ -105,10 +105,14 @@ Le cache MSAL est chiffré et lié à l’entreprise, au propriétaire et à la 
 
 La déconnexion retire l’accès d’AlpenData pour cette entreprise ; elle ne supprime pas le consentement global de l’application dans Microsoft et ne déconnecte pas les autres applications de l’utilisateur. Les cookies et l’état HTTP ne sont pas partagés entre les lectures des collaborateurs. Les réponses Graph sont limitées à 2 Mio ; les redirections et liens de pagination ne sont pas suivis. Une limitation Microsoft revient avec `Retry-After`, sans boucle automatique de nouvelles lectures. Aucun contenu de mail ou fichier n’est conservé par ces routes de lecture.
 
-La recherche retourne les métadonnées et liens web des fichiers accessibles. Elle ne télécharge pas encore leur contenu et ne remplace pas une validation des droits SharePoint sur un tenant réel. Les liens de téléchargement préautorisés ne sont pas transmis au navigateur. Le chat et les tâches planifiées n’utilisent pas encore ces routes.
+La recherche retourne les métadonnées et liens web des fichiers accessibles. Elle ne télécharge pas encore leur contenu et ne remplace pas une validation des droits SharePoint sur un tenant réel. Les liens de téléchargement préautorisés ne sont pas transmis au navigateur. Le chat utilise désormais le même service de lecture avec les droits de son propriétaire ; les tâches planifiées restent à relier.
 
 Références : [mails Graph](https://learn.microsoft.com/en-us/graph/api/user-list-messages?view=graph-rest-1.0), [calendrier Graph](https://learn.microsoft.com/en-us/graph/api/calendar-list-calendarview?view=graph-rest-1.0), [recherche Microsoft](https://learn.microsoft.com/en-us/graph/api/search-query?view=graph-rest-1.0), [permissions](https://learn.microsoft.com/en-us/graph/permissions-reference).
 
 ## Passerelle Mistral/OpenRouter
 
-La [passerelle de modèles](../docs/PASSERELLE_MODELES.md) est implémentée et exercée avec Hermes réel et un fournisseur HTTP local synthétique. Les clés et le routage sont contrôlés par le serveur ; la consommation vient de la réponse du fournisseur. Cette brique interne ne constitue pas encore une route de chat, un registre de facturation ou une validation avec des modèles commerciaux réels.
+La [passerelle de modèles](../docs/PASSERELLE_MODELES.md) est implémentée et exercée avec Hermes réel et un fournisseur HTTP local synthétique. Les clés et le routage sont contrôlés par le serveur ; la consommation vient de la réponse du fournisseur.
+
+## Chat et processus de travail
+
+Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les conversations, les tours idempotents et les relevés de modèle par propriétaire. Ses routes se trouvent sous `/api/organizations/{organization_id}/chat`. L’API enregistre le travail ; le processus séparé `uv run python -m alpendata_api.chat_worker` l’exécute sur Linux. Le document lié décrit la configuration complète, les droits, les interruptions et les limites restantes. Les modèles commerciaux et services Microsoft réels restent à valider.

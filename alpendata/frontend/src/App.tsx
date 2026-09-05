@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowRight, Check, CheckCircle2, ChevronRight, Copy, Globe2, LockKeyhole, LogOut, Mail, ShieldCheck, UserRound, UsersRound, X } from 'lucide-react';
+import { ArrowRight, Check, CheckCircle2, ChevronRight, Copy, Globe2, LockKeyhole, LogOut, Mail, MessageSquare, ShieldCheck, UserRound, UsersRound, X } from 'lucide-react';
 import { api, ApiError, readInvitation, rememberInvitation } from './api';
 import type { Company, Membership, Onboarding, Options, PendingInvitation, Person } from './api';
 import { copy, errorText } from './locale';
 import type { Language, Text } from './locale';
 import { Notice, useAction } from './feedback';
 import { Tools } from './Tools';
+import { Chat } from './Chat';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -163,7 +164,7 @@ export default function App() {
   const t = copy[language]; const [pendingInvitation, setPendingInvitation] = useState(readInvitation);
   const [user, setUser] = useState<Person | null>(null), [options, setOptions] = useState<Options | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]), [companyId, setCompanyId] = useState('');
-  const [section, setSection] = useState<'personal' | 'team'>('personal'), [loading, setLoading] = useState(true), [error, setError] = useState('');
+  const [section, setSection] = useState<'personal' | 'team' | 'chat'>('personal'), [loading, setLoading] = useState(true), [error, setError] = useState('');
   const generation = useRef(0); const signOutAction = useAction(t);
   async function refresh(preferred?: string) {
     const request = ++generation.current; setError('');
@@ -193,7 +194,7 @@ export default function App() {
     </div></header>
     {user && company && membership && !pendingInvitation && <aside className="sidebar">
       <label className="company-selector"><span>{t.company}</span><select aria-label={t.company} value={companyId} onChange={e => { setCompanyId(e.target.value); setSection('personal'); }}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <nav aria-label={t.workspace}><button className={section === 'personal' ? 'selected' : ''} onClick={() => setSection('personal')}><UserRound size={19} />{t.workspace}</button>{membership.role === 'admin' && <button className={section === 'team' ? 'selected' : ''} onClick={() => setSection('team')}><UsersRound size={19} />{t.company}</button>}</nav>
+      <nav aria-label={t.workspace}><button className={section === 'personal' ? 'selected' : ''} onClick={() => setSection('personal')}><UserRound size={19} />{t.workspace}</button><button className={section === 'chat' ? 'selected' : ''} onClick={() => setSection('chat')}><MessageSquare size={19} />Assistant</button>{membership.role === 'admin' && <button className={section === 'team' ? 'selected' : ''} onClick={() => setSection('team')}><UsersRound size={19} />{t.company}</button>}</nav>
       <div className="sidebar-person"><div className="avatar"><UserRound size={19} /></div><div><strong>{user.display_name}</strong><span>{t.personal}</span></div></div>
     </aside>}
     <main id="main"><Notice>{signOutAction.error}</Notice>
@@ -201,7 +202,7 @@ export default function App() {
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
-          section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} company={company} membership={membership} language={language} t={t} />
+          section === 'chat' ? <Chat key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} company={company} membership={membership} language={language} t={t} />
         : null}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>

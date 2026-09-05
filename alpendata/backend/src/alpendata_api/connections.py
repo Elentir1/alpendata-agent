@@ -103,11 +103,60 @@ def pending_actor(db, pending):
     return user, connection
 
 
+class MicrosoftReader:
+    def __init__(self, settings: Settings, factory, provider=None, graph=None):
+        self.factory = factory
+        self.vault = Vault(settings.credential_keys) if settings.microsoft_enabled else None
+        self.provider, self.graph = provider or MicrosoftData(settings), graph or GraphReader()
+
+    def read(self, organization_id, authorize, capability, **arguments):
+        """Authorize is a server callback, resolved again inside the credential transaction."""
+        if self.vault is None:
+            raise HTTPException(503, "microsoft_signin_not_configured")
+        failure, result = None, None
+        with self.factory.begin() as db:
+            user = authorize(db)
+            lock_member(db, user, organization_id)
+            connection = connection_for(db, user, organization_id)
+            if connection is None or connection.status != "connected":
+                raise HTTPException(409, "microsoft_reconnect_required")
+            if capability not in connection.capabilities:
+                raise HTTPException(403, "microsoft_permission_required")
+            try:
+                serialized = self.vault.open(context(connection), connection.encrypted_cache)["cache"]
+                token, updated = self.provider.access(
+                    serialized, MicrosoftIdentity(user.issuer, user.subject, user.display_name), capability
+                )
+                if not token:
+                    raise GraphError(409, "microsoft_reconnect_required")
+                connection.encrypted_cache = self.vault.seal(context(connection), {"cache": updated})
+                operations = {
+                    "mail": self.graph.mail,
+                    "calendar": self.graph.calendar,
+                    "files": self.graph.files,
+                }
+                result = operations[capability](token, **arguments)
+            except (InvalidToken, KeyError):
+                failure = GraphError(409, "microsoft_reconnect_required")
+            except RequestException:
+                failure = GraphError(502, "microsoft_read_failed")
+            except GraphError as error:
+                failure = error
+            if failure and failure.code == "microsoft_reconnect_required":
+                clear_connection(connection, "reconnect_required")
+        # Persist cache refresh/revocation even when the operation returns an error.
+        if failure:
+            headers = {"Retry-After": str(failure.retry_after)} if failure.retry_after else None
+            raise HTTPException(failure.status, failure.code, headers=headers)
+        return result
+
+
 def microsoft_router(settings: Settings, factory, provider=None, graph=None):
     router = APIRouter()
     vault = Vault(settings.credential_keys) if settings.microsoft_enabled else None
     provider = provider or MicrosoftData(settings)
     graph = graph or GraphReader()
+    reader = MicrosoftReader(settings, factory, provider, graph)
 
     def enabled():
         if vault is None:
@@ -236,38 +285,12 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
         return Response(status_code=204)
 
     def read(organization_id, request, capability, **arguments):
-        enabled()
-        failure, result = None, None
-        with factory.begin() as db:
-            user, _ = actor(db, request, organization_id)
-            connection = connection_for(db, user, organization_id)
-            if connection is None or connection.status != "connected":
-                raise HTTPException(409, "microsoft_reconnect_required")
-            if capability not in connection.capabilities:
-                raise HTTPException(403, "microsoft_permission_required")
-            try:
-                serialized = vault.open(context(connection), connection.encrypted_cache)["cache"]
-                token, updated = provider.access(
-                    serialized, MicrosoftIdentity(user.issuer, user.subject, user.display_name), capability
-                )
-                if not token:
-                    raise GraphError(409, "microsoft_reconnect_required")
-                connection.encrypted_cache = vault.seal(context(connection), {"cache": updated})
-                operation = {"mail": graph.mail, "calendar": graph.calendar, "files": graph.files}[capability]
-                result = operation(token, **arguments)
-            except (InvalidToken, KeyError):
-                failure = GraphError(409, "microsoft_reconnect_required")
-            except RequestException:
-                failure = GraphError(502, "microsoft_read_failed")
-            except GraphError as error:
-                failure = error
-            if failure and failure.code == "microsoft_reconnect_required":
-                clear_connection(connection, "reconnect_required")
-        # Persist cache refresh/revocation even when the operation returns an error.
-        if failure:
-            headers = {"Retry-After": str(failure.retry_after)} if failure.retry_after else None
-            raise HTTPException(failure.status, failure.code, headers=headers)
-        return result
+        return reader.read(
+            organization_id,
+            lambda db: authenticate(db, request_authorization(request, settings)),
+            capability,
+            **arguments,
+        )
 
     @router.get(PREFIX + "/mail")
     def mail(organization_id: str, request: Request):

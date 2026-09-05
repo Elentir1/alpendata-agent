@@ -131,7 +131,7 @@ class ModelUsage:
         if not isinstance(value, dict):
             return None
         names = ("prompt_tokens", "completion_tokens", "total_tokens")
-        if any(type(value.get(name)) is not int or value[name] < 0 for name in names):
+        if any(type(value.get(name)) is not int or not 0 <= value[name] <= 2**63 - 1 for name in names):
             return None
         if value["total_tokens"] < value["prompt_tokens"] + value["completion_tokens"]:
             return None

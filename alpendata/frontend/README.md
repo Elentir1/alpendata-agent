@@ -10,8 +10,9 @@ Première interface web du produit, construite avec React, TypeScript et Vite, d
 - Onboarding individuel en français/anglais ; les réponses non enregistrées sont conservées lors d’un changement de langue.
 - Espace administrateur : membres, invitations en attente, création et annulation d’invitations ; aucune lecture des contenus privés des collaborateurs.
 - Déconnexion, y compris si la session a déjà expiré.
+- Chat personnel : conversations, envoi idempotent, suivi de l’exécution, historique et arrêt d’une demande.
 
-Après sauvegarde des réponses, chacun choisit ses accès Microsoft 365 et suit le consentement personnel. Une fois connecté, il peut afficher ses derniers mails, ses rendez-vous ou rechercher un document. Les résultats viennent des routes Graph du backend ; aucun dialogue IA ni automatisation n’est simulé. Le chat, les propositions d’automatisations, la gestion complète des licences et la facturation restent à implémenter.
+Après sauvegarde des réponses, chacun choisit ses accès Microsoft 365 et suit le consentement personnel. Une fois connecté, il peut afficher ses derniers mails, ses rendez-vous ou rechercher un document. L’entrée « Assistant » ouvre le chat relié au processus Hermes et à la passerelle de modèles du backend. Le chat annonce son indisponibilité tant que le serveur n’est pas configuré ; aucune réponse IA n’est simulée dans l’application. Les propositions d’automatisations, la gestion complète des licences et la facturation restent à implémenter.
 
 ## Développement
 
@@ -37,6 +38,6 @@ npm test
 npm run build
 ```
 
-Sept scénarios d’interface passent dans JSDOM avec une API simulée : disponibilité de connexion, conservation et sauvegarde des réponses, invitation suivie de l’onboarding, gestion des invitations par l’administrateur sortie d’une session expirée, sélection personnelle des accès Microsoft et affichage puis retrait des mails après révocation. Le build vérifie les types et produit le bundle statique. Ces tests ne sont pas une validation visuelle dans un navigateur ni une connexion Entra réelle.
+Dix scénarios d’interface passent dans JSDOM avec une API simulée : les parcours existants de connexion, onboarding, invitations et Microsoft, plus création/envoi de conversation, rendu texte sans HTML, maintien du brouillon lors d’un changement de langue, nouvelle tentative avec la même clé et arrêt sans licence. Le build vérifie les types et produit le bundle statique. Un contrôle visuel distinct dans le navigateur intégré utilise le build et des données fictives explicitement signalées ; il vérifie la présentation, l’envoi et le changement de langue. Il ne constitue pas une connexion Entra ou une validation métier avec un modèle réel.
 
 L’aperçu local a été démarré et a répondu HTTP 200. Les actifs de marque publics sont référencés dans `public/brand/README.md`, avec la licence de la police Inter.

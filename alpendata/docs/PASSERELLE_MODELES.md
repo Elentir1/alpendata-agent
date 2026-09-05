@@ -1,12 +1,12 @@
 # Passerelle de modèles AlpenData
 
-6 septembre 2026 — brique interne implémentée ; le chat web reste à raccorder.
+6 septembre 2026 — passerelle reliée au [chat personnel](CHAT_PERSONNEL.md) et à son processus de travail.
 
 `backend/src/alpendata_api/model_gateway.py` relie le superviseur de l’agent aux API de modèles. Le conteneur Hermes transmet une requête sur ses pipes ; le processus serveur appelle `ModelGateway.complete()` et renvoie `completion.reply()` au conteneur. La clé du fournisseur reste dans la configuration du processus serveur. Elle ne figure ni dans le montage personnel, ni dans l’environnement du conteneur, ni dans la réponse de la passerelle.
 
 ## Configuration et limites
 
-Le constructeur `ModelSettings` exige un fournisseur (`mistral` ou `openrouter`), un identifiant de modèle et une clé serveur. Il accepte une limite de sortie, un délai réseau et, pour OpenRouter, une liste de fournisseurs autorisés. Ces paramètres sont fournis par l’exploitant, jamais par le navigateur ou le message de l’agent. Aucun modèle commercial ni tarif n’est présélectionné. Cette configuration interne n’active pas encore de route de chat dans l’API.
+Le constructeur `ModelSettings` exige un fournisseur (`mistral` ou `openrouter`), un identifiant de modèle et une clé serveur. Il accepte une limite de sortie, un délai réseau et, pour OpenRouter, une liste de fournisseurs autorisés. Ces paramètres sont fournis par l’exploitant, jamais par le navigateur ou le message de l’agent. Aucun modèle commercial ni tarif n’est présélectionné. La configuration du chat et de son processus de travail est décrite dans le document lié ci-dessus.
 
 Les destinations HTTPS sont fixes. Le modèle, le nombre de réponses et le plafond de sortie sont imposés par le serveur. Les paramètres de routage, plugins, modèles de secours, en-têtes et identifiants de suivi fournis par le conteneur ne sont pas transmis. Les outils acceptés sont des définitions de fonctions exécutées par Hermes ; les outils de recherche web ou d’exécution du fournisseur sont refusés. Les messages acceptent pour l’instant du texte et des appels/résultats de fonctions, sans images ou fichiers distants que le fournisseur pourrait télécharger.
 
@@ -16,12 +16,12 @@ Les échanges sont non diffusés en continu et limités à 6 Mio. Les redirectio
 
 ## Consommation
 
-`ModelCompletion.usage` contient les compteurs d’entrée, de sortie et de total lus dans la réponse HTTP. Les chiffres déclarés par le conteneur sont ignorés. Des compteurs absents, négatifs ou incohérents produisent une consommation inconnue (`None`), jamais une estimation gratuite. L’enregistrement durable de ces relevés par exécution, leur réconciliation et la conversion en facturation CHF restent à implémenter. Le conteneur ne doit pas être la source du registre de facturation.
+`ModelCompletion.usage` contient les compteurs d’entrée, de sortie et de total lus dans la réponse HTTP. Les chiffres déclarés par le conteneur sont ignorés. Des compteurs absents, négatifs ou incohérents produisent une consommation inconnue (`None`), jamais une estimation gratuite. Le processus de chat enregistre maintenant ces relevés par propriétaire et par tour, y compris si le travail est annulé pendant l’appel. Leur réconciliation et la conversion en facturation CHF restent à implémenter.
 
 ## Validation
 
 Cinq scénarios utilisent un serveur HTTP local avec des réponses de modèle synthétiques. La bibliothèque HTTP, la sérialisation et la passerelle sont réelles. Ils couvrent les destinations et clés, le routage imposé, les plafonds, les outils et contenus refusés, les erreurs et redirections, les réponses surdimensionnées, les compteurs manquants et la continuité du raisonnement.
 
-Le scénario conteneurisé existant passe également par cette passerelle pour le premier tour Hermes : mémoire, commande locale, outil métier et réponse finale. Les appels auxiliaires de titrage sont eux aussi comptés. Les essais n’utilisent aucune clé de fournisseur réelle et ne valident pas la qualité des réponses d’un modèle commercial.
+Le scénario conteneurisé existant passe également par cette passerelle pour le premier tour Hermes : mémoire, commande locale, outil métier et réponse finale. Le test du chat ajoute les relevés durables et les contrôles d’accès pendant l’exécution. Le titrage secondaire Hermes est désormais désactivé, car les conversations sont nommées par AlpenData. Les essais n’utilisent aucune clé de fournisseur réelle et ne valident pas la qualité des réponses d’un modèle commercial.
 
 Références : [API de chat Mistral](https://docs.mistral.ai/api/endpoint/chat), [routage OpenRouter](https://openrouter.ai/docs/guides/routing/provider-selection), [continuité du raisonnement OpenRouter](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).

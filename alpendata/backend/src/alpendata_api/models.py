@@ -5,6 +5,7 @@ import uuid
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     ForeignKey,
@@ -168,3 +169,86 @@ class MicrosoftConnectionFlow(OwnedMixin, Base):
     encrypted_flow: Mapped[str] = mapped_column(Text)
     expires_at: Mapped[int] = mapped_column(Integer, index=True)
     __table_args__ = (ownership_constraint(),)
+
+
+class Conversation(OwnedMixin, Base):
+    __tablename__ = "alpendata_conversations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    title: Mapped[str] = mapped_column(String(160))
+    language: Mapped[str] = mapped_column(String(2))
+    provider: Mapped[str] = mapped_column(String(24))
+    model: Mapped[str] = mapped_column(String(200))
+    system_prompt: Mapped[str] = mapped_column(Text)
+    capabilities: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ownership_constraint(),
+        UniqueConstraint("id", "organization_id", "owner_id"),
+        CheckConstraint("language IN ('fr', 'en')", name="ck_conversation_language"),
+    )
+
+
+class ChatTurn(OwnedMixin, Base):
+    __tablename__ = "alpendata_chat_turns"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    conversation_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_id: Mapped[str] = mapped_column(String(36))
+    sequence: Mapped[int] = mapped_column(Integer)
+    message: Mapped[str] = mapped_column(Text)
+    response: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), default="queued", index=True)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    lease_id: Mapped[str | None] = mapped_column(String(36))
+    lease_expires_at: Mapped[int | None] = mapped_column(Integer, index=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    started_at: Mapped[int | None] = mapped_column(Integer)
+    finished_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["conversation_id", "organization_id", "owner_id"],
+            [
+                "alpendata_conversations.id",
+                "alpendata_conversations.organization_id",
+                "alpendata_conversations.owner_id",
+            ],
+        ),
+        UniqueConstraint("id", "organization_id", "owner_id"),
+        UniqueConstraint("organization_id", "owner_id", "request_id"),
+        UniqueConstraint("conversation_id", "sequence"),
+        CheckConstraint("sequence > 0", name="ck_chat_turn_sequence"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'completed', 'failed', 'cancelled', 'interrupted')",
+            name="ck_chat_turn_status",
+        ),
+    )
+
+
+class ModelCall(OwnedMixin, Base):
+    __tablename__ = "alpendata_model_calls"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    provider: Mapped[str] = mapped_column(String(24))
+    model: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(24), default="started")
+    prompt_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    completion_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    total_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    finished_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["turn_id", "organization_id", "owner_id"],
+            [
+                "alpendata_chat_turns.id",
+                "alpendata_chat_turns.organization_id",
+                "alpendata_chat_turns.owner_id",
+            ],
+        ),
+        CheckConstraint("status IN ('started', 'completed', 'failed')", name="ck_model_call_status"),
+        CheckConstraint(
+            "prompt_tokens >= 0 AND completion_tokens >= 0 AND total_tokens >= 0",
+            name="ck_model_call_tokens",
+        ),
+    )
