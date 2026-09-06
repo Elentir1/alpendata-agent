@@ -87,7 +87,7 @@ Sortie attendue : activation des utilisateurs et facturation cohérentes, et par
 ## Décisions encore nécessaires au moment approprié
 
 - Jelastic Infomaniak et `agent.alpendata.ch` sont retenus ; environnement et capacités d'exécution à inspecter. Voir les [précisions de déploiement](DECISIONS_DEPLOIEMENT.md).
-- Corriger en priorité la connexion exclusivement Microsoft : authentification AlpenData indépendante et onboarding utilisable sans intégration Microsoft. Le choix du parcours d'authentification est demandé.
+- La connexion e-mail/mot de passe et l'onboarding sans intégration Microsoft sont implémentés. Le [provisionnement manuel du pilote](COMPTES_ALPENDATA.md) reste à effectuer sur le serveur déployé.
 - Enregistrement Microsoft et comptes de test seulement pour la recette du connecteur facultatif ; ils ne conditionnent pas l'accès à AlpenData.
 - Mistral est retenu et le compte existe ; modèle précis et configuration serveur à finaliser.
 - Les invitations du pilote seront gérées par le porteur du projet ; adapter l'activation au mode de connexion retenu sans rendre l'envoi automatique d'invitations obligatoire.

@@ -75,6 +75,8 @@ def check_schedule_access(db, settings, schedule):
         raise HTTPException(503, "chat_not_configured")
     if (conversation.provider, conversation.model) != (settings.model.provider, settings.model.model):
         raise HTTPException(409, "chat_model_changed")
+    if not conversation.capabilities and not conversation.email_send_enabled:
+        return conversation
     connection = db.scalar(
         select(MicrosoftConnection).where(
             MicrosoftConnection.organization_id == schedule.organization_id,

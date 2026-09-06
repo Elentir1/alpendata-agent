@@ -1,8 +1,8 @@
 export type Membership = { organization_id: string; user_id: string; role: 'admin' | 'member'; active: boolean; licensed: boolean };
 export interface Member extends Membership { display_name: string; version: number }
-export type Person = { id: string; display_name: string; memberships: Membership[] };
+export type Person = { id: string; display_name: string; memberships: Membership[]; password_account?: boolean };
 export type Company = { id: string; name: string };
-export type Options = { microsoft: boolean; invitation_email: boolean };
+export type Options = { microsoft: boolean; invitation_email: boolean; password?: boolean };
 export type Onboarding = { language: 'fr' | 'en'; step: string; answers: { role?: string; activity?: string; needs?: string } };
 
 export class ApiError extends Error {

@@ -129,6 +129,7 @@ def trial_view(db, trial):
         "status": turn.status,
         "email_delivery": db.get(Conversation, turn.conversation_id).email_delivery,
         "delivery_accepted": delivery_accepted(db, turn),
+        "requires_sources": bool(RECIPES[proposal.template].capabilities),
         "sources_verified": turn.status == "completed"
         and set(RECIPES[proposal.template].capabilities) <= reads,
     }

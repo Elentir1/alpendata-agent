@@ -52,6 +52,22 @@ class AuthSession(Base):
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class PasswordAccount(Base):
+    __tablename__ = "alpendata_password_accounts"
+    user_id: Mapped[str] = mapped_column(ForeignKey("alpendata_users.id"), primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True)
+    password_hash: Mapped[str | None] = mapped_column(String(512))
+    activation_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
+    activation_expires_at: Mapped[int | None] = mapped_column(Integer)
+
+
+class SignInLimit(Base):
+    __tablename__ = "alpendata_signin_limits"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    attempts: Mapped[int] = mapped_column(Integer)
+    reset_at: Mapped[int] = mapped_column(Integer, index=True)
+
+
 class SignInFlow(Base):
     __tablename__ = "alpendata_signin_flows"
     state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)

@@ -8,6 +8,7 @@ Premier socle de gestion des entreprises et des espaces personnels, indépendant
 - Attribution des licences et modifications d’adhésion versionnées ; compteur des places attribuées, réservées et libres. Le PATCH d’un membre exige la version lue depuis la migration `0018`. Voir [Membres et licences](../docs/MEMBRES_LICENCES.md).
 - Invitations nominatives, révocables, expirantes et utilisables une fois ; les invitations en attente réservent une place.
 - Sessions opaques stockées sous forme d’empreinte, révocation et vérification de l’état du compte.
+- Connexion e-mail/mot de passe indépendante de Microsoft, activation et récupération manuelles du pilote ; voir [Comptes AlpenData](../docs/COMPTES_ALPENDATA.md).
 - Connexion Microsoft organisationnelle par MSAL, avec retour `form_post`, PKCE, nonce, tentative liée au navigateur et consommation unique.
 - Onboarding propre à chaque membre, y compris l’administrateur.
 - Ressources personnelles accessibles uniquement à leur propriétaire dans son entreprise ; aucun contournement lié au rôle administrateur.
@@ -15,7 +16,7 @@ Premier socle de gestion des entreprises et des espaces personnels, indépendant
 - Lecture des dix derniers mails, des rendez-vous des sept prochains jours et recherche de fichiers OneDrive/SharePoint sous les droits du compte connecté.
 - Migration Alembic et contraintes de propriété en base.
 
-Les sessions sont émises uniquement par le serveur après le parcours Microsoft. Aucun endpoint ne permet de déclarer librement son identité ou son rôle ; aucun compte de démonstration n’est intégré. Les tests emploient des identités synthétiques et un transport Microsoft simulé en conservant la véritable bibliothèque MSAL. Aucune connexion à un compte Microsoft réel n’a encore été validée.
+Les sessions sont émises uniquement par le serveur après authentification Microsoft, authentification par mot de passe ou activation d'un compte préalablement provisionné. Aucun endpoint ne permet de déclarer librement son identité ou son rôle ; aucun compte de démonstration n’est intégré. Les tests emploient des identités synthétiques et un transport Microsoft simulé en conservant la véritable bibliothèque MSAL. Aucune connexion à un compte Microsoft réel n’a encore été validée.
 
 Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le runtime isolé du moteur Hermes est raccordé aux conversations et aux récurrences personnelles, et décrit dans `../runtime/README.md`. Stripe reste à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
 

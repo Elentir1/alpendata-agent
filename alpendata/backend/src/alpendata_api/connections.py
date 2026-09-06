@@ -108,6 +108,17 @@ def pending_actor(db, pending):
     return user, connection
 
 
+def source_identity(user, stored=None):
+    if user.issuer != "alpendata:password":
+        return MicrosoftIdentity(user.issuer, user.subject, user.display_name)
+    identity = (stored or {}).get("identity")
+    if identity is None:
+        return None
+    return MicrosoftIdentity(
+        identity["issuer"], identity["subject"], identity["display_name"], identity.get("cache_realm")
+    )
+
+
 class MicrosoftReader:
     def __init__(self, settings: Settings, factory, provider=None, graph=None):
         self.factory = factory
@@ -140,13 +151,16 @@ class MicrosoftReader:
             if capability not in connection.capabilities:
                 raise HTTPException(403, "microsoft_permission_required")
             try:
-                serialized = self.vault.open(context(connection), connection.encrypted_cache)["cache"]
-                token, updated = self.provider.access(
-                    serialized, MicrosoftIdentity(user.issuer, user.subject, user.display_name), capability
-                )
+                stored = self.vault.open(context(connection), connection.encrypted_cache)
+                identity = source_identity(user, stored)
+                if identity is None:
+                    raise GraphError(409, "microsoft_reconnect_required")
+                token, updated = self.provider.access(stored["cache"], identity, capability)
                 if not token:
                     raise GraphError(409, "microsoft_reconnect_required")
-                connection.encrypted_cache = self.vault.seal(context(connection), {"cache": updated})
+                connection.encrypted_cache = self.vault.seal(
+                    context(connection), {**stored, "cache": updated}
+                )
                 result = perform(self.graph, token)
             except (InvalidToken, KeyError):
                 failure = GraphError(409, "microsoft_reconnect_required")
@@ -156,7 +170,9 @@ class MicrosoftReader:
                 failure = error
             if failure and failure.code == "microsoft_reconnect_required":
                 clear_connection(connection, "reconnect_required")
-                block_owner_schedules(db, organization_id, user.id, "microsoft_reconnect_required")
+                block_owner_schedules(
+                    db, organization_id, user.id, "microsoft_reconnect_required", available=[]
+                )
         # Persist cache refresh/revocation even when the operation returns an error.
         if failure:
             headers = {"Retry-After": str(failure.retry_after)} if failure.retry_after else None
@@ -212,11 +228,16 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
                 db.add(connection)
                 db.flush()
             try:
+                stored = (
+                    vault.open(context(connection), connection.encrypted_cache)
+                    if connection.encrypted_cache
+                    else None
+                )
                 flow = provider.begin_connection(
                     list(dict.fromkeys(body.capabilities)),
-                    MicrosoftIdentity(user.issuer, user.subject, user.display_name),
+                    source_identity(user, stored),
                 )
-            except (ValueError, RequestException):
+            except (ValueError, RequestException, InvalidToken, KeyError):
                 raise HTTPException(502, "microsoft_signin_unavailable") from None
             connection.generation += 1
             digest = token_digest(flow["state"])
@@ -275,10 +296,30 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
             raise HTTPException(401, "microsoft_connection_failed") from None
         with factory.begin() as db:
             user, connection = pending_actor(db, pending)
-            if (user.issuer, user.subject) != (grant.identity.issuer, grant.identity.subject):
+            stored = (
+                vault.open(context(connection), connection.encrypted_cache)
+                if connection.encrypted_cache
+                else None
+            )
+            expected = source_identity(user, stored)
+            if expected and (expected.issuer, expected.subject) != (
+                grant.identity.issuer,
+                grant.identity.subject,
+            ):
                 raise HTTPException(403, "microsoft_account_mismatch")
             require_allowed(db, pending.organization_id, grant.capabilities)
-            connection.encrypted_cache = vault.seal(context(connection), {"cache": grant.cache})
+            connection.encrypted_cache = vault.seal(
+                context(connection),
+                {
+                    "cache": grant.cache,
+                    "identity": {
+                        "issuer": grant.identity.issuer,
+                        "subject": grant.identity.subject,
+                        "display_name": grant.identity.display_name,
+                        "cache_realm": grant.identity.cache_realm,
+                    },
+                },
+            )
             connection.capabilities = grant.capabilities
             connection.status, connection.connected_at = "connected", now()
             block_owner_schedules(
@@ -306,7 +347,9 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
             connection = connection_for(db, user, organization_id)
             if connection is not None:
                 clear_connection(connection)
-                block_owner_schedules(db, organization_id, user.id, "microsoft_reconnect_required")
+                block_owner_schedules(
+                    db, organization_id, user.id, "microsoft_reconnect_required", available=[]
+                )
                 db.execute(
                     delete(MicrosoftConnectionFlow).where(
                         MicrosoftConnectionFlow.connection_id == connection.id

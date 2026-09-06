@@ -15,24 +15,26 @@ import { PersonalAutonomy } from './PersonalAutonomy';
 import { PersonalMemory } from './PersonalMemory';
 import { Notifications } from './Notifications';
 import { CompanyResources } from './CompanyResources';
+import { PasswordAccess, PasswordChange, readActivation, clearActivation } from './PasswordAccess';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
 }
 
-function SignIn({ t, options }: { t: Text; options: Options }) {
+function SignIn({ t, options, language, done }: { t: Text; options: Options; language: Language; done: () => Promise<void> }) {
   const action = useAction(t);
   return <section className="welcome-grid">
     <div className="welcome-panel">
       <div className="eyebrow">ALPENDATA · {t.workspace.toUpperCase()}</div>
       <h1>{t.welcome}</h1><p className="lead">{t.welcomeText}</p>
-      <button className="primary wide" disabled={!options.microsoft || action.busy} onClick={() => action.run(async () => {
+      {options.password && <PasswordAccess language={language} done={done} />}
+      {(options.microsoft || !options.password) && <button className="primary wide" disabled={!options.microsoft || action.busy} onClick={() => action.run(async () => {
         const result = await api<{ authorization_url: string }>('/api/auth/microsoft/start', {});
         const url = new URL(result.authorization_url);
         if (url.origin !== 'https://login.microsoftonline.com') throw new Error('Unexpected identity provider');
         location.assign(url.href);
-      })}><span className="microsoft-mark" aria-hidden="true"><i /><i /><i /><i /></span>{action.busy ? t.signingIn : t.signIn}<ArrowRight size={19} /></button>
-      {!options.microsoft && <p className="configuration-note">{t.unavailable} <a href="https://www.alpendata.ch/contact">{t.support}</a></p>}
+      })}><span className="microsoft-mark" aria-hidden="true"><i /><i /><i /><i /></span>{action.busy ? t.signingIn : t.signIn}<ArrowRight size={19} /></button>}
+      {!options.microsoft && !options.password && <p className="configuration-note">{t.unavailable} <a href="https://www.alpendata.ch/contact">{t.support}</a></p>}
       <Notice>{action.error}</Notice>
       <div className="language-note"><Globe2 size={16} />{t.languageNote}</div>
     </div>
@@ -120,6 +122,7 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
 
 
 export default function App() {
+  const [activation, setActivation] = useState(readActivation);
   const [connectionInterrupted] = useState(() => {
     const query = new URLSearchParams(location.search);
     const interrupted = query.get('connection_error') === 'interrupted';
@@ -179,10 +182,11 @@ export default function App() {
     <main id="main"><Notice>{signOutAction.error}</Notice>
       {signinInterrupted && <Notice>{t.signInFailed}</Notice>}
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
-      {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
+      {activation ? <section className="form-page"><PasswordAccess language={language} activation={activation} done={async () => { clearActivation(); setActivation(null); await refresh(); }} /><button className="text-button" onClick={() => { clearActivation(); setActivation(null); }}>{language === 'fr' ? 'Revenir à la connexion' : 'Back to sign in'}</button></section> : loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} language={language} done={refresh} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
           section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={`${company.id}:${user.id}`} company={company} user={user} t={t} language={language} refreshAccount={() => refresh(company.id)} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
         : null}
+      {user?.password_account && !activation && <PasswordChange key={user.id} language={language} />}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>
   </div>;

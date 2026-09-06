@@ -310,3 +310,9 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 
 .billing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 #billing-quantity { max-width: 220px; }
+/* Independent account access uses the same form rhythm as onboarding. */
+.password-access { display: grid; gap: 12px; margin: 24px 0; }
+.password-access input { width: 100%; }
+.password-change { margin-top: 32px; max-width: 520px; }
+.password-change summary { cursor: pointer; }
+.password-change form { display: grid; gap: 12px; margin-top: 16px; }

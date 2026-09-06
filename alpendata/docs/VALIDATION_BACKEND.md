@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Comptes indépendants et onboarding sans Microsoft — 6 septembre 2026
+
+La migration `0022` ajoute les comptes par mot de passe et la limitation persistante des tentatives. La suite complète passe **96 tests dans 51 fichiers sous Linux/PostgreSQL**, sans échec ni scénario ignoré, avec Podman, age, Nginx et systemd utilisateur réels. Le lanceur officiel a utilisé quatre workers et aucune nouvelle tentative automatique (`HERMES_TEST_FILE_RETRIES=0`), pour 298 secondes d'exécution après précompilation. Un premier passage avec 32 workers avait produit trois échecs dans les fichiers runtime, sauvegarde et mémoire, dont des délais d'attente de la commande Podman ; tous passent lors du passage complet à quatre workers, sans modifier les délais de production.
+
+L'interface passe **44 scénarios JSDOM** et sa compilation TypeScript/Vite. Ruff et `git diff --check` passent. Cette étape ne constitue pas une recette de connexion dans un navigateur sur le domaine public.
+
+Les nouveaux scénarios exercent le CLI réel avec fichiers temporaires privés, l'activation unique concurrente, le choix et le changement de mot de passe, la révocation des sessions, la récupération, l'invalidation après restauration, les limites persistantes et les erreurs sans secrets. Un compte indépendant connecte ensuite son propre compte Microsoft avec MSAL réel et un transport synthétique : l'administrateur ne reçoit pas ses jetons et un changement silencieux de compte source est refusé.
+
+Un scénario complet démarre sans configuration Microsoft ni SMTP, active un compte AlpenData, crée l'entreprise et le profil personnel, fait enregistrer des propositions par Hermes, exécute un essai puis une occurrence planifiée sans sources externes. Le modèle HTTP fournit des réponses synthétiques ; les conteneurs et la boucle Hermes sont réels. Le résultat indique qu'il part des informations saisies, sans prétendre vérifier des fichiers ou des e-mails. Image inchangée : `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`.
+
+L'environnement Jelastic existant a été démarré et son terminal Web SSH ouvert. Le diagnostic constate un accès root, Docker, systemctl et Python 3, mais aucun Podman installé ; `docker ps` ne liste aucun conteneur actif. La limite `user.max_user_namespaces` est non nulle, sans que cela prouve encore l'exécution imbriquée sans privilèges. Aucun code AlpenData, secret Mistral, compte réel ou configuration DNS/TLS n'a été déployé à cette étape.
+
 ## Actualisation autonome de la facturation — 6 septembre 2026
 
 La suite complète passe **90 scénarios Linux/PostgreSQL**, dans 47 fichiers, sans échec, scénario ignoré ni relance automatique. Les exercices incluent le runtime Hermes inchangé, age, Nginx et les unités systemd. Les six scénarios Stripe ciblés donnent quatre succès sur Windows/SQLite et deux exclusions Linux explicites. Le frontend passe **42 scénarios JSDOM** et son build TypeScript/Vite ; Ruff et la vérification Git passent.

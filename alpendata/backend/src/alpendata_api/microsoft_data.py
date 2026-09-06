@@ -1,6 +1,6 @@
 """Delegated Graph tokens, kept in an encrypted MSAL cache per connection."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from uuid import UUID
 
 import msal
@@ -40,8 +40,8 @@ class MicrosoftData(MicrosoftSignIn):
             raise ValueError("Microsoft identity is not supported")
         return tenant
 
-    def begin_connection(self, capabilities: list[str], identity: MicrosoftIdentity) -> dict:
-        tenant = self.tenant(identity)
+    def begin_connection(self, capabilities: list[str], identity: MicrosoftIdentity | None) -> dict:
+        tenant = self.tenant(identity) if identity else "organizations"
         # Pin the data connection to the signed-in directory, including guest
         # accounts. MSAL's cache realm then represents that resource directory.
         flow = self.client(offline=True, tenant=tenant).initiate_auth_code_flow(
@@ -60,6 +60,9 @@ class MicrosoftData(MicrosoftSignIn):
         try:
             result = client.acquire_token_by_auth_code_flow(flow, response)
             identity = validated_identity(result["id_token_claims"], self.settings.microsoft_client_id)
+            # MSAL stores the first organizations-authority grant under that cache realm.
+            # Keep it bound to the separately validated issuer/oid, never to an email claim.
+            identity = replace(identity, cache_realm=flow["tenant"])
         except (RuntimeError, ValueError, KeyError, TypeError):
             raise ValueError("Microsoft connection failed") from None
         capabilities = [
@@ -74,9 +77,10 @@ class MicrosoftData(MicrosoftSignIn):
 
     @staticmethod
     def matches(account: dict, identity: MicrosoftIdentity) -> bool:
-        return (
-            account.get("local_account_id") == identity.subject
-            and identity.issuer == f"https://login.microsoftonline.com/{account.get('realm')}/v2.0"
+        return account.get("local_account_id") == identity.subject and (
+            identity.issuer == f"https://login.microsoftonline.com/{account.get('realm')}/v2.0"
+            or identity.cache_realm == "organizations"
+            and account.get("realm") == "organizations"
         )
 
     def access(self, serialized: str, identity: MicrosoftIdentity, capability: str):
@@ -84,6 +88,9 @@ class MicrosoftData(MicrosoftSignIn):
         cache.deserialize(serialized)
         client = self.client(token_cache=cache, offline=True, tenant=self.tenant(identity))
         accounts = [account for account in client.get_accounts() if self.matches(account, identity)]
+        # A later tenant-specific refresh may add its canonical account entry.
+        pinned = [account for account in accounts if account.get("realm") == self.tenant(identity)]
+        accounts = pinned or accounts
         if len(accounts) != 1:
             return None, cache.serialize()
         try:

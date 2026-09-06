@@ -7,11 +7,12 @@ import { RoutineTrialAction } from './RoutineTrialAction';
 import type { EmailDelivery } from './RoutineTrialAction';
 
 export type Proposal = { sends_email?: boolean; id: string; title: string; benefit: string; focus: string };
-export type Trial = { schedule_version?: number | null; email_delivery?: EmailDelivery | null; delivery_accepted?: boolean; can_replace_schedule?: boolean; schedule_id?: string | null; id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
+export type Trial = { requires_sources?: boolean; schedule_version?: number | null; email_delivery?: EmailDelivery | null; delivery_accepted?: boolean; can_replace_schedule?: boolean; schedule_id?: string | null; id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
 
 const words = {
   fr: {
-    title: 'Un premier résultat utile.', intro: 'Après avoir connecté vos outils, choisissez ce qui vous ferait gagner du temps aujourd’hui.',
+    title: 'Un premier résultat utile.', intro: 'Choisissez ce qui vous ferait gagner du temps aujourd’hui. Vous pouvez commencer avec les informations que vous donnez à l’assistant, puis connecter vos outils si nécessaire.',
+    provided: 'Ce résultat repose sur les informations que vous avez fournies. Vérifiez-le avant de le réutiliser ; aucune source externe n’était nécessaire à cet essai.',
     question: 'Par quoi aimeriez-vous commencer ?', placeholder: 'Par exemple : repérer les demandes de mes clients qui nécessitent un suivi.',
     propose: 'Trouver mes premières tâches', working: 'Préparation…', try: 'Tester maintenant', retry: 'Réessayer',
     once: 'Chaque essai produit un résultat dans votre conversation. Les tâches d’envoi demandent une confirmation supplémentaire. Aucun essai ne programme de répétition.',
@@ -23,7 +24,8 @@ const words = {
     unverified: 'L’essai est terminé, mais la consultation de toutes les sources nécessaires n’a pas été confirmée.',
   },
   en: {
-    title: 'Your first useful result.', intro: 'After connecting your tools, choose what would save you time today.',
+    title: 'Your first useful result.', intro: 'Choose what would save you time today. Start with the information you give your assistant and connect your tools when needed.',
+    provided: 'This result is based on information you provided. Review it before reusing it; this trial required no external source.',
     question: 'What would you like to start with?', placeholder: 'For example: identify client requests that need a follow-up.',
     propose: 'Find my first tasks', working: 'Preparing…', try: 'Try now', retry: 'Retry',
     once: 'Each trial produces a result in your conversation. Sending tasks require an additional confirmation. No trial schedules a recurrence.',
@@ -79,5 +81,5 @@ export function RoutineCards({ proposals, organizationId, language, disabled, on
 }
 
 export function TrialEvidence({ trials, language }: { trials: Trial[]; language: Language }) {
-  return <>{trials.filter(trial => trial.status === 'completed').map(trial => <p className="configuration-note" key={trial.id}>{trial.sources_verified ? words[language].verified : words[language].unverified}</p>)}</>;
+  return <>{trials.filter(trial => trial.status === 'completed').map(trial => <p className="configuration-note" key={trial.id}>{trial.requires_sources === false ? words[language].provided : trial.sources_verified ? words[language].verified : words[language].unverified}</p>)}</>;
 }

@@ -4,7 +4,8 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.responses import RedirectResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,8 +24,18 @@ from .health import database_ready, health_router, release_head
 from .invitation_delivery import delivery_view, invitation_delivery_router
 from .mail import SMTPMailer
 from .memory_routes import memory_router
-from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
+from .models import (
+    AuthSession,
+    Invitation,
+    Membership,
+    Onboarding,
+    Organization,
+    PasswordAccount,
+    PersonalResource,
+    User,
+)
 from .notifications import notifications_router
+from .password_signin import password_router
 from .policy_routes import policy_router
 from .routines import routines_router
 from .schedules import schedules_router
@@ -71,6 +82,7 @@ def create_app(
     app.include_router(billing_router(settings, factory, billing_gateway))
     app.include_router(invitation_delivery_router(settings, factory, mailer))
     app.include_router(signin_router(settings, factory, signin_provider))
+    app.include_router(password_router(settings, factory))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
     app.include_router(artifacts_router(settings, factory))
@@ -83,6 +95,15 @@ def create_app(
     app.include_router(routines_router(settings, factory))
     app.include_router(schedules_router(settings, factory))
     app.include_router(policy_router(settings, factory))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, error: RequestValidationError):
+        if request.url.path.startswith("/api/auth/password/"):
+            # FastAPI's default validation response includes rejected input values.
+            return JSONResponse({"detail": "password_request_invalid"}, status_code=422)
+        from fastapi.exception_handlers import request_validation_exception_handler
+
+        return await request_validation_exception_handler(request, error)
 
     @app.exception_handler(HTTPException)
     async def browser_signin_error(request: Request, error: HTTPException):
@@ -131,6 +152,7 @@ def create_app(
         return {
             "id": actor.id,
             "display_name": actor.display_name,
+            "password_account": db.get(PasswordAccount, actor.id) is not None,
             "memberships": [membership_view(item) for item in memberships],
         }
 

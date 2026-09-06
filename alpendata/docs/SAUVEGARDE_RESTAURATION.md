@@ -55,6 +55,7 @@ La commande contrôle les empreintes et exige la même version de migration que 
 Ensuite, dans la base cible seulement :
 
 - Les sessions sont révoquées ; les parcours OAuth, preuves d’invitation et anciennes invitations sont invalidés.
+- Les mots de passe AlpenData restaurés et leurs anciens liens d'activation sont invalidés. Vérifier chaque bénéficiaire avant de préparer sa [récupération manuelle](COMPTES_ALPENDATA.md).
 - Les connexions Microsoft sont déconnectées et leurs caches supprimés ; le mode personnel d’envoi revient à la confirmation.
 - Les récurrences non archivées sont suspendues et leurs versions avancent.
 - Les tours en attente ou en cours deviennent interrompus ; les appels sans résultat deviennent inconnus/échoués selon leur registre. Les envois et dépôts dont l’issue était incertaine ne sont pas rejoués.

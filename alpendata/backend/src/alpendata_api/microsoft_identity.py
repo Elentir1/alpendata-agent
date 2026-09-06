@@ -35,6 +35,7 @@ class MicrosoftIdentity:
     issuer: str
     subject: str
     display_name: str
+    cache_realm: str | None = None
 
 
 class MicrosoftSignIn:

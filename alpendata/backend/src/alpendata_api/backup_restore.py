@@ -22,6 +22,7 @@ from .models import (
     MicrosoftConnection,
     MicrosoftConnectionFlow,
     ModelCall,
+    PasswordAccount,
     PersonalActionPolicy,
     RoutineSchedule,
     SharePointSave,
@@ -81,6 +82,12 @@ def suspend_restored_work(factory):
             .values(status="review", access_until=0, synced_at=None, next_sync_at=0, sync_error=None)
         )
         db.execute(update(AuthSession).values(revoked=True))
+        # A restored old password or activation must not recover revoked access.
+        db.execute(
+            update(PasswordAccount).values(
+                password_hash=None, activation_hash=None, activation_expires_at=None
+            )
+        )
         for model in (SignInFlow, MicrosoftConnectionFlow, InvitationProof):
             db.execute(delete(model))
         db.execute(update(Invitation).values(revoked=True))

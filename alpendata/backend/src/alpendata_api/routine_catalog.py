@@ -13,6 +13,30 @@ class Recipe:
 
 
 RECIPES = {
+    "work_process": Recipe(
+        (),
+        "Structurer un processus",
+        "Structure a work process",
+        "Using only the user's profile and focus, draft a practical process with steps, responsibilities "
+        "and a review checklist. Label proposals and assumptions. Ask for missing business details; "
+        "never claim to have checked email, files or current company activity. Return the draft in chat.",
+    ),
+    "work_checklist": Recipe(
+        (),
+        "Préparer une liste de travail",
+        "Prepare a working checklist",
+        "Using the user's role and focus, prepare a concrete reusable checklist for their stated task. "
+        "Identify information they must supply before using it. Do not invent deadlines, completed work "
+        "or live source information. Return suggestions in chat, not a claim that work was performed.",
+    ),
+    "document_outline": Recipe(
+        (),
+        "Préparer une trame de document",
+        "Prepare a document outline",
+        "Using the user's profile and focus, draft a reusable document structure with headings, example "
+        "wording and clearly marked fields to complete. Return the draft in chat. Do not invent client "
+        "facts, files, download links or a claim that a document was saved externally.",
+    ),
     "mail_briefing_delivery": Recipe(
         ("mail",),
         "Envoyer mon briefing par e-mail",

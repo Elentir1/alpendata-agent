@@ -49,7 +49,11 @@ def signin_router(settings: Settings, factory, provider: MicrosoftSignIn | None 
 
     @router.get("/options")
     def options():
-        return {"microsoft": settings.microsoft_enabled, "invitation_email": settings.smtp_enabled}
+        return {
+            "microsoft": settings.microsoft_enabled,
+            "invitation_email": settings.smtp_enabled,
+            "password": True,
+        }
 
     @router.post("/microsoft/start")
     def start(request: Request):
