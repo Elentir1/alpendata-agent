@@ -58,4 +58,4 @@ L’image finale de cette étape est `sha256:349e453517fcbbe3fb69cf4fe3804024a1f
 
 `test_sharepoint_documents.py` vérifie la connexion personnelle, les refus d’accès, la déconnexion, les liens temporaires invalides ou expirés, les fichiers modifiés et les plafonds annoncés ou dépassés pendant le transfert. `test_sharepoint_worker.py` fait rechercher, télécharger et lire un PDF par le vrai Hermes, puis compare son téléchargement privé aux octets source. Microsoft et le modèle restent synthétiques dans ces tests.
 
-La validation avec les modèles SharePoint du client, l’enregistrement avec gestion des collisions, la conservation configurable et la validation métier avec le pilote restent à terminer. Le lot documents reste en cours.
+L’[enregistrement personnel dans Microsoft 365](ENREGISTREMENT_SHAREPOINT.md) est désormais relié à une préparation et une confirmation dans l’interface, avec permission supplémentaire, conflit explicite et reçus durables. La validation sur Microsoft réel, les modèles du client, les règles administrateur, la conservation configurable et la validation métier avec le pilote restent à terminer. Le lot documents reste en cours.

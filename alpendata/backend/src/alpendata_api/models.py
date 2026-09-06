@@ -279,7 +279,39 @@ class Artifact(OwnedMixin, Base):
     __table_args__ = (
         turn_ownership_constraint(),
         UniqueConstraint("turn_id", "filename", "sha256"),
+        UniqueConstraint("id", "organization_id", "owner_id", name="uq_artifact_owner"),
         CheckConstraint("size > 0 AND size <= 5242880", name="ck_artifact_size"),
+    )
+
+
+class SharePointSave(OwnedMixin, Base):
+    __tablename__ = "alpendata_sharepoint_saves"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    artifact_id: Mapped[str] = mapped_column(String(36), index=True)
+    drive_id: Mapped[str] = mapped_column(String(512))
+    folder_id: Mapped[str] = mapped_column(String(512))
+    folder_name: Mapped[str] = mapped_column(String(1024))
+    folder_url: Mapped[str | None] = mapped_column(String(4096))
+    filename: Mapped[str] = mapped_column(String(180))
+    existing_id: Mapped[str | None] = mapped_column(String(512))
+    existing_etag: Mapped[str | None] = mapped_column(String(1024))
+    status: Mapped[str] = mapped_column(String(24), default="review")
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    result: Mapped[dict | None] = mapped_column(JSON)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    expires_at: Mapped[int] = mapped_column(Integer)
+    started_at: Mapped[int | None] = mapped_column(Integer)
+    finished_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["artifact_id", "organization_id", "owner_id"],
+            ["alpendata_artifacts.id", "alpendata_artifacts.organization_id", "alpendata_artifacts.owner_id"],
+            name="fk_sharepoint_save_artifact_owner",
+        ),
+        CheckConstraint(
+            "status IN ('review', 'running', 'completed', 'failed', 'unknown')",
+            name="ck_sharepoint_save_status",
+        ),
     )
 
 

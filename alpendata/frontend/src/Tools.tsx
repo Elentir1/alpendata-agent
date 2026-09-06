@@ -5,7 +5,7 @@ import { Notice, useAction } from './feedback';
 import { copy, errorText } from './locale';
 import type { Language } from './locale';
 
-type Capability = 'mail' | 'calendar' | 'files';
+type Capability = 'mail' | 'calendar' | 'files' | 'files_write';
 type Connection = { available: boolean; status: 'disconnected' | 'connected' | 'reconnect_required'; capabilities: Capability[] };
 type MailItem = { id: string; subject: string; sender: string; preview: string; url: string | null };
 type FileItem = { id: string; drive_id: string; name: string; url: string | null };
@@ -16,7 +16,8 @@ const text = {
     mail: 'Mes mails', mailDetail: 'Lire vos échanges pour retrouver le contexte d’un client.',
     calendar: 'Mon calendrier', calendarDetail: 'Consulter vos rendez-vous à venir.',
     files: 'Mes documents et SharePoint', filesDetail: 'Rechercher et lire les fichiers auxquels votre compte a accès, y compris les fichiers partagés.',
-    reading: 'Ces accès permettent uniquement la lecture. Aucun mail ne sera envoyé et aucun document ne sera modifié.',
+    reading: 'La lecture ne modifie rien. Si vous autorisez l’enregistrement, chaque dépôt ou remplacement sera confirmé depuis le document créé.',
+    write: 'Enregistrer mes documents', writeDetail: 'Déposer un document dans un dossier Microsoft 365 après votre confirmation.',
     permission: 'Utilisez le même compte que pour AlpenData. Selon les règles Microsoft de votre entreprise, une validation de votre administrateur Microsoft peut être nécessaire.',
     connect: 'Connecter mes outils', change: 'Modifier mes accès', disconnect: 'Déconnecter mes outils', connected: 'Vos outils sont connectés.',
     unavailable: 'La connexion aux outils n’est pas encore configurée dans cet environnement.', working: 'Chargement…',
@@ -30,7 +31,8 @@ const text = {
     mail: 'My email', mailDetail: 'Read your conversations to find client context.',
     calendar: 'My calendar', calendarDetail: 'View your upcoming appointments.',
     files: 'My documents and SharePoint', filesDetail: 'Find and read files your account can access, including shared files.',
-    reading: 'These permissions allow reading only. No email will be sent and no document will be changed.',
+    reading: 'Reading changes nothing. If you allow saving, each upload or replacement is confirmed from the created document.',
+    write: 'Save my documents', writeDetail: 'Save a document to a Microsoft 365 folder after your confirmation.',
     permission: 'Use the same account as for AlpenData. Your company’s Microsoft policies may require approval from your Microsoft administrator.',
     connect: 'Connect my tools', change: 'Change my access', disconnect: 'Disconnect my tools', connected: 'Your tools are connected.',
     unavailable: 'Tool connections have not been configured in this environment yet.', working: 'Loading…',
@@ -74,6 +76,7 @@ export function Tools({ companyId, language }: { companyId: string; language: La
     { id: 'mail' as const, title: c.mail, description: c.mailDetail, Icon: Mail },
     { id: 'calendar' as const, title: c.calendar, description: c.calendarDetail, Icon: CalendarDays },
     { id: 'files' as const, title: c.files, description: c.filesDetail, Icon: FileSearch },
+    { id: 'files_write' as const, title: c.write, description: c.writeDetail, Icon: FileSearch },
   ];
   if (loadError) return <Notice>{loadError}</Notice>;
   if (!connection) return <p role="status">{t.loading}</p>;

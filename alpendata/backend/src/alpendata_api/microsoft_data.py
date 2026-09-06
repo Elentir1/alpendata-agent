@@ -8,7 +8,12 @@ from requests import RequestException
 
 from .microsoft_identity import MicrosoftIdentity, MicrosoftSignIn, validated_identity
 
-SCOPES = {"mail": "Mail.Read", "calendar": "Calendars.Read", "files": "Files.Read.All"}
+SCOPES = {
+    "mail": "Mail.Read",
+    "calendar": "Calendars.Read",
+    "files": "Files.Read.All",
+    "files_write": "Files.ReadWrite.All",
+}
 CALLBACK = "/api/integrations/microsoft/callback"
 
 

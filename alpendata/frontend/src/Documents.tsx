@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, FileText } from 'lucide-react';
 import type { Language } from './locale';
+import { SharePointSave } from './SharePointSave';
 
 export interface DocumentReceipt { id: string; filename: string; size: number; media_type: string }
 
 export function Documents({ items, organizationId, language }: { items: DocumentReceipt[]; organizationId: string; language: Language }) {
   const [busy, setBusy] = useState(''), [failed, setFailed] = useState(false);
+  const [saving, setSaving] = useState<DocumentReceipt | null>(null);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => { pending.current?.abort(); }, []);
   if (!items.length) return null;
@@ -38,5 +40,7 @@ export function Documents({ items, organizationId, language }: { items: Document
     <strong>{fr ? 'Documents créés' : 'Created documents'}</strong>
     <ul>{items.map(item => <li key={item.id}><FileText size={18} aria-hidden="true" /><span>{item.filename}<small>{new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(item.size / 1024)} {fr ? 'Ko' : 'KB'}</small></span><button type="button" className="secondary" disabled={!!busy} onClick={() => void download(item)} aria-label={`${fr ? 'Télécharger' : 'Download'} ${item.filename}`}><Download size={16} aria-hidden="true" />{busy === item.id ? '…' : fr ? 'Télécharger' : 'Download'}</button></li>)}</ul>
     {failed && <p role="alert">{fr ? 'Le téléchargement a échoué. Vérifiez votre connexion et réessayez.' : 'Download failed. Check your connection and try again.'}</p>}
+    <div className="save-shortcuts">{items.map(item => <button type="button" className="secondary" key={item.id} onClick={() => setSaving(item)}>{fr ? 'Enregistrer' : 'Save'} {item.filename} {fr ? 'dans Microsoft 365' : 'to Microsoft 365'}</button>)}</div>
+    {saving && <SharePointSave key={saving.id} item={saving} organizationId={organizationId} language={language} onClose={() => setSaving(null)} />}
   </section>;
 }

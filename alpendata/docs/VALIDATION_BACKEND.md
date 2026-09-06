@@ -1,5 +1,13 @@
 # Vérification du premier backend
 
+## Enregistrement Microsoft 365 — 6 septembre 2026
+
+La suite complète passe **43 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec le runtime documentaire inchangé `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2`. Après ajout de la vérification des octets présents à la destination et distinction de l’expiration d’une URL d’envoi, les deux scénarios d’enregistrement sont repassés avec succès sur PostgreSQL. Le frontend passe **16 scénarios JSDOM** et le build TypeScript/Vite.
+
+La migration `0010`, le consentement personnel supplémentaire, la préparation sans effet externe, le choix de dossier, la confirmation de remplacement, les accès propriétaires et l’idempotence sont vérifiés avec Microsoft synthétique au niveau HTTP. Une confirmation concurrente et une réponse perdue ne provoquent pas de seconde écriture. La récupération compare le SHA-256 téléchargé au document immuable attendu. Le parcours français/anglais a été contrôlé visuellement sur un aperçu fictif séparé ; la case de remplacement a été corrigée puis revérifiée.
+
+Les règles administrateur et les services réels restent à raccorder. En particulier, les tests synthétiques ne prouvent pas que la bibliothèque cible applique l’en-tête conditionnel de remplacement. Ce point doit être validé sur Microsoft avant le pilote. Les limites et le parcours sont décrits dans [Enregistrement SharePoint](ENREGISTREMENT_SHAREPOINT.md).
+
 ## Lecture du contenu SharePoint — 6 septembre 2026
 
 La suite complète passe **41 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2`. Le frontend passe ses **15 scénarios JSDOM** et son build TypeScript/Vite. Ruff et le contrôle des espaces passent.

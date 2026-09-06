@@ -192,3 +192,16 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .chat-documents small { display: block; color: #6b7280; margin-top: .2rem; }
 .chat-documents button { flex-shrink: 0; }
 @media (max-width: 520px) { .chat-documents li { flex-wrap: wrap; } .chat-documents button { margin-left: 1.8rem; } }
+/* A personal save review stays beside the document being shared. */
+.sharepoint-save { margin-top: 1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink); }
+.save-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.save-heading h3 { margin: 0; }
+.sharepoint-save label, .sharepoint-save form { display: grid; gap: .5rem; margin: 1rem 0; }
+.sharepoint-save input:not([type=checkbox]) { width: 100%; min-width: 0; }
+.sharepoint-save button { white-space: normal; }
+.save-shortcuts, .save-folders { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .8rem; }
+.save-destination, .save-review, .save-result { display: grid; gap: .7rem; padding: .9rem 0; overflow-wrap: anywhere; }
+.save-review label { display: flex; align-items: flex-start; }
+.save-review input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; margin: .25rem 0 0; flex-shrink: 0; accent-color: var(--red); }
+.save-result p, .save-review p { margin: 0; }
+.sharepoint-save a { display: inline-flex; align-items: center; gap: .4rem; }

@@ -80,7 +80,12 @@ def connected_capabilities(db, user, organization_id):
             MicrosoftConnection.organization_id == organization_id, MicrosoftConnection.owner_id == user.id
         )
     )
-    return list(connection.capabilities) if connection and connection.status == "connected" else []
+    # Consent to manual file saves does not give the model a write capability.
+    return (
+        [item for item in connection.capabilities if item in {"mail", "calendar", "files"}]
+        if connection and connection.status == "connected"
+        else []
+    )
 
 
 def create_conversation(

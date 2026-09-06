@@ -29,6 +29,7 @@ from .schemas import (
     VerifyInvitation,
 )
 from .settings import Settings
+from .sharepoint_saves import sharepoint_router
 from .signin import signin_router
 
 
@@ -50,6 +51,7 @@ def create_app(
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
     app.include_router(artifacts_router(settings, factory))
+    app.include_router(sharepoint_router(settings, factory, microsoft_provider, graph))
     app.include_router(routines_router(settings, factory))
     app.include_router(schedules_router(settings, factory))
 

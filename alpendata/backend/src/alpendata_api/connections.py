@@ -36,7 +36,9 @@ PREFIX = "/api/organizations/{organization_id}/microsoft"
 
 class ConnectInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    capabilities: list[Literal["mail", "calendar", "files"]] = Field(min_length=1, max_length=3)
+    capabilities: list[Literal["mail", "calendar", "files", "files_write"]] = Field(
+        min_length=1, max_length=4
+    )
 
 
 class SearchInput(BaseModel):
@@ -112,6 +114,17 @@ class MicrosoftReader:
         self.provider, self.graph = provider or MicrosoftData(settings), graph or GraphReader()
 
     def read(self, organization_id, authorize, capability, *, operation="read", **arguments):
+        def perform(graph, token):
+            operations = {"mail": graph.mail, "calendar": graph.calendar, "files": graph.files}
+            if operation == "download" and capability == "files":
+                return content_download(graph, token, **arguments)
+            if operation == "read" and capability in operations:
+                return operations[capability](token, **arguments)
+            raise GraphError(400, "agent_tool_arguments_invalid")
+
+        return self.execute(organization_id, authorize, capability, perform)
+
+    def execute(self, organization_id, authorize, capability, perform):
         """Authorize is a server callback, resolved again inside the credential transaction."""
         if self.vault is None:
             raise HTTPException(503, "microsoft_signin_not_configured")
@@ -132,17 +145,7 @@ class MicrosoftReader:
                 if not token:
                     raise GraphError(409, "microsoft_reconnect_required")
                 connection.encrypted_cache = self.vault.seal(context(connection), {"cache": updated})
-                operations = {
-                    "mail": self.graph.mail,
-                    "calendar": self.graph.calendar,
-                    "files": self.graph.files,
-                }
-                if operation == "download" and capability == "files":
-                    result = content_download(self.graph, token, **arguments)
-                elif operation == "read":
-                    result = operations[capability](token, **arguments)
-                else:
-                    raise GraphError(400, "agent_tool_arguments_invalid")
+                result = perform(self.graph, token)
             except (InvalidToken, KeyError):
                 failure = GraphError(409, "microsoft_reconnect_required")
             except RequestException:
