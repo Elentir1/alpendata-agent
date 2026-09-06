@@ -14,7 +14,7 @@ La version est l'empreinte SHA-256 des octets lus. Une écriture sur une version
 
 Les nouvelles conversations reprennent la mémoire corrigée. Les conversations déjà ouvertes conservent leur contexte système, conformément au fonctionnement d'Hermes. Une réponse réseau perdue impose de relire l'état avant une nouvelle édition ; aucune écriture n'est répétée automatiquement. Enregistrer une liste ne remplace pas les corrections non enregistrées de l'autre liste.
 
-Cette fonction gère la mémoire active. Elle ne supprime pas les conversations passées, leurs contextes déjà enregistrés, les fichiers produits ou les sauvegardes. Une information encore présente dans une source ou une conversation peut être mémorisée à nouveau. Un effacement complet avec règles de conservation et traitement des sauvegardes reste un chantier distinct.
+Cette fonction gère la mémoire active. Elle ne supprime pas les conversations passées, leurs contextes déjà enregistrés, les fichiers produits ou les sauvegardes. Une information encore présente dans une source ou une conversation peut être mémorisée à nouveau. Un effacement complet avec règles de conservation et traitement des sauvegardes reste un chantier distinct ; les emplacements et dépendances vérifiés sont décrits dans [Conservation et suppression des données](CONSERVATION_DONNEES.md).
 
 ## Vérification
 

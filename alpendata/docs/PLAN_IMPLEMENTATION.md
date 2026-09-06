@@ -73,6 +73,8 @@ Sortie attendue : les automatisations restent compréhensibles et contrôlables,
 
 ## Lot 6 — Commercialisation
 
+L'[inventaire de conservation et suppression](CONSERVATION_DONNEES.md) identifie les données de la base, les volumes Hermes, les copies partagées, les reçus externes et les sauvegardes. La mémoire active est modifiable ; l'effacement complet des conversations et fichiers reste à implémenter après définition de la règle de conservation, actuellement demandée au porteur du projet.
+
 L’[administration des membres et licences](MEMBRES_LICENCES.md) est reliée à l’API : modifications versionnées, capacité disponible et réservations par invitation. Le [raccordement Stripe des abonnements](FACTURATION_STRIPE.md) ajoute Checkout, portail, notifications signées et synchronisation des places après lecture de l'abonnement. Un service périodique relit les abonnements, avec échéances durables, reprise après erreur et unité systemd facultative. Les tests utilisent le SDK officiel et HTTP local. Configuration du compte Stripe, paiement de test réel, surusage, durée du pilote et politique d'impayés restent à finaliser avant commercialisation.
 
 - Définir licence en CHF, consommation incluse, surusage, plafonds et règles de cycle de vie.
