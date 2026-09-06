@@ -23,6 +23,7 @@ const words = {
     open: 'Ouvrir dans Microsoft 365', refresh: 'Actualiser le résultat', verify: 'Vérifier le document enregistré', wait: 'Chargement…', history: 'Derniers enregistrements',
     partial: 'Cette sélection est partielle. Utilisez la recherche pour retrouver un dossier absent.',
     permission: 'Activez « Enregistrer mes documents » dans vos connexions Microsoft, puis revenez ici.',
+    policy: 'Les règles de votre entreprise bloquent cet accès. Contactez votre administrateur.',
     reconnect: 'Reconnectez votre compte Microsoft dans vos outils personnels.',
     conflict: 'La destination a changé. Préparez à nouveau l’enregistrement pour examiner la version actuelle.',
     expired: 'Cette préparation a expiré. Préparez à nouveau l’enregistrement.',
@@ -40,6 +41,7 @@ const words = {
     open: 'Open in Microsoft 365', refresh: 'Refresh result', verify: 'Check the saved document', wait: 'Loading…', history: 'Recent saves',
     partial: 'This selection is partial. Use search to find a missing folder.',
     permission: 'Enable “Save my documents” in your Microsoft connections, then return here.',
+    policy: 'Your company rules block this access. Contact your administrator.',
     reconnect: 'Reconnect your Microsoft account in your personal tools.',
     conflict: 'The destination changed. Prepare the save again to review the current version.',
     expired: 'This review expired. Prepare the save again.',
@@ -58,6 +60,7 @@ export function SharePointSave({ item, organizationId, language, onClose }: {
   const [history, setHistory] = useState<Save[]>([]);
   const current = trail.at(-1);
   const errorMessages: Record<string, string> = {
+    company_policy_denied: t.policy,
     microsoft_permission_required: t.permission, microsoft_reconnect_required: t.reconnect,
     sharepoint_destination_changed: t.conflict, sharepoint_review_expired: t.expired,
     sharepoint_save_unknown: t.unknown, sharepoint_save_unresolved: t.unknown,

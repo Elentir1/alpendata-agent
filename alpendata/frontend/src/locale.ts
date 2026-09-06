@@ -2,6 +2,7 @@ import { ApiError } from './api';
 
 export const copy = {
   fr: {
+    companyPolicy: 'Les règles de votre entreprise bloquent cet accès. Contactez votre administrateur.',
     connectionFailed: 'La connexion à vos outils n’a pas abouti. Réessayez avec le même compte Microsoft que pour AlpenData.',
     reconnect: 'Reconnectez votre compte Microsoft pour retrouver cet accès.', permission: 'Cet accès n’est pas autorisé. Vérifiez vos choix et les droits de votre compte Microsoft.', microsoftRate: 'Microsoft demande de patienter avant de réessayer.',
     language: 'Langue', loading: 'Ouverture de votre espace…', retry: 'Réessayer', support: 'Contacter AlpenData',
@@ -40,6 +41,7 @@ export const copy = {
     rate: 'Patientez avant de demander un nouveau lien.', fields: 'Vérifiez les informations saisies.', sessionExpired: 'Votre session a expiré. Reconnectez-vous.',
   },
   en: {
+    companyPolicy: 'Your company rules block this access. Contact your administrator.',
     connectionFailed: 'Your tools could not be connected. Try again with the same Microsoft account you use for AlpenData.',
     reconnect: 'Reconnect your Microsoft account to restore access.', permission: 'This access is not allowed. Check your choices and your Microsoft account permissions.', microsoftRate: 'Microsoft asks you to wait before trying again.',
     language: 'Language', loading: 'Opening your workspace…', retry: 'Try again', support: 'Contact AlpenData',
@@ -93,6 +95,7 @@ export function errorText(error: unknown, t: Text): string {
     microsoft_signin_not_configured: t.unavailable, transactional_mail_not_configured: t.noMail,
     license_required: t.license, microsoft_reconnect_required: t.reconnect,
     microsoft_permission_required: t.permission, microsoft_access_denied: t.permission,
+    company_policy_denied: t.companyPolicy,
   };
   return messages[error.code] || t.error;
 }

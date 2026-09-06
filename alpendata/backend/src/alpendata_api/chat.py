@@ -13,6 +13,7 @@ from .artifacts import turn_artifacts
 from .auth import authenticate, request_authorization
 from .connections import lock_member
 from .models import ChatTurn, Conversation, MicrosoftConnection, Onboarding, now
+from .organization_policy import allowed_capabilities, require_allowed
 from .routine_service import conversation_routines, read_evidence
 from .schemas import Input
 
@@ -82,7 +83,11 @@ def connected_capabilities(db, user, organization_id):
     )
     # Consent to manual file saves does not give the model a write capability.
     return (
-        [item for item in connection.capabilities if item in {"mail", "calendar", "files"}]
+        [
+            item
+            for item in connection.capabilities
+            if item in {"mail", "calendar", "files"} and item in allowed_capabilities(db, organization_id)
+        ]
         if connection and connection.status == "connected"
         else []
     )
@@ -103,6 +108,8 @@ def create_conversation(
     """Caller holds the owner's membership lock before creating or enqueuing work."""
     ensure_chat(settings)
     profile = personal_profile(db, user, organization_id)
+    if capabilities is not None:
+        require_allowed(db, organization_id, capabilities)
     available = connected_capabilities(db, user, organization_id)
     if capabilities is not None and not set(capabilities) <= set(available):
         raise HTTPException(409, "microsoft_reconnect_required")

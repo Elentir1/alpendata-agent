@@ -10,6 +10,7 @@ import { Tools } from './Tools';
 import { Chat } from './Chat';
 import { FirstTasks } from './FirstTasks';
 import { Schedules } from './Schedules';
+import { CompanyRules } from './CompanyRules';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -115,7 +116,7 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
 
 type Member = Membership & { display_name: string };
 type InvitationRow = { id: string; email: string; expires_at: number };
-function Team({ company, user, t }: { company: Company; user: Person; t: Text }) {
+function Team({ company, user, t, language }: { company: Company; user: Person; t: Text; language: Language }) {
   const [members, setMembers] = useState<Member[]>([]), [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [email, setEmail] = useState(''), [link, setLink] = useState(''), [copied, setCopied] = useState(false), [loadError, setLoadError] = useState('');
   const action = useAction(t); const base = `/api/organizations/${company.id}`;
@@ -146,6 +147,7 @@ function Team({ company, user, t }: { company: Company; user: Person; t: Text })
           setLink(location.origin + '/join#invitation=' + encodeURIComponent(result.token)); setCopied(false); await refresh();
         }); }}><label htmlFor="invite-email">{t.inviteEmail}</label><input id="invite-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={320} autoComplete="email" /><button className="primary" disabled={action.busy}>{action.busy ? t.inviting : t.invite}<ArrowRight size={17} /></button></form>}
     </div></div>
+    <CompanyRules organizationId={company.id} language={language} />
   </section>;
 }
 
@@ -205,7 +207,7 @@ export default function App() {
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
-          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
+          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} language={language} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
         : null}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>

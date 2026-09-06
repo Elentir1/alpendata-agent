@@ -25,6 +25,7 @@ from .models import (
     User,
     now,
 )
+from .organization_policy import allowed_capabilities, require_allowed
 from .schedule_state import block_owner_schedules
 from .settings import Settings
 from .signin import FLOW_SECONDS, callback_parameters
@@ -132,6 +133,7 @@ class MicrosoftReader:
         with self.factory.begin() as db:
             user = authorize(db)
             lock_member(db, user, organization_id)
+            require_allowed(db, organization_id, [capability])
             connection = connection_for(db, user, organization_id)
             if connection is None or connection.status != "connected":
                 raise HTTPException(409, "microsoft_reconnect_required")
@@ -184,10 +186,17 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
         with factory.begin() as db:
             user, _ = actor(db, request, organization_id, licensed=False)
             connection = connection_for(db, user, organization_id)
+            allowed = allowed_capabilities(db, organization_id)
             return {
                 "available": settings.microsoft_enabled,
                 "status": connection.status if connection else "disconnected",
-                "capabilities": connection.capabilities if connection else [],
+                "capabilities": [item for item in connection.capabilities if item in allowed]
+                if connection
+                else [],
+                "allowed_capabilities": allowed,
+                "restricted_capabilities": [item for item in connection.capabilities if item not in allowed]
+                if connection
+                else [],
                 "connected_at": connection.connected_at if connection else None,
             }
 
@@ -196,6 +205,7 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
         enabled()
         with factory.begin() as db:
             user, session_hash = actor(db, request, organization_id)
+            require_allowed(db, organization_id, body.capabilities)
             connection = connection_for(db, user, organization_id)
             if connection is None:
                 connection = MicrosoftConnection(organization_id=organization_id, owner_id=user.id)
@@ -267,6 +277,7 @@ def microsoft_router(settings: Settings, factory, provider=None, graph=None):
             user, connection = pending_actor(db, pending)
             if (user.issuer, user.subject) != (grant.identity.issuer, grant.identity.subject):
                 raise HTTPException(403, "microsoft_account_mismatch")
+            require_allowed(db, pending.organization_id, grant.capabilities)
             connection.encrypted_cache = vault.seal(context(connection), {"cache": grant.cache})
             connection.capabilities = grant.capabilities
             connection.status, connection.connected_at = "connected", now()

@@ -6,7 +6,7 @@ import { copy, errorText } from './locale';
 import type { Language } from './locale';
 
 type Capability = 'mail' | 'calendar' | 'files' | 'files_write';
-type Connection = { available: boolean; status: 'disconnected' | 'connected' | 'reconnect_required'; capabilities: Capability[] };
+type Connection = { available: boolean; status: 'disconnected' | 'connected' | 'reconnect_required'; capabilities: Capability[]; allowed_capabilities?: Capability[]; restricted_capabilities?: Capability[] };
 type MailItem = { id: string; subject: string; sender: string; preview: string; url: string | null };
 type FileItem = { id: string; drive_id: string; name: string; url: string | null };
 type EventItem = { id: string; subject: string; start: { dateTime: string; timeZone: string } | null; url: string | null };
@@ -18,6 +18,7 @@ const text = {
     files: 'Mes documents et SharePoint', filesDetail: 'Rechercher et lire les fichiers auxquels votre compte a accès, y compris les fichiers partagés.',
     reading: 'La lecture ne modifie rien. Si vous autorisez l’enregistrement, chaque dépôt ou remplacement sera confirmé depuis le document créé.',
     write: 'Enregistrer mes documents', writeDetail: 'Déposer un document dans un dossier Microsoft 365 après votre confirmation.',
+    blocked: 'Limité par votre entreprise', rules: 'Les règles de votre entreprise limitent certains accès. Seul votre administrateur peut les réautoriser.',
     permission: 'Utilisez le même compte que pour AlpenData. Selon les règles Microsoft de votre entreprise, une validation de votre administrateur Microsoft peut être nécessaire.',
     connect: 'Connecter mes outils', change: 'Modifier mes accès', disconnect: 'Déconnecter mes outils', connected: 'Vos outils sont connectés.',
     unavailable: 'La connexion aux outils n’est pas encore configurée dans cet environnement.', working: 'Chargement…',
@@ -33,6 +34,7 @@ const text = {
     files: 'My documents and SharePoint', filesDetail: 'Find and read files your account can access, including shared files.',
     reading: 'Reading changes nothing. If you allow saving, each upload or replacement is confirmed from the created document.',
     write: 'Save my documents', writeDetail: 'Save a document to a Microsoft 365 folder after your confirmation.',
+    blocked: 'Restricted by your company', rules: 'Your company rules restrict some access. Only your administrator can allow it again.',
     permission: 'Use the same account as for AlpenData. Your company’s Microsoft policies may require approval from your Microsoft administrator.',
     connect: 'Connect my tools', change: 'Change my access', disconnect: 'Disconnect my tools', connected: 'Your tools are connected.',
     unavailable: 'Tool connections have not been configured in this environment yet.', working: 'Loading…',
@@ -56,10 +58,11 @@ export function Tools({ companyId, language }: { companyId: string; language: La
   const [messages, setMessages] = useState<MailItem[] | null>(null), [files, setFiles] = useState<FileItem[] | null>(null), [events, setEvents] = useState<EventItem[] | null>(null);
   useEffect(() => {
     let active = true;
-    api<Connection>(base).then(value => { if (active) { setConnection(value); if (value.capabilities.length) setSelected(value.capabilities); } }).catch(error => { if (active) setLoadError(errorText(error, t)); });
+    api<Connection>(base).then(value => { if (active) { setConnection(value); setSelected(value.capabilities.length ? value.capabilities : value.allowed_capabilities?.includes('mail') === false ? [] : ['mail']); } }).catch(error => { if (active) setLoadError(errorText(error, t)); });
     return () => { active = false; };
   }, [base]);
   const connected = connection?.status === 'connected';
+  const allowed = (id: Capability) => !connection?.allowed_capabilities || connection.allowed_capabilities.includes(id);
   function clearResults() { setMessages(null); setFiles(null); setEvents(null); }
   async function read(operation: () => Promise<void>) {
     await action.run(async () => {
@@ -67,6 +70,11 @@ export function Tools({ companyId, language }: { companyId: string; language: La
       catch (error) {
         if (error instanceof ApiError && error.code === 'microsoft_reconnect_required') {
           clearResults(); setConnection(current => current ? { ...current, status: 'reconnect_required', capabilities: [] } : current);
+        }
+        if (error instanceof ApiError && error.code === 'company_policy_denied') {
+          clearResults();
+          const updated = await api<Connection>(base);
+          setConnection(updated); setSelected(updated.capabilities);
         }
         throw error;
       }
@@ -86,11 +94,12 @@ export function Tools({ companyId, language }: { companyId: string; language: La
     {connection.status === 'reconnect_required' && <Notice>{t.reconnect}</Notice>}
     <fieldset disabled={action.busy || !connection.available} className="tool-choices"><legend>{c.choose}</legend>
       {choices.map(({ id, title, description, Icon }) => <label className="tool-choice" key={id}>
-        <input type="checkbox" checked={selected.includes(id)} onChange={event => setSelected(values => event.target.checked ? [...values, id] : values.filter(value => value !== id))} />
-        <Icon size={20} aria-hidden="true" /><span><strong>{title}</strong><small>{description}</small></span>
+        <input type="checkbox" checked={selected.includes(id) && allowed(id)} disabled={!allowed(id)} onChange={event => setSelected(values => event.target.checked ? [...values, id] : values.filter(value => value !== id))} />
+        <Icon size={20} aria-hidden="true" /><span><strong>{title}</strong><small>{allowed(id) ? description : c.blocked}</small></span>
       </label>)}
     </fieldset>
     <p className="subtle">{c.reading}</p><p className="subtle">{c.permission}</p>
+    {choices.some(choice => !allowed(choice.id)) && <Notice>{c.rules}</Notice>}
     <div className="tool-actions"><button className="primary" disabled={action.busy || !connection.available || !selected.length} onClick={() => action.run(async () => {
       const result = await api<{ authorization_url: string }>(base + '/connect', { capabilities: selected });
       const url = new URL(result.authorization_url);

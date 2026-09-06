@@ -55,6 +55,7 @@ const words = {
 };
 
 function errorMessage(error: unknown, language: Language) {
+  if (error instanceof ApiError && error.code === 'company_policy_denied') return language === 'fr' ? 'Les règles de votre entreprise bloquent un accès nécessaire. Contactez votre administrateur.' : 'Your company rules block a required access. Contact your administrator.';
   const c = words[language];
   const codes: Record<string, string> = { microsoft_reconnect_required: c.access, agent_access_revoked: c.revoked, routine_version_changed: c.changed, routine_request_conflict: c.changed, chat_model_changed: c.model, routine_trial_required: c.trial, routine_already_exists: c.exists, routine_repeated_failures: c.repeated };
   if (error instanceof ApiError && error.code === 'routine_sources_missing') return language === 'fr' ? 'Les sources nécessaires n’ont pas été consultées.' : 'The required sources were not consulted.';

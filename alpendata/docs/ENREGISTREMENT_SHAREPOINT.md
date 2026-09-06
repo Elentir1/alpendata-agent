@@ -8,7 +8,7 @@ Depuis un document créé dans le chat, « Enregistrer dans Microsoft 365 » ouv
 
 Si ce nom existe déjà, une case de confirmation de remplacement est obligatoire avant de pouvoir confirmer. La préparation expire après quinze minutes. Changer le nom ou la destination crée une nouvelle préparation. Le contenu est celui du document immuable déjà publié dans AlpenData ; aucun nouveau contenu fourni par le navigateur n’est accepté lors de la confirmation.
 
-L’utilisateur active séparément « Enregistrer mes documents » dans ses connexions personnelles. Cette capacité demande `Files.ReadWrite.All` déléguée. Elle n’est jamais ajoutée aux capacités du modèle ou aux anciennes conversations : les écritures de cette étape sont exclusivement déclenchées par la confirmation dans l’interface. Les règles administrateur et l’autonomie accordée aux agents restent à implémenter avant le pilote.
+L’utilisateur active séparément « Enregistrer mes documents » dans ses connexions personnelles. Cette capacité demande `Files.ReadWrite.All` déléguée. Elle n’est jamais ajoutée aux capacités du modèle ou aux anciennes conversations : les écritures de cette étape sont exclusivement déclenchées par la confirmation dans l’interface. Les [règles administrateur](REGLES_ENTREPRISE.md) limitent désormais cet accès à chaque opération. L’autonomie accordée aux agents reste à implémenter avant le pilote.
 
 ## Destinations et protocole
 

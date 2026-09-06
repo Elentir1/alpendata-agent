@@ -1,5 +1,13 @@
 # Vérification du premier backend
 
+## Règles d’entreprise — 6 septembre 2026
+
+La suite complète passe **45 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré. Le runtime reste `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2` ; cette étape modifie l’API et l’interface. Le frontend passe **18 scénarios JSDOM** et le build TypeScript/Vite. Un cas supplémentaire de consentement commencé avant une restriction est ajouté puis vérifié sous Windows/SQLite ; le scénario de concurrence PostgreSQL est volontairement ignoré sur Windows.
+
+Les tests contrôlent l’administration, les versions concurrentes, les confirmations SharePoint déjà préparées, les capacités des nouvelles conversations, la stabilité des anciennes et l’absence d’accès administrateur aux contenus personnels. Le scénario PostgreSQL garde un appel Microsoft en cours : la politique attend, puis les appels suivants sont refusés et l’automatisation concernée est bloquée. Réautoriser les capacités ne la relance pas automatiquement.
+
+L’écran administrateur a été contrôlé visuellement en français et anglais, sur des données fictives séparées. Les limites actuelles et le fonctionnement des verrous sont décrits dans [Règles de l’entreprise](REGLES_ENTREPRISE.md). Les autorisations personnelles d’action autonome et les services réels restent à raccorder.
+
 ## Enregistrement Microsoft 365 — 6 septembre 2026
 
 La suite complète passe **43 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec le runtime documentaire inchangé `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2`. Après ajout de la vérification des octets présents à la destination et distinction de l’expiration d’une URL d’envoi, les deux scénarios d’enregistrement sont repassés avec succès sur PostgreSQL. Le frontend passe **16 scénarios JSDOM** et le build TypeScript/Vite.

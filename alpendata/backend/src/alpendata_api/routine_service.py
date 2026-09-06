@@ -14,6 +14,7 @@ from .models import (
     RoutineTrial,
     ToolRead,
 )
+from .organization_policy import allowed_capabilities
 from .routine_catalog import RECIPES, available_recipes
 from .schemas import Input
 
@@ -45,7 +46,9 @@ def record_proposals(db, turn, payload):
         )
     )
     current = connection.capabilities if connection and connection.status == "connected" else []
-    available = available_recipes(set(current) & set(conversation.capabilities))
+    available = available_recipes(
+        set(current) & set(conversation.capabilities) & set(allowed_capabilities(db, turn.organization_id))
+    )
     names = [item.template for item in data.proposals]
     if len(set(names)) != len(names) or any(name not in available for name in names):
         raise HTTPException(409, "routine_capabilities_changed")

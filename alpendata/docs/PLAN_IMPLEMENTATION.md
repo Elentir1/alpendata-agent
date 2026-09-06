@@ -44,7 +44,7 @@ Sortie attendue : parcours complet depuis l’invitation jusqu’à un premier b
 
 ## Lot 4 — Documents et actions
 
-État : lecture du contenu SharePoint, génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. L’enregistrement personnel dans Microsoft 365 dispose d’un choix de dossier, d’une confirmation explicite et de reçus durables ; il est testé avec HTTP Microsoft synthétique. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. La validation Microsoft réelle, les modèles du client, les règles administrateur, les actions e-mail et la validation avec un modèle commercial restent à réaliser. Détails dans [Documents](DOCUMENTS.md) et [Enregistrement SharePoint](ENREGISTREMENT_SHAREPOINT.md).
+État : lecture du contenu SharePoint, génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. L’enregistrement personnel dans Microsoft 365 dispose d’un choix de dossier, d’une confirmation explicite et de reçus durables ; il est testé avec HTTP Microsoft synthétique. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. La validation Microsoft réelle, les modèles du client, les autorisations d’action autonome, les actions e-mail et la validation avec un modèle commercial restent à réaliser. Détails dans [Documents](DOCUMENTS.md) et [Enregistrement SharePoint](ENREGISTREMENT_SHAREPOINT.md).
 
 - Produire des fichiers Word, Excel, PowerPoint et PDF avec un premier exemple représentatif de chaque format.
 - Ajouter téléchargement, destination SharePoint et gestion des collisions de noms.

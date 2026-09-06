@@ -8,6 +8,19 @@ const json = (value: unknown, status = 200) => new Response(JSON.stringify(value
 beforeEach(() => { sessionStorage.clear(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+test('company restrictions cannot be enabled from personal tool choices', async () => {
+  const fetcher = vi.fn(async () => json({ available: true, status: 'connected', capabilities: ['files'], allowed_capabilities: ['files'], restricted_capabilities: ['mail'] }));
+  vi.stubGlobal('fetch', fetcher);
+  render(<Tools companyId="company-a" language="fr" />);
+  const mail = await screen.findByRole('checkbox', { name: /Mes mails/ }) as HTMLInputElement;
+  expect(mail.disabled).toBe(true); expect(mail.checked).toBe(false);
+  await userEvent.click(mail);
+  expect(mail.checked).toBe(false);
+  expect(screen.queryByRole('button', { name: 'Voir mes derniers mails' })).toBeNull();
+  expect(screen.getByText(/Les règles de votre entreprise limitent certains accès/)).toBeTruthy();
+  expect(fetcher).toHaveBeenCalledOnce();
+});
+
 test('personal consent sends only chosen permissions and preserves them across languages', async () => {
   const assign = vi.fn();
   vi.stubGlobal('location', { assign });

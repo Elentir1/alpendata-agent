@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from .models import ChatTurn, Conversation, MicrosoftConnection, RoutineOccurrence, RoutineSchedule, now
+from .organization_policy import require_allowed
 
 CATCH_UP_SECONDS = 7200
 
@@ -54,6 +55,7 @@ def block_owner_schedules(db, organization_id, owner_id, reason, *, available=No
 def check_schedule_access(db, settings, schedule):
     turn = db.get(ChatTurn, schedule.reviewed_turn_id)
     conversation = db.get(Conversation, turn.conversation_id)
+    require_allowed(db, schedule.organization_id, conversation.capabilities)
     if not settings.chat_enabled:
         raise HTTPException(503, "chat_not_configured")
     if (conversation.provider, conversation.model) != (settings.model.provider, settings.model.model):

@@ -77,6 +77,16 @@ class Membership(Base):
     __table_args__ = (CheckConstraint("role IN ('admin', 'member')", name="ck_membership_role"),)
 
 
+class OrganizationPolicy(Base):
+    __tablename__ = "alpendata_organization_policies"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("alpendata_organizations.id"), primary_key=True)
+    allowed_capabilities: Mapped[list] = mapped_column(JSON)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_by: Mapped[str] = mapped_column(ForeignKey("alpendata_users.id"))
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (CheckConstraint("version > 0", name="ck_organization_policy_version"),)
+
+
 class Invitation(Base):
     __tablename__ = "alpendata_invitations"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
