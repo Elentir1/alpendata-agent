@@ -10,7 +10,7 @@ Résultats : révision d’origine enregistrée, diagnostic reproductible, princ
 
 ## Lot 1 — Identités et isolation
 
-État : identités, invitations avec preuve de boîte mail, licences locales et onboarding individuel implémentés. Les conversations durables sont reliées à l’interface, à la passerelle Mistral/OpenRouter et au véritable Hermes dans des conteneurs personnels. Les tests PostgreSQL vérifient la propriété, l’envoi concurrent, les interruptions et la consommation. La reprise conserve le contexte système et les droits sont revérifiés à l’exécution. Entra, SMTP et les modèles commerciaux réels, ainsi que la récupération opérationnelle des conteneurs orphelins, restent à valider : ce lot reste en cours.
+État : identités, invitations avec preuve de boîte mail, licences locales et onboarding individuel implémentés. Les conversations durables sont reliées à l’interface, à la passerelle Mistral/OpenRouter et au véritable Hermes dans des conteneurs personnels. Les tests PostgreSQL vérifient la propriété, l’envoi concurrent, les interruptions et la consommation. La reprise conserve le contexte système et les droits sont revérifiés à l’exécution. Entra, SMTP et les modèles commerciaux réels, ainsi que la récupération opérationnelle sur Infomaniak, restent à valider : ce lot reste en cours.
 
 - Créer l’API AlpenData, les entreprises, les utilisateurs, les membres et les invitations.
 - Préparer un environnement Hermes neuf par utilisateur, sans copie de connexions ou de mémoires personnelles.
@@ -56,7 +56,7 @@ Sortie attendue : chaque livrable est ouvert et vérifié dans le format attendu
 
 ## Lot 5 — Automatisations et exploitation
 
-État : récurrences personnelles, historique, modification d’horaire, suspension, reprise et remplacement après nouvel essai versionné implémentés. Une première recette d’envoi utilise une destination explicitement confirmée par le propriétaire. Les tests couvrent PostgreSQL concurrent et Hermes réel avec des services externes synthétiques. Notifications, restauration, récupération opérateur et exploitation Infomaniak restent à réaliser.
+État : récurrences personnelles, historique, modification d’horaire, suspension, reprise et remplacement après nouvel essai versionné implémentés. Une première recette d’envoi utilise une destination explicitement confirmée par le propriétaire. Les tests couvrent PostgreSQL concurrent et Hermes réel avec des services externes synthétiques. La récupération opérateur ciblée est implémentée avec vérification du conteneur, des baux et des verrous, sans répétition des actions. Voir [Récupération runtime](RECUPERATION_RUNTIME.md). Notifications, restauration, collecte des reçus opérateur et exploitation Infomaniak restent à réaliser.
 
 - Ajouter suivi des exécutions, reprise, suspension et notifications utiles.
 - Utiliser l’autorité unique de planification PostgreSQL et la file Hermes, conformément à la décision documentée dans [Automatisations](AUTOMATISATIONS.md).

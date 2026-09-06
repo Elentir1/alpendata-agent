@@ -113,6 +113,8 @@ Stripe recevra les événements de facturation après définition des tarifs. La
 
 Prévoir sauvegardes séparées des données métier et des états utilisateurs, restauration testée, journaux sans jetons ni corps de messages privés par défaut, suivi des tâches en erreur et déploiements versionnés. Aucune mise à jour automatique depuis `upstream/main` en production : construire une version AlpenData et vérifier les parcours concernés avant déploiement.
 
+La [récupération locale des conteneurs orphelins](RECUPERATION_RUNTIME.md) exige l'identifiant exact inspecté, le montage personnel attendu et les verrous du propriétaire. Elle clôture les baux expirés sans rejouer les actions ni effacer les fichiers. Elle est réservée à l'exploitation, sans endpoint administrateur client. La collecte du reçu opérateur et les exercices de restauration restent à mettre en place sur l'hébergement.
+
 ## Critères qui conditionnent le premier accès client
 
 1. Un compte ne peut consulter ou actionner aucune ressource privée d’un autre utilisateur ou d’une autre entreprise, y compris en modifiant les identifiants côté navigateur.

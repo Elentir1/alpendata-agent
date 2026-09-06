@@ -22,7 +22,7 @@ PostgreSQL verrouille l’adhésion avant les tours et connexions. Une seule ex�
 
 Un travail actif possède un bail de 120 secondes, renouvelé toutes les trois secondes. Ce délai laisse passer un renouvellement de jeton suivi d’une lecture Graph tenant les verrous d’autorisation. La perte du bail, la désactivation de l’utilisateur ou du membre, le retrait de licence et l’annulation empêchent de continuer ou livrer le résultat. Le contrôle d’annulation et du délai continue pendant l’attente des appels du broker. Le conteneur peut être arrêté pendant cette attente ; une requête déjà reçue par le fournisseur ne peut pas être retirée, et son éventuel reçu tardif reste lié au tour d’origine.
 
-Au redémarrage, un bail expiré devient une interruption visible. Le travail n’est jamais rejoué automatiquement. Une consommation commencée sans réponse reste inconnue. Si un conteneur orphelin existe encore, le superviseur refuse de lancer un second écrivain et signale `agent_recovery_required`. La procédure opérateur de récupération contrôlée et les exercices de restauration restent à compléter avant exploitation.
+Au redémarrage, un bail expiré devient une interruption visible. Le travail n’est jamais rejoué automatiquement. Une consommation commencée sans réponse reste inconnue. Si un conteneur orphelin existe encore, le superviseur refuse de lancer un second écrivain et signale `agent_recovery_required`. La [récupération opérateur ciblée](RECUPERATION_RUNTIME.md) est implémentée ; les exercices de restauration et la validation sur Infomaniak restent à réaliser avant exploitation.
 
 ## Consommation
 

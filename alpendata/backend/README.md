@@ -119,6 +119,10 @@ La [passerelle de modèles](../docs/PASSERELLE_MODELES.md) est implémentée et 
 
 Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les conversations, les tours idempotents et les relevés de modèle par propriétaire. Ses routes se trouvent sous `/api/organizations/{organization_id}/chat`. L’API enregistre le travail ; le processus séparé `uv run python -m alpendata_api.chat_worker` l’exécute sur Linux. Le document lié décrit la configuration complète, les droits, les interruptions et les limites restantes. Les modèles commerciaux et services Microsoft réels restent à valider.
 
+## Récupération opérateur
+
+L'outil local `python -m alpendata_api.runtime_recovery` permet le diagnostic et la récupération ciblée des conteneurs orphelins, sous verrous PostgreSQL et du volume personnel. Il ne demande aucune clé modèle ou Microsoft. Voir la [procédure opérateur](../docs/RECUPERATION_RUNTIME.md).
+
 ## Onboarding et essais personnels
 
 La migration `0006` ajoute les propositions personnalisées, les essais et les reçus de lecture. Le [parcours du premier résultat](../docs/PREMIER_RESULTAT.md) documente les routes, la validation par le broker et les limites. La création d’une conversation exige maintenant un rôle et un besoin enregistrés dans le profil personnel. Les répétitions sont activables après revue d’un essai depuis la migration `0007`. Le processus `uv run python -m alpendata_api.schedule_worker` alimente la file du chat ; voir [Automatisations](../docs/AUTOMATISATIONS.md).

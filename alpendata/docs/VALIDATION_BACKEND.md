@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Récupération opérateur — 6 septembre 2026
+
+La suite complète passe **60 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l'image runtime inchangée `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Le changement porte sur le contrôleur hôte et son outil opérateur ; aucune migration ni modification frontend n'est ajoutée. Ruff et le contrôle de format passent.
+
+Les nouveaux tests créent de véritables conteneurs rootless temporaires. Ils vérifient le refus d'un bail valide, le verrou du volume, le refus d'une inspection périmée, deux récupérations concurrentes, un montage étranger, la file d'attente et le point d'entrée CLI. Une seule récupération aboutit, les fichiers personnels et le reçu d'e-mail incertain restent inchangés, puis une opération du véritable runtime accède de nouveau au volume. Un scénario simule également la suppression du conteneur suivie d'un rollback en base ; la clôture explicitement confirmée avec `absent` interrompt le tour sans le rejouer.
+
+Les premières exécutions ciblées ont révélé le nom exact du champ de format Podman (`.ID`) et un cas d'attente du verrou PostgreSQL lors de demandes simultanées. Le champ a été corrigé et la contention du propriétaire dispose d'un refus dédié `recovery_owner_busy`. La suite complète finale passe après ces corrections.
+
+La procédure documente le diagnostic, la récupération, la collecte du reçu opérateur et les résultats incertains. L'API locale normale a été redémarrée et ses routes de santé et de configuration répondent ; la base reste en `0015`. Les services externes restent synthétiques, et les exercices Infomaniak, la collecte centralisée des reçus et les restaurations restent à réaliser. Voir [Récupération runtime](RECUPERATION_RUNTIME.md).
+
 ## Mémoire personnelle — 6 septembre 2026
 
 La suite complète passe **58 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l'image `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Le frontend passe **30 scénarios JSDOM**, puis TypeScript et le build Vite. Ruff passe. Aucune migration n'est ajoutée.

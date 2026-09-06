@@ -25,6 +25,16 @@ class RuntimeFailure(Exception):
     pass
 
 
+def container_name(organization_id, owner_id):
+    owner_key = f"{UUID(organization_id)}:{UUID(owner_id)}"
+    return "alpendata-" + hashlib.sha256(owner_key.encode()).hexdigest()[:48]
+
+
+def engine_environment():
+    # Service credentials and engine overrides must not reach the subprocess.
+    return {key: os.environ[key] for key in ("PATH", "HOME", "XDG_RUNTIME_DIR") if key in os.environ}
+
+
 def frame(value):
     encoded = json.dumps(value, ensure_ascii=True, allow_nan=False).encode() + b"\n"
     if len(encoded) > FRAME_LIMIT:
@@ -109,13 +119,10 @@ class ContainerRuntime:
     def run(self, organization_id, owner_id, payload, exchange, *, check=None):
         """Exchange is bound by the caller to one authorized execution, never its payload."""
         with self.owner_state(organization_id, owner_id) as state:
-            owner_key = f"{UUID(organization_id)}:{UUID(owner_id)}"
-            name = "alpendata-" + hashlib.sha256(owner_key.encode()).hexdigest()[:48]
+            name = container_name(organization_id, owner_id)
             # An allowlist prevents service secrets and container-engine overrides
             # from propagating through the controller's process environment.
-            environment = {
-                key: os.environ[key] for key in ("PATH", "HOME", "XDG_RUNTIME_DIR") if key in os.environ
-            }
+            environment = engine_environment()
             existing = subprocess.run(
                 [self.settings.executable, "--cgroup-manager=cgroupfs", "container", "exists", name],
                 env=environment,

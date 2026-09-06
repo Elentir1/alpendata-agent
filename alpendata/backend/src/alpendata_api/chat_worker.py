@@ -99,6 +99,27 @@ def authorize_job(db, job):
     return user
 
 
+def interrupt_expired_turn(db, turn):
+    """Caller holds the owner and turn locks and has checked lease expiry."""
+    turn.status, turn.error_code, turn.finished_at = (
+        "interrupted",
+        "agent_worker_interrupted",
+        now(),
+    )
+    turn.lease_expires_at = None
+    finish_occurrence(db, turn, "agent_worker_interrupted")
+    db.execute(
+        update(ModelCall)
+        .where(ModelCall.turn_id == turn.id, ModelCall.status == "started")
+        .values(status="failed", error_code="model_result_unknown", finished_at=now())
+    )
+    db.execute(
+        update(ToolRead)
+        .where(ToolRead.turn_id == turn.id, ToolRead.status == "started")
+        .values(status="failed", error_code="tool_result_unknown", finished_at=now())
+    )
+
+
 class ChatWorker:
     def __init__(self, settings, factory, *, gateway=None, runtime=None, microsoft=None):
         if not settings.chat_enabled:
@@ -119,23 +140,7 @@ class ChatWorker:
                 turn = locked_turn(db, Job(previous.id, previous.organization_id, previous.owner_id, ""))
                 if turn.status != "running" or turn.lease_expires_at > now():
                     continue
-                turn.status, turn.error_code, turn.finished_at = (
-                    "interrupted",
-                    "agent_worker_interrupted",
-                    now(),
-                )
-                turn.lease_expires_at = None
-                finish_occurrence(db, turn, "agent_worker_interrupted")
-                db.execute(
-                    update(ModelCall)
-                    .where(ModelCall.turn_id == turn.id, ModelCall.status == "started")
-                    .values(status="failed", error_code="model_result_unknown", finished_at=now())
-                )
-                db.execute(
-                    update(ToolRead)
-                    .where(ToolRead.turn_id == turn.id, ToolRead.status == "started")
-                    .values(status="failed", error_code="tool_result_unknown", finished_at=now())
-                )
+                interrupt_expired_turn(db, turn)
         # No automatic replay: an interrupted tool may already have taken effect.
 
     def claim(self):
