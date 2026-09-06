@@ -24,6 +24,9 @@ def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_ev
             "id": invite.json()["id"],
             "email": "colleague@example.com",
             "expires_at": invite.json()["expires_at"],
+            "delivery_status": "manual",
+            "revoked": False,
+            "accepted": False,
         }
     ]
     assert client.get(f"{base}/invitations", headers=outsider).status_code == 404

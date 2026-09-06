@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Invitations directes par e-mail — 6 septembre 2026
+
+La suite complète finale passe **84 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique. Les services systemd temporaires, Nginx, age et l'image Hermes inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b` sont inclus. Le frontend passe **40 scénarios JSDOM** ; TypeScript, Vite, Ruff et la vérification Git passent. Les quatre scénarios ciblés migration/invitation/propriété passent également sur Windows/SQLite.
+
+Le parcours utilise un vrai serveur SMTP TLS local avec authentification. Deux appels concurrents PostgreSQL portant le même UUID produisent une invitation et un seul e-mail initial. Une relecture ne renvoie aucun jeton brut. Le destinataire doit encore obtenir une preuve d'adresse liée à son compte ; un autre compte ne peut pas l'utiliser. L'acceptation ne provoque aucun nouvel envoi. Un accusé perdu après réception par le serveur SMTP laisse un reçu incertain, sans répétition du message. Les invitations annulées, les demandes restées en cours et la limite d'envoi sont vérifiées.
+
+Le test de migration a d'abord reproduit un refus SQLite : la recréation de la table aurait supprimé une table encore référencée par une preuve existante. La migration ajoute désormais ses colonnes et son index sans cette recréation. Une base `0018` contenant une invitation et sa preuve conserve leur association et leurs empreintes, sur SQLite et PostgreSQL. Le contrôle de propriété existant a été adapté pour autoriser uniquement les nouveaux champs publics de suivi ; il continue d'exclure les jetons et les contenus privés.
+
+L'interface est vérifiée dans le navigateur avec un bandeau explicite de données fictives : formulaire français, choix de langue de l'e-mail, présentation anglaise, état transmis et invitations incertaines. Le statut est placé sous l'adresse pour éviter la juxtaposition des textes. Les tests JSDOM vérifient également le maintien du même UUID après une réponse perdue et l'affichage d'une annulation.
+
+La base locale dispose d'une copie `preview.before-0019.db` et est migrée vers `0019`. L'ancienne API a été remplacée par la version courante ; `/health/ready` répond et la nouvelle route est présente. Microsoft et SMTP restent non configurés dans cette API locale. Le serveur de vérification visuelle utilise uniquement des réponses fictives, sans accès au backend ni envoi externe. La réception dans les messageries du client et son parcours Entra restent à valider. Voir [Invitations par e-mail](INVITATIONS_EMAIL.md).
+
 ## Services continus et arrêts de maintenance — 6 septembre 2026
 
 La suite complète finale passe **81 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec le gestionnaire utilisateur **systemd 257 (257.7-1)**. L'image runtime reste `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Les exercices HTTPS et age sont aussi inclus. Ruff, le format des fichiers concernés et la vérification Git passent. Aucun changement de schéma, d'image runtime ni d'interface ; la compilation et les tests frontend précédents n'ont pas été répétés.

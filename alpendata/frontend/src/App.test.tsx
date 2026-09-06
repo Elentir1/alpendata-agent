@@ -100,9 +100,10 @@ test('administrator invitations can be created and revoked without displaying pr
     if (path.endsWith('/onboarding')) return json({ language: 'fr', step: 'introduction', answers: {} });
     if (path.endsWith('/members')) return json({ members: [{ ...member, role: 'admin', display_name: person.display_name }] });
     if (path.endsWith('/invitations')) {
-      if (init?.method === 'POST') { expect(JSON.parse(String(init.body))).toEqual({ email: 'colleague@example.com' }); pending = [{ id: 'invite-1', email: 'colleague@example.com' }]; return json({ token: 'c'.repeat(64) }, 201); }
+
       return json({ invitations: pending });
     }
+    if (path.endsWith('/invitations/email')) { expect(JSON.parse(String(init?.body))).toEqual({ email: 'colleague@example.com', language: 'fr', request_id: expect.any(String) }); pending = [{ id: 'invite-1', email: 'colleague@example.com' }]; return json({ id: 'invite-1', email: 'colleague@example.com', delivery_status: 'submitted' }, 201); }
     if (path.endsWith('/invitations/invite-1') && init?.method === 'DELETE') { pending = []; return new Response(null, { status: 204 }); }
     throw new Error(`Unexpected request: ${path}`);
   });
@@ -110,9 +111,8 @@ test('administrator invitations can be created and revoked without displaying pr
   render(<App />);
   await userEvent.click(await screen.findByRole('button', { name: 'Mon entreprise' }));
   await userEvent.type(await screen.findByLabelText('Adresse professionnelle du collaborateur'), 'colleague@example.com');
-  await userEvent.click(screen.getByRole('button', { name: 'Créer une invitation' }));
-  const link = await screen.findByLabelText('Lien à partager avec votre collaborateur');
-  expect((link as HTMLInputElement).value).toBe(`https://alpendata.example.test/join#invitation=${'c'.repeat(64)}`);
+  await userEvent.click(screen.getByRole('button', { name: 'Envoyer l’invitation' }));
+  await screen.findByRole('heading', { name: 'E-mail transmis · en attente d’acceptation' });
   await userEvent.click(await screen.findByRole('button', { name: 'Annuler l’invitation de colleague@example.com' }));
   await waitFor(() => expect(screen.queryByText('colleague@example.com')).toBeNull());
   expect(fetcher.mock.calls.some(([path]) => path.includes('/personal-resources'))).toBe(false);

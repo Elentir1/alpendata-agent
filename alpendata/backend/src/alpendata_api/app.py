@@ -19,6 +19,7 @@ from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .email_routes import email_router
 from .health import database_ready, health_router, release_head
+from .invitation_delivery import delivery_view, invitation_delivery_router
 from .mail import SMTPMailer
 from .memory_routes import memory_router
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
@@ -60,6 +61,7 @@ def create_app(
     app = FastAPI(title="AlpenData API", version="0.1.0", lifespan=lifespan)
     app.state.engine, app.state.session_factory = engine, factory
     app.include_router(health_router(engine, expected_schema))
+    app.include_router(invitation_delivery_router(settings, factory, mailer))
     app.include_router(signin_router(settings, factory, signin_provider))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
@@ -171,7 +173,7 @@ def create_app(
         member(db, actor, organization_id, admin=True, licensed=False)
         return {
             "invitations": [
-                {"id": item.id, "email": item.recipient_email, "expires_at": item.expires_at}
+                delivery_view(item)
                 for item in db.scalars(
                     select(Invitation).where(*organizations.active_invites(organization_id))
                 )

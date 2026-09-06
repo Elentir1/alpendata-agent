@@ -99,7 +99,15 @@ class Invitation(Base):
     consumed_at: Mapped[int | None] = mapped_column(Integer)
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
     inviter_id: Mapped[str] = mapped_column(String(36))
+    delivery_request_id: Mapped[str | None] = mapped_column(String(36))
+    delivery_language: Mapped[str | None] = mapped_column(String(2))
+    delivery_started_at: Mapped[int | None] = mapped_column(Integer)
+    delivery_status: Mapped[str] = mapped_column(String(16), default="manual", server_default="manual")
     __table_args__ = (
+        Index("uq_invitation_delivery_request", "organization_id", "delivery_request_id", unique=True),
+        CheckConstraint(
+            "delivery_status IN ('manual', 'sending', 'submitted', 'unknown')", name="ck_invitation_delivery"
+        ),
         ForeignKeyConstraint(
             ["organization_id", "inviter_id"],
             ["alpendata_memberships.organization_id", "alpendata_memberships.user_id"],

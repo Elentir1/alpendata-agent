@@ -10,6 +10,8 @@ Résultats : révision d’origine enregistrée, diagnostic reproductible, princ
 
 ## Lot 1 — Identités et isolation
 
+L'envoi direct des invitations et leur suivi sont implémentés, avec protection contre les doublons et conservation de la preuve personnelle de boîte mail. Voir [Invitations par e-mail](INVITATIONS_EMAIL.md).
+
 État : identités, invitations avec preuve de boîte mail, licences locales et onboarding individuel implémentés. Les conversations durables sont reliées à l’interface, à la passerelle Mistral/OpenRouter et au véritable Hermes dans des conteneurs personnels. Les tests PostgreSQL vérifient la propriété, l’envoi concurrent, les interruptions et la consommation. La reprise conserve le contexte système et les droits sont revérifiés à l’exécution. Entra, SMTP et les modèles commerciaux réels, ainsi que la récupération opérationnelle sur Infomaniak, restent à valider : ce lot reste en cours.
 
 - Créer l’API AlpenData, les entreprises, les utilisateurs, les membres et les invitations.

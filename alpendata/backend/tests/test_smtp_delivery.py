@@ -17,7 +17,8 @@ from alpendata_api.mail import SMTPMailer, invitation_message
 from alpendata_api.settings import Settings
 
 
-def test_delivery_uses_authenticated_tls_and_rejects_an_untrusted_certificate(tmp_path):
+@pytest.fixture
+def smtp_server(tmp_path):
     # A real SMTP server accepts test messages only on loopback; nothing is relayed.
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "AlpenData SMTP test")])
@@ -88,20 +89,23 @@ def test_delivery_uses_authenticated_tls_and_rejects_an_untrusted_certificate(tm
             smtp_password="test-password",
         )
         mailer = SMTPMailer(settings, tls_context=client_tls)
-        for language in ("fr", "en"):
-            message = invitation_message(
-                settings, "coach@example.com", "synthetic-invitation", "synthetic-proof", language
-            )
-            mailer.send(message)
-        assert len(inbox.messages) == 2
-        for sender, recipients, raw in inbox.messages:
-            assert sender == "noreply@example.com" and recipients == ["coach@example.com"]
-            parsed = BytesParser(policy=policy.default).parsebytes(raw)
-            assert (
-                "/join#invitation=synthetic-invitation&verification=synthetic-proof" in parsed.get_content()
-            )
-        with pytest.raises(ssl.SSLCertVerificationError):
-            SMTPMailer(settings).send(message)
-        assert len(inbox.messages) == 2
+        yield settings, mailer, inbox
     finally:
         controller.stop()
+
+
+def test_delivery_uses_authenticated_tls_and_rejects_an_untrusted_certificate(smtp_server):
+    settings, mailer, inbox = smtp_server
+    for language in ("fr", "en"):
+        message = invitation_message(
+            settings, "coach@example.com", "synthetic-invitation", "synthetic-proof", language
+        )
+        mailer.send(message)
+    assert len(inbox.messages) == 2
+    for sender, recipients, raw in inbox.messages:
+        assert sender == "noreply@example.com" and recipients == ["coach@example.com"]
+        parsed = BytesParser(policy=policy.default).parsebytes(raw)
+        assert "/join#invitation=synthetic-invitation&verification=synthetic-proof" in parsed.get_content()
+    with pytest.raises(ssl.SSLCertVerificationError):
+        SMTPMailer(settings).send(message)
+    assert len(inbox.messages) == 2

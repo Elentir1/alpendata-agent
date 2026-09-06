@@ -79,6 +79,11 @@ def suspend_restored_work(factory):
             db.execute(delete(model))
         db.execute(update(Invitation).values(revoked=True))
         db.execute(
+            update(Invitation)
+            .where(Invitation.delivery_status == "sending")
+            .values(delivery_status="unknown")
+        )
+        db.execute(
             update(MicrosoftConnection).values(
                 status="disconnected",
                 encrypted_cache=None,
