@@ -1,6 +1,6 @@
 # Documents privés dans le chat
 
-6 septembre 2026 — génération locale, publication et téléchargement.
+6 septembre 2026 — lecture SharePoint, génération locale, publication et téléchargement.
 
 ## Parcours implémenté
 
@@ -36,6 +36,16 @@ Le programme facultatif `document_builder.py` crée des mises en page de départ
 
 Le guide conserve l’accès direct aux bibliothèques pour les modèles, graphiques, tableaux PowerPoint et mises en page qui dépassent ce programme de départ. Les originaux Office restent modifiables ; les rendus PDF sont des sorties distinctes. Les modèles de documents propres au client restent à recueillir et à valider. Aucune application bureautique ni compétence technique n’est nécessaire sur son poste pour demander la création depuis le chat.
 
+## Lecture du contenu SharePoint
+
+Les nouvelles conversations autorisées à lire les fichiers disposent de `alpendata_download_file`. Après une recherche, Hermes transmet les identifiants de lecteur et de fichier au broker, qui utilise exclusivement la connexion Microsoft personnelle du propriétaire. Les droits, la licence et le bail du tour sont revérifiés. Le fichier rejoint un sous-dossier privé unique dans `sources/`, en conservant son nom lorsque celui-ci est utilisable. Hermes peut alors le lire ou l’éditer avec les bibliothèques locales et publier le résultat dans le chat.
+
+Le [protocole Microsoft de téléchargement](https://learn.microsoft.com/en-us/graph/api/driveitem-get-content?view=graph-rest-1.0) fournit une redirection vers une URL temporaire préauthentifiée. Le broker conserve cette URL côté serveur et la télécharge dans une session distincte sans jeton OAuth ni suivi de redirections supplémentaires. Les destinations HTTPS sont limitées aux sous-domaines de `sharepoint.com`, `sharepointonline.com` et `1drv.com`. Ce raccordement vise le service Microsoft global ; les clouds nationaux et destinations différentes restent à valider avant de les prendre en charge.
+
+La taille annoncée et les octets reçus sont plafonnés à 5 Mio. L’identifiant et l’ETag sont vérifiés avant et après le transfert ; un changement ou une taille différente provoque un refus, sans remettre un résultat présenté comme stable. Les sources visibles dans le chat contiennent le nom et le lien de consultation Microsoft, jamais le lien temporaire ou le contenu binaire. Un téléchargement réussi prouve la récupération des octets ; l’agent doit encore ouvrir le fichier avant de prétendre l’avoir analysé.
+
+La migration `0009` fige une révision d’outils par conversation. Les conversations existantes restent en révision 1 ; les nouvelles utilisent la révision 2. Les occurrences planifiées recopient la révision de l’essai revu. Cela préserve les outils et le contexte des conversations antérieures. Cette opération de lecture ne modifie aucun fichier SharePoint et ne demande pas de permission d’écriture.
+
 ## Vérification et travail restant
 
 `test_documents_worker.py` utilise l’API réelle, PostgreSQL, un modèle HTTP synthétique et un vrai conteneur Hermes. Le scénario crée un PDF complet dans le terminal de l’agent, refuse un chemin sortant et un lien symbolique, publie deux fois sans doublon, compare les octets téléchargés et refuse l’accès administrateur. Il n’utilise aucune connexion Microsoft.
@@ -46,4 +56,6 @@ Le guide conserve l’accès direct aux bibliothèques pour les modèles, graphi
 
 L’image finale de cette étape est `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`. Les exemples sont synthétiques, et les décisions du modèle de test sont scriptées. Cette vérification prouve le parcours technique et les exemples contrôlés ; elle ne mesure pas encore la qualité d’un modèle commercial sur les documents du client.
 
-La lecture du contenu SharePoint, la reprise de ses modèles, l’enregistrement avec gestion des collisions, la conservation configurable et la validation métier avec le pilote restent à terminer. Le lot documents reste en cours.
+`test_sharepoint_documents.py` vérifie la connexion personnelle, les refus d’accès, la déconnexion, les liens temporaires invalides ou expirés, les fichiers modifiés et les plafonds annoncés ou dépassés pendant le transfert. `test_sharepoint_worker.py` fait rechercher, télécharger et lire un PDF par le vrai Hermes, puis compare son téléchargement privé aux octets source. Microsoft et le modèle restent synthétiques dans ces tests.
+
+La validation avec les modèles SharePoint du client, l’enregistrement avec gestion des collisions, la conservation configurable et la validation métier avec le pilote restent à terminer. Le lot documents reste en cours.

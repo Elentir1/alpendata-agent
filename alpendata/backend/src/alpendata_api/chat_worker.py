@@ -14,6 +14,7 @@ from sqlalchemy import select, update
 from .artifacts import publish_document
 from .connections import MicrosoftReader, SearchInput, lock_member
 from .database import database_factory
+from .graph_documents import FileInput
 from .model_gateway import ModelError, ModelGateway
 from .models import ChatTurn, Conversation, Membership, ModelCall, RoutineProposal, ToolRead, User, now
 from .routine_service import read_evidence, record_proposals, source_references
@@ -37,6 +38,7 @@ class Job:
 class ToolRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     capability: Literal["mail", "calendar", "files"]
+    operation: Literal["read", "download"] = "read"
     arguments: dict
 
 
@@ -280,7 +282,16 @@ class ChatWorker:
             if request.capability not in capabilities:
                 raise HTTPException(403, "microsoft_permission_required")
             arguments = request.arguments
-            if request.capability == "files":
+            if request.operation == "download":
+                if request.capability != "files":
+                    raise HTTPException(400, "agent_tool_arguments_invalid")
+                with self.factory.begin() as db:
+                    authorize_job(db, job)
+                    turn = db.get(ChatTurn, job.id)
+                    if db.get(Conversation, turn.conversation_id).tool_revision < 2:
+                        raise HTTPException(403, "document_new_conversation_required")
+                arguments = FileInput.model_validate(arguments).model_dump()
+            elif request.capability == "files":
                 arguments = SearchInput.model_validate(arguments).model_dump()
             elif arguments:
                 raise HTTPException(400, "agent_tool_arguments_invalid")
@@ -297,7 +308,11 @@ class ChatWorker:
                 receipt_id = receipt.id
             try:
                 result = self.microsoft.read(
-                    job.organization_id, lambda db: authorize_job(db, job), request.capability, **arguments
+                    job.organization_id,
+                    lambda db: authorize_job(db, job),
+                    request.capability,
+                    operation=request.operation,
+                    **arguments,
                 )
             except HTTPException as error:
                 with self.factory.begin() as db:
@@ -384,6 +399,7 @@ class ChatWorker:
                     "message": turn.message,
                     "purpose": conversation.purpose,
                     "documents_enabled": conversation.documents_enabled,
+                    "tool_revision": conversation.tool_revision,
                 }
             handlers = {
                 "model": lambda body: self.model(job, body),

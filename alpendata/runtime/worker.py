@@ -89,12 +89,16 @@ def model_proxy(channel):
     return server
 
 
-def register_tools(channel, capabilities, *, planning=False, documents=False):
+def register_tools(
+    channel, capabilities, *, planning=False, documents=False, file_download=False
+):
     from tools.registry import registry
-    from documents import register_documents
+    from documents import register_documents, register_download
 
     if documents:
         register_documents(channel, registry)
+    if file_download and "files" in capabilities:
+        register_download(channel, registry)
 
     if planning:
 
@@ -236,6 +240,7 @@ def run(channel, request):
         capabilities,
         planning=request.get("purpose") == "onboarding",
         documents=request.get("documents_enabled", False),
+        file_download=request.get("tool_revision", 1) >= 2,
     )
     session_db = SessionDB()
     agent = AIAgent(

@@ -40,8 +40,9 @@ def items(value, limit):
 
 
 class GraphReader:
-    def __init__(self, session=None):
+    def __init__(self, session=None, *, content_session=None):
         self.session = session
+        self.content_session = content_session
 
     def request(self, token, method, path, *, params=None, body=None):
         try:
@@ -62,6 +63,8 @@ class GraphReader:
                         raise GraphError(409, "microsoft_reconnect_required")
                     if response.status_code == 403:
                         raise GraphError(403, "microsoft_access_denied")
+                    if response.status_code == 404:
+                        raise GraphError(404, "microsoft_item_not_found")
                     if response.status_code == 429:
                         delay = response.headers.get("Retry-After", "60")
                         raise GraphError(

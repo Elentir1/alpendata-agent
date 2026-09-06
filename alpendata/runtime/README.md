@@ -43,6 +43,8 @@ Les frames sont plafonnées à 8 Mio et les demandes par tour à 80. L’écritu
 
 ## Vérification
 
+Le parcours `test_sharepoint_worker.py` fait rechercher, télécharger puis lire un PDF SharePoint par Hermes et le publier sous son nom d’origine dans le chat privé. Le jeton Microsoft et le lien temporaire restent dans le broker. La suite complète passe 41 scénarios Linux/PostgreSQL avec l’image `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2`. Graph et le modèle sont synthétiques ; les fichiers et le conteneur sont réels. La disponibilité du nouvel outil est figée par conversation, et les anciens essais planifiés conservent leurs outils.
+
 Le parcours `test_document_generation.py` crée, édite, recalcule et rend les quatre formats dans le vrai Hermes, puis vérifie leurs téléchargements privés. L’option de test `--document-qa-output DIRECTORY` conserve les originaux et rendus dans un nouveau sous-dossier pour inspection visuelle. Image finale de génération documentaire vérifiée : `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`.
 
 L’extension [documents](../docs/DOCUMENTS.md) publie des fichiers privés depuis les nouvelles conversations, même sans connexion Microsoft. Les octets traversent le broker ; aucun fichier n’est lu par un chemin hôte choisi par le modèle. Image vérifiée pour cette étape : `sha256:acbd8d15b9c59a97425671e677fcae5714ac05ddc0b93f48e853eb2cf22158e8`.

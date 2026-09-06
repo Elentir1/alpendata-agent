@@ -13,6 +13,7 @@ from sqlalchemy import delete, select
 from .access import member
 from .auth import authenticate, request_authorization, token_digest
 from .graph import GraphError, GraphReader
+from .graph_documents import content_download
 from .microsoft_data import CALLBACK, MicrosoftData
 from .microsoft_identity import MicrosoftIdentity
 from .models import (
@@ -110,7 +111,7 @@ class MicrosoftReader:
         self.vault = Vault(settings.credential_keys) if settings.microsoft_enabled else None
         self.provider, self.graph = provider or MicrosoftData(settings), graph or GraphReader()
 
-    def read(self, organization_id, authorize, capability, **arguments):
+    def read(self, organization_id, authorize, capability, *, operation="read", **arguments):
         """Authorize is a server callback, resolved again inside the credential transaction."""
         if self.vault is None:
             raise HTTPException(503, "microsoft_signin_not_configured")
@@ -136,7 +137,12 @@ class MicrosoftReader:
                     "calendar": self.graph.calendar,
                     "files": self.graph.files,
                 }
-                result = operations[capability](token, **arguments)
+                if operation == "download" and capability == "files":
+                    result = content_download(self.graph, token, **arguments)
+                elif operation == "read":
+                    result = operations[capability](token, **arguments)
+                else:
+                    raise GraphError(400, "agent_tool_arguments_invalid")
             except (InvalidToken, KeyError):
                 failure = GraphError(409, "microsoft_reconnect_required")
             except RequestException:

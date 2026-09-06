@@ -179,6 +179,7 @@ class Conversation(OwnedMixin, Base):
     title: Mapped[str] = mapped_column(String(160))
     purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
     documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    tool_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     language: Mapped[str] = mapped_column(String(2))
     provider: Mapped[str] = mapped_column(String(24))
     model: Mapped[str] = mapped_column(String(200))

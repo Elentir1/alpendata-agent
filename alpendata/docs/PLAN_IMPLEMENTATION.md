@@ -22,7 +22,7 @@ Sortie attendue : un utilisateur authentifié parle à son agent, retrouve son h
 
 ## Lot 2 — Connexion Microsoft personnelle
 
-État : consentement, coffre, renouvellement, déconnexion et premières lectures implémentés. Les scénarios SQLite/PostgreSQL utilisent MSAL réel avec HTTP simulé. L’interface permet de choisir les accès et de vérifier mails, agenda ou métadonnées de fichiers. L’enregistrement Entra, les droits SharePoint réels et la lecture du contenu des fichiers restent à terminer.
+État : consentement, coffre, renouvellement, déconnexion et lectures implémentés, y compris le contenu des fichiers SharePoint dans l’espace privé d’Hermes. Les scénarios SQLite/PostgreSQL utilisent MSAL réel avec HTTP simulé. L’interface permet de choisir les accès et de vérifier mails, agenda ou métadonnées de fichiers. L’enregistrement Entra et les droits SharePoint réels restent à valider.
 
 - Enregistrer l’application Microsoft et ses URL de retour sur les environnements de développement puis de test.
 - Implémenter le consentement individuel, le coffre de jetons, le renouvellement et la déconnexion.
@@ -44,7 +44,7 @@ Sortie attendue : parcours complet depuis l’invitation jusqu’à un premier b
 
 ## Lot 4 — Documents et actions
 
-État : génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. Les réponses du modèle sont scriptées dans ce test. Les modèles et contenus SharePoint du client, les écritures externes et la validation avec un modèle commercial restent à réaliser. Détails dans [Documents](DOCUMENTS.md).
+État : lecture du contenu SharePoint, génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. Les réponses du modèle sont scriptées dans ce test. La validation avec les modèles et contenus SharePoint du client, les écritures externes et la validation avec un modèle commercial restent à réaliser. Détails dans [Documents](DOCUMENTS.md).
 
 - Produire des fichiers Word, Excel, PowerPoint et PDF avec un premier exemple représentatif de chaque format.
 - Ajouter téléchargement, destination SharePoint et gestion des collisions de noms.

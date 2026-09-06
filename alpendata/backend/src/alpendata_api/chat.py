@@ -113,6 +113,9 @@ def create_conversation(
         "For document creation or editing, first read /opt/hermes/alpendata/runtime/DOCUMENT_GUIDE.md. "
         "Office libraries, LibreOffice and PDF utilities are installed locally. "
         "Create editable Office originals; check contents and render before publishing.\n"
+        "For connected SharePoint files, use alpendata_download_file "
+        "with the drive and item IDs from search. "
+        "Read the returned local path before claiming to have reviewed the file's content.\n"
         + extra_prompt
         + "\nUser profile data: "
         + json.dumps(profile.answers, ensure_ascii=False)
@@ -123,6 +126,7 @@ def create_conversation(
         language=language,
         purpose=purpose,
         documents_enabled=True,
+        tool_revision=2,
         title=title or ("Nouvelle conversation" if language == "fr" else "New conversation"),
         provider=settings.model.provider,
         model=settings.model.model,

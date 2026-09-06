@@ -1,5 +1,13 @@
 # Vérification du premier backend
 
+## Lecture du contenu SharePoint — 6 septembre 2026
+
+La suite complète passe **41 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2`. Le frontend passe ses **15 scénarios JSDOM** et son build TypeScript/Vite. Ruff et le contrôle des espaces passent.
+
+Le nouveau scénario utilise MSAL, l’API et Hermes réels, avec Microsoft Graph et le modèle simulés au niveau HTTP. Hermes recherche un fichier, le télécharge via la connexion de son propriétaire, ouvre réellement le PDF avec pypdf puis le publie sous son nom d’origine. Les octets téléchargés par l’API correspondent à la source ; l’administrateur reçoit un refus. Les requêtes du modèle ne contiennent ni jeton Microsoft ni URL de téléchargement préauthentifiée.
+
+Les tests du broker couvrent les connexions personnelles, la déconnexion, les capacités absentes, les anciennes conversations, les destinations refusées, l’expiration du lien temporaire, le changement d’ETag et les dépassements de taille avant ou pendant le transfert. La migration `0009` est exercée sur les bases temporaires ; elle conserve les anciens outils et fige la nouvelle révision pour les nouvelles conversations. Les essais avec Entra et les fichiers réels du pilote restent à réaliser. Voir [Documents](DOCUMENTS.md).
+
 ## Génération documentaire — 6 septembre 2026
 
 La suite complète passe **38 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image `sha256:32b95a02d526073ae49c8ca414c99dd454d51f3fd2fb716a9d7d275c6ff7aa85`. Après correction visuelle des styles Word, le parcours documentaire complet est retesté avec succès sur l’image finale `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`.
