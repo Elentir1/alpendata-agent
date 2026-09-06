@@ -300,3 +300,10 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .member-confirm input { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin-top: .2rem; accent-color: var(--red); }
 .member-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
 .member-actions button, .team-page .member-list button { white-space: normal; }
+.document-share { margin-top: 1rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; }
+.document-share p, .document-share h3 { overflow-wrap: anywhere; }
+.document-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.document-share .resource-editor { margin-top: .5rem; }
+.document-share .resource-confirm, .document-share .resource-grants label { display: flex; align-items: flex-start; gap: .6rem; }
+.document-share input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin: 2px 0 0; accent-color: var(--red); }
+.document-share button { white-space: normal; }

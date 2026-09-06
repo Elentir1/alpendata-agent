@@ -10,6 +10,7 @@ import pytest
 from model_http import completion, model_http
 from test_company_resources import publication
 from test_documents import example_pdf, start_document_turn
+from test_member_sharing import sharing_author
 from test_routines import connected_service as connected_service
 from test_routines import routine_service as routine_service
 
@@ -26,10 +27,11 @@ def test_real_hermes_reads_only_granted_company_copies_and_observes_revocation(r
         pytest.skip("Requires real OCI image")
     app, client, settings, _, _, org, admin, owner = routine_service
     base = f"/api/organizations/{org}/company-resources"
-    note = client.post(base, headers=admin[2], json=publication(member_ids=[owner[0]])).json()
+    _, author = sharing_author(app, org)
+    note = client.post(base, headers=author, json=publication(member_ids=[owner[0]])).json()
     file = client.post(
         base,
-        headers=admin[2],
+        headers=author,
         json=publication(
             title="Workshop document",
             kind="document",
@@ -117,7 +119,7 @@ def test_real_hermes_reads_only_granted_company_copies_and_observes_revocation(r
         assert (
             client.patch(
                 base + "/" + note["id"] + "/access",
-                headers=admin[2],
+                headers=author,
                 json={"version": 1, "audience": "selected", "member_ids": [], "confirmed": True},
             ).status_code
             == 200

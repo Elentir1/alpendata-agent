@@ -12,6 +12,8 @@ Le chat affiche les reçus conservés dans la base, indépendamment du texte de 
 
 `GET /api/organizations/{organization_id}/documents/{document_id}/download` exige une session et une adhésion active du propriétaire. Un membre actif sans licence garde ses documents existants ; un membre désactivé perd l’accès. L’administrateur ne peut pas télécharger les documents personnels d’un collègue. Les réponses utilisent `attachment`, `no-store`, `nosniff` et un nom UTF-8. Aucun lien public ou jeton dans l’URL n’est créé.
 
+Le propriétaire peut aussi choisir « Partager dans l’entreprise », sélectionner les lecteurs et confirmer une copie dans les [ressources d’entreprise](RESSOURCES_ENTREPRISE.md). Le serveur copie son document existant sans téléchargement puis renvoi par le navigateur. Ce geste ne partage ni la conversation ni la connexion personnelle ; les administrateurs ne peuvent pas initier une copie à partir du document privé d’un collègue.
+
 ## Stockage et limites actuelles
 
 La migration `0008` ajoute les reçus et leurs octets immuables dans PostgreSQL (`bytea`) ou SQLite pour l’aperçu local. Le contenu binaire est chargé uniquement au téléchargement. Une clé étrangère composée rattache chaque document au tour et au propriétaire. Une répétition du même fichier, nom et tour renvoie le même reçu. Des octets différents créent un nouveau document sans écraser le précédent.

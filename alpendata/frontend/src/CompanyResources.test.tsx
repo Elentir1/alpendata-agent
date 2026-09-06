@@ -6,13 +6,13 @@ import type { CompanyResource } from './resourceTypes';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status });
-const note: CompanyResource = { id: 'note', title: 'Workshop guidance', kind: 'note', text: 'Agree on objectives first.', filename: null, media_type: null, size: 0, version: 1, audience: 'selected', member_ids: ['coach'] };
+const note: CompanyResource = { id: 'note', created_by: 'admin', can_manage: true, title: 'Workshop guidance', kind: 'note', text: 'Agree on objectives first.', filename: null, media_type: null, size: 0, version: 1, audience: 'selected', member_ids: ['coach'] };
 
 test('an explicitly shared copy survives a lost publication reply and access conflicts require a fresh read', async () => {
   let current: CompanyResource | null = null;
   const publications: unknown[] = [], accesses: unknown[] = [];
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
-    if (path.endsWith('/members')) return json({ members: [{ user_id: 'coach', display_name: 'Alex', role: 'member', active: true }] });
+    if (path.endsWith('/recipients')) return json({ members: [{ user_id: 'coach', display_name: 'Alex', role: 'member', active: true }] });
     if (init?.method === 'POST') {
       const body = JSON.parse(String(init.body)); publications.push(body);
       current = { ...note, kind: body.kind, title: body.title, text: body.text, member_ids: body.member_ids, filename: body.document?.filename || null };
@@ -77,7 +77,7 @@ test('revocation clears a previously viewed note and a late response cannot foll
   vi.stubGlobal('fetch', vi.fn(async (path: string) => {
     if (path.endsWith('/note')) {
       if (late) return new Promise<Response>(resolve => { finishRead = resolve; });
-      return revoked ? json({ detail: 'company_resource_not_found' }, 404) : json(note);
+      return revoked ? json({ detail: 'company_resource_not_found' }, 404) : json({ ...note, can_manage: false });
     }
     return json({ resources: [note], next_offset: null });
   }));

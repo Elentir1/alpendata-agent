@@ -31,7 +31,7 @@ def test_company_copies_require_explicit_publication_and_personal_grants(routine
     app, client, _, _, _, org, admin, owner = routine_service
     base = f"/api/organizations/{org}/company-resources"
     body = publication(member_ids=[owner[0]])
-    assert client.post(base, headers=owner[2], json=body).status_code == 403
+    assert client.post(base, headers=owner[2], json={**body, "created_by": admin[0]}).status_code == 422
     assert client.post(base, headers=admin[2], json={**body, "confirmed": False}).status_code == 422
     assert client.post(base, headers=admin[2], json={**body, "member_ids": [str(uuid4())]}).status_code == 422
     result = client.post(base, headers=admin[2], json=body)

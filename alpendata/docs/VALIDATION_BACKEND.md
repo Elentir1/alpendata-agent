@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Partage volontaire par les collaborateurs — 6 septembre 2026
+
+La suite complète passe **69 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **38 scénarios JSDOM** ; TypeScript, Vite, Ruff et la vérification Git passent.
+
+Les deux nouveaux scénarios API exercent la publication par un membre, l’annuaire limité de destinataires, le contrôle de l’auteur et de l’administrateur, le refus des mutations par un lecteur, les versions et la désactivation. Ils vérifient aussi qu’un document créé dans le chat est copié exactement depuis son propriétaire : un administrateur ou un collègue ne peut pas publier l’original privé, et retirer la copie laisse cet original inchangé. Les demandes rejouées restent idempotentes, y compris les anciens corps sans identifiant de document source.
+
+Le parcours OCI utilise un collaborateur pour publier les ressources puis révoquer l’accès : Hermes réel lit la note, télécharge et ouvre le PDF sous les droits du destinataire, puis constate la révocation sans modifier le contexte système de la conversation. Les services de modèle restent synthétiques.
+
+Les nouveaux tests d’interface couvrent la publication par un membre, la reconfirmation après modification des destinataires et le partage depuis le chat sans téléchargement préalable. Une réponse perdue conserve le même identifiant de publication et fige le formulaire. Le build a été contrôlé visuellement en français, en anglais et à une largeur mobile de 360 pixels avec des données fictives ; l’aperçu séparé a ensuite été fermé et arrêté.
+
+L’API normale a été redémarrée et ses nouvelles routes vérifiées ; la base reste en `0018`, sans migration pour ce lot. Microsoft et les invitations par e-mail restent annoncés comme non configurés. Aucun compte client, service commercial ou paiement réel n’a été utilisé. Voir [Ressources d’entreprise](RESSOURCES_ENTREPRISE.md).
+
 ## Administration des membres et licences — 6 septembre 2026
 
 La suite complète passe **67 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **36 scénarios JSDOM** ; ses deux nouveaux scénarios passent également après le traitement des erreurs de relecture. TypeScript, Vite, Ruff et la cohérence des migrations passent.
