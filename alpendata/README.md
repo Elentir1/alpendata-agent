@@ -24,6 +24,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
 - [Chat personnel et exécutions durables](docs/CHAT_PERSONNEL.md)
 - [Consultation et correction de la mémoire personnelle](docs/MEMOIRE_PERSONNELLE.md)
+- [Chiffrement et clés de récupération](docs/CHIFFREMENT_SAUVEGARDES.md)
 - [Sauvegarde et restauration locales](docs/SAUVEGARDE_RESTAURATION.md)
 - [Récupération opérateur d'un assistant interrompu](docs/RECUPERATION_RUNTIME.md)
 - [Notifications personnelles des automatisations](docs/NOTIFICATIONS.md)

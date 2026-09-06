@@ -85,6 +85,8 @@ scripts/run_tests.sh alpendata/backend/tests -- \
   --postgresql-bin /usr/lib/postgresql/17/bin
 ```
 
+Pour inclure les exercices de chiffrement, installer `age` et `age-keygen` dans l’hôte Linux, puis ajouter `--age-bin /usr/bin/age` et l’option `--runtime-image` déjà utilisée pour les conteneurs Hermes. Sans `--age-bin`, les deux scénarios de chiffrement sont explicitement ignorés ; cela ne valide pas ce parcours.
+
 Cette seconde commande crée des serveurs PostgreSQL temporaires, accessibles exclusivement par des sockets Unix dans des dossiers privés. Elle ne se connecte pas à une base existante. Ne pas l’exécuter en tant que root. La création depuis les migrations et la cohérence entre schéma et modèles sont vérifiées avant chaque scénario.
 
 Les scénarios couvrent les accès croisés entre entreprises, la confidentialité vis-à-vis de l’administrateur, la révocation de session, la désactivation d’un membre, les licences et invitations. Ils exercent également MSAL avec un serveur Microsoft simulé : liaison au navigateur, PKCE, usage unique, identité stable, refus des réponses invalides et protection des cookies. Le scénario Linux supplémentaire exerce simultanément deux invitations pour la dernière place et deux acceptations du même lien.
@@ -122,7 +124,7 @@ Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les c
 
 ## Sauvegarde et restauration
 
-La commande locale `python -m alpendata_api.backup` crée un ensemble PostgreSQL + états privés et restaure uniquement vers une base vide et un dossier neuf. Les tâches restaurées sont suspendues et les connexions doivent être rétablies. Aucun service n’est démarré automatiquement. Les ensembles locaux ne sont pas encore chiffrés ni transférés hors hôte ; voir la [procédure et ses limites](../docs/SAUVEGARDE_RESTAURATION.md).
+La commande locale `python -m alpendata_api.backup` crée un ensemble PostgreSQL + états privés et restaure uniquement vers une base vide et un dossier neuf. Les tâches restaurées sont suspendues et les connexions doivent être rétablies. Aucun service n’est démarré automatiquement. La commande distincte `python -m alpendata_api.backup_encryption` [chiffre ces ensembles avec age](../docs/CHIFFREMENT_SAUVEGARDES.md) avant leur conservation hors hôte. Aucun transfert distant n’est encore intégré ; voir la [procédure et ses limites](../docs/SAUVEGARDE_RESTAURATION.md).
 
 ## Récupération opérateur
 

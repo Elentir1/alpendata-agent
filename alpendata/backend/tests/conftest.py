@@ -17,6 +17,7 @@ from alpendata_api.settings import Settings
 
 
 def pytest_addoption(parser):
+    parser.addoption("--age-bin", help="Absolute age binary for real encrypted-backup exercises")
     parser.addoption("--document-qa-output", help="Optional directory for generated document QA artifacts")
     parser.addoption("--runtime-image", help="Pinned Podman image ID for real Linux Hermes runtime tests")
     parser.addoption(

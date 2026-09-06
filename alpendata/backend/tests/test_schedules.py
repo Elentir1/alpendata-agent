@@ -158,8 +158,9 @@ def test_missed_occurrences_are_not_replayed_and_repeated_failures_block(routine
     path = f"/api/organizations/{org}/schedules"
     schedule = client.post(path, headers=bob[2], json=activation(trial)).json()
     ticker = ScheduleWorker(settings, app.state.session_factory)
-    make_due(app, schedule["id"], now() - 7201)
-    assert ticker.tick() == 1 and worker.claim() is None
+    at = now()
+    make_due(app, schedule["id"], at - 7201)
+    assert ticker.tick(at) == 1 and worker.claim() is None
     assert (
         client.get(path + "/" + schedule["id"] + "/occurrences", headers=bob[2]).json()["occurrences"][0][
             "status"
@@ -167,8 +168,10 @@ def test_missed_occurrences_are_not_replayed_and_repeated_failures_block(routine
         == "missed"
     )
     for offset in range(3):
-        make_due(app, schedule["id"], now() - 20 - offset)
-        assert ticker.tick() == 1
+        # One fixed clock gives each forced occurrence its own instant, regardless
+        # of how many wall-clock seconds the preceding request consumed.
+        make_due(app, schedule["id"], at - 20 + offset)
+        assert ticker.tick(at) == 1
         job = worker.claim()
         # A model answer alone cannot turn an unperformed scheduled read into success.
         worker.finish(job, result={"response": "Unsupported claim of reading emails"})
@@ -176,7 +179,7 @@ def test_missed_occurrences_are_not_replayed_and_repeated_failures_block(routine
             assert db.get(ChatTurn, job.id).error_code == "routine_sources_missing"
     blocked = client.get(path, headers=bob[2]).json()["schedules"][0]
     assert blocked["status"] == "blocked" and blocked["reason_code"] == "routine_repeated_failures"
-    assert ticker.tick() == 0
+    assert ticker.tick(at) == 0
     repeat = client.post(
         f"/api/organizations/{org}/routines/" + blocked["proposal_id"] + "/trial",
         headers=bob[2],

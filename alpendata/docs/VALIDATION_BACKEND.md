@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Chiffrement des sauvegardes — 6 septembre 2026
+
+La suite complète finale passe **73 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b` et le programme age **1.2.1** du paquet Debian `1.2.1-1+b5`. Ruff, le format des nouveaux fichiers et la vérification Git passent. Aucune migration, route cliente ou modification d’interface n’est ajoutée.
+
+Le nouveau parcours chiffre un ensemble réel PostgreSQL + états personnels pour deux clés de récupération indépendantes. La commande de déchiffrement retourne un ensemble vérifié, puis une nouvelle base PostgreSQL et de nouveaux fichiers sont restaurés. Les données privées retrouvent leurs octets ; les sessions sont révoquées et les caches Microsoft sont retirés dans la cible. Les clés sont éphémères et les données synthétiques.
+
+Les refus couvrent une mauvaise clé, une identité lisible par d’autres utilisateurs, un fichier tronqué après plusieurs blocs, une altération du contenu, un reçu qui ne correspond pas, une cible existante, une enveloppe contenant un chemin extérieur et un ensemble source incomplet. La troncature est aussi testée avec une empreinte recalculée, pour exercer réellement l’authentification finale de age. Aucun dossier final en clair n’est publié dans ces cas. Les fichiers temporaires en clair sont séparés du répertoire de sortie chiffrée ; le manifeste et les octets effectivement empaquetés sont vérifiés avant chiffrement.
+
+La première suite complète a révélé un ancien scénario de planification dépendant de l’horloge réelle : `now() - 20 - offset` pouvait donner le même horaire deux fois. Ce scénario utilise désormais un instant fixe et des échéances distinctes, transmis au véritable ticker. La suite complète finale passe après cette correction, sans modifier le comportement du scheduler en production.
+
+L’option `--age-bin /usr/bin/age` est nécessaire pour inclure les exercices de chiffrement. Le paquet age a été installé dans l’environnement Debian local depuis le dépôt signé ; la source Redis déjà mal formée n’a pas été modifiée. Aucun stockage Infomaniak ni clé de production n’a été configuré. L’API locale et sa base `0018` sont inchangées. Voir [Chiffrement et clés de récupération](CHIFFREMENT_SAUVEGARDES.md) pour la procédure, le reçu indépendant et les limites du stockage temporaire.
+
 ## Sauvegarde et restauration locales — 6 septembre 2026
 
 La suite complète passe **71 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Ruff, le format des fichiers concernés et la vérification Git passent. Ce lot ajoute uniquement un outil opérateur et sa documentation : aucune migration, route client ou modification d’interface.
