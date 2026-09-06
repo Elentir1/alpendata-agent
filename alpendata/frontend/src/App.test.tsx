@@ -55,11 +55,16 @@ test('personal onboarding keeps unsaved answers when language changes and persis
   expect((screen.getByLabelText('What is your role?') as HTMLInputElement).value).toBe('Coach indépendant');
   await userEvent.type(screen.getByLabelText('What would you like to simplify first?'), 'Prepare my client meetings');
   await userEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
-  await screen.findByRole('heading', { name: 'Next: your tools.' });
+  await screen.findByRole('heading', { name: 'Let’s get your first result.' });
   expect(saved).toEqual({ language: 'en', role: 'Coach indépendant', activity: '', needs: 'Prepare my client meetings' });
+  expect((screen.getByLabelText('What would you like to start with?') as HTMLTextAreaElement).value).toBe('Prepare my client meetings');
+  await userEvent.type(screen.getByLabelText('What would you like to start with?'), ' tomorrow');
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'fr');
+  expect((screen.getByLabelText('Par quoi aimeriez-vous commencer ?') as HTMLTextAreaElement).value).toBe('Prepare my client meetings tomorrow');
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Langue' }), 'en');
   expect(within(screen.getByRole('navigation')).queryByRole('button', { name: 'My company' })).toBeNull();
   view.unmount(); render(<App />);
-  await screen.findByRole('heading', { name: 'Next: your tools.' });
+  await screen.findByRole('heading', { name: 'Let’s get your first result.' });
   await userEvent.click(screen.getByRole('button', { name: 'Edit my answers' }));
   expect((screen.getByLabelText('What is your role?') as HTMLInputElement).value).toBe('Coach indépendant');
 });

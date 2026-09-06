@@ -24,6 +24,7 @@ const words = {
     error: 'L’essai n’a pas pu démarrer. Réessayez.',
     access: 'Vérifiez vos outils et votre choix d’envoi direct dans « Mon espace », ainsi que les règles de votre entreprise.',
     busy: 'Votre assistant termine déjà une demande. Réessayez ensuite.',
+    review: 'Aucun essai n’a été retrouvé pour cette demande. Vérifiez à nouveau les détails avant de reprendre ; la même référence sera conservée.',
   },
   en: {
     try: 'Try now', sending: 'Try with an email send', preparing: 'Preparing…', retry: 'Retrieve this trial',
@@ -35,6 +36,7 @@ const words = {
     error: 'The trial could not start. Try again.',
     access: 'Check your tools and direct sending choice in “My workspace”, and your company rules.',
     busy: 'Your assistant is already working on a request. Try again afterwards.',
+    review: 'No trial was found for this request. Review the details before continuing; the same reference will be kept.',
   },
 };
 
@@ -45,6 +47,11 @@ export function DeliverySummary({ delivery, language }: { delivery: EmailDeliver
 
 export function RoutineTrialAction({ organizationId, proposalId, language, disabled, sendsEmail, initialDelivery, label, onOpen }: Props) {
   const c = words[language], id = useId();
+  // Proposal IDs belong to one owner; only an opaque request ID survives a reload.
+  const storageKey = `alpendata.trial.${organizationId}.${proposalId}`;
+  const [restored] = useState(() => sessionStorage.getItem(storageKey));
+  const requestId = useRef<string | null>(restored);
+  const [recovering, setRecovering] = useState(!!restored), [reviewAgain, setReviewAgain] = useState(false);
   const [open, setOpen] = useState(false), [to, setTo] = useState(initialDelivery?.to.join(', ') || ''), [subject, setSubject] = useState(initialDelivery?.subject || '');
   const [confirmed, setConfirmed] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
   const pending = useRef<TrialIntent | null>(null), sending = useRef(false);
@@ -52,21 +59,39 @@ export function RoutineTrialAction({ organizationId, proposalId, language, disab
   async function run() {
     if (sending.current) return;
     sending.current = true; setBusy(true); setError(null);
-    const body = pending.current || { request_id: crypto.randomUUID(), ...(sendsEmail ? {
+    const body = pending.current || { request_id: requestId.current || crypto.randomUUID(), ...(sendsEmail ? {
       email_delivery: { to: to.split(',').map(value => value.trim()), subject: subject.trim() }, email_send_confirmed: true as const,
     } : {}) };
     pending.current = body;
     try {
+      sessionStorage.setItem(storageKey, body.request_id); requestId.current = body.request_id;
       const trial = await api<Trial>(`/api/organizations/${organizationId}/routines/${proposalId}/trial`, body);
+      sessionStorage.removeItem(storageKey); requestId.current = null;
       pending.current = null; onOpen(trial.conversation_id);
     } catch (cause) {
       if (cause instanceof ApiError && cause.status > 0 && cause.status < 500) pending.current = null;
+      if (cause instanceof ApiError && cause.code === 'chat_request_conflict') setRecovering(true);
       setError(cause);
     } finally { sending.current = false; setBusy(false); }
   }
+  async function recover() {
+    if (sending.current || !requestId.current) return;
+    sending.current = true; setBusy(true); setError(null);
+    try {
+      const result = await api<{ trial: Trial | null }>(`/api/organizations/${organizationId}/routines/${proposalId}/trial?request_id=${encodeURIComponent(requestId.current)}`);
+      if (result.trial) {
+        sessionStorage.removeItem(storageKey); requestId.current = null; onOpen(result.trial.conversation_id);
+      } else {
+        pending.current = null; setRecovering(false); setOpen(true); setConfirmed(false); setReviewAgain(true);
+      }
+    } catch (cause) { setError(cause); }
+    finally { sending.current = false; setBusy(false); }
+  }
   const accessErrors = ['microsoft_reconnect_required', 'email_confirmation_required', 'company_policy_denied'];
   const failure = pending.current ? c.uncertain : error instanceof ApiError && accessErrors.includes(error.code) ? c.access : error instanceof ApiError && error.code === 'agent_already_running' ? c.busy : c.error;
+  if (recovering) return <div className="routine-trial-action"><p>{c.uncertain}</p><Notice>{error ? failure : ''}</Notice><button className="secondary" disabled={busy} onClick={() => void recover()}>{busy ? c.preparing : c.retry}</button></div>;
   return <div className="routine-trial-action">
+    {reviewAgain && <p className="configuration-note">{c.review}</p>}
     {sendsEmail && !open ? <><p>{c.note}</p><button className="secondary" disabled={disabled} onClick={() => setOpen(true)}><Play size={16} />{label || c.sending}</button></> :
       <form onSubmit={event => { event.preventDefault(); if (!sendsEmail || confirmed) void run(); }}>
         {sendsEmail && <>

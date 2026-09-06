@@ -104,6 +104,19 @@ def routines_router(settings, factory):
             turn = queue_turn(db, settings, user, conversation, body.request_id, body.refinement)
             return {"conversation": conversation_view(conversation), "turn": turn_view(turn)}
 
+    @router.get(PREFIX + "/routines/{proposal_id}/trial")
+    def recover_trial(organization_id: str, proposal_id: str, request_id: UUID, request: Request):
+        with factory.begin() as db:
+            user = actor(db, request, organization_id)
+            proposal = owned(db, RoutineProposal, organization_id, user.id, proposal_id)
+            previous = request_turn(db, user, organization_id, request_id)
+            if previous is None:
+                return {"trial": None}
+            saved = db.scalar(select(RoutineTrial).where(RoutineTrial.turn_id == previous.id))
+            if saved is None or saved.proposal_id != proposal.id:
+                raise HTTPException(409, "chat_request_conflict")
+            return {"trial": trial_view(db, saved)}
+
     @router.post(PREFIX + "/routines/{proposal_id}/trial", status_code=202)
     def trial(organization_id: str, proposal_id: str, request: Request, body: TrialInput):
         with factory.begin() as db:

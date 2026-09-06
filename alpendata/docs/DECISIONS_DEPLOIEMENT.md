@@ -4,7 +4,7 @@ Ces décisions complètent le cahier des charges initial et priment sur les hypo
 
 | Sujet | Décision confirmée |
 | --- | --- |
-| Hébergement | Utiliser en priorité le compte Jelastic Infomaniak existant. Aucun projet Public Cloud n'est disponible. |
+| Hébergement | Déployer le pilote sur Infomaniak Public Cloud, désormais disponible. Ce choix remplace la priorité initiale donnée à Jelastic ; les prérequis d'isolation doivent être vérifiés sur la machine avant déploiement applicatif. |
 | Adresse publique | `https://agent.alpendata.ch`. Le choix du nom n'est pas une preuve de configuration DNS ou TLS. |
 | Fournisseur IA initial | Mistral, avec un compte déjà détenu par AlpenData. Le modèle précis et le raccordement serveur restent à configurer. |
 | Microsoft | Intégration facultative. Un client sans Microsoft doit pouvoir se connecter à AlpenData et utiliser les fonctions ne nécessitant pas cette intégration. |

@@ -191,7 +191,7 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .chat-documents li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .chat-documents small { display: block; color: #6b7280; margin-top: .2rem; }
 .chat-documents button { flex-shrink: 0; }
-@media (max-width: 520px) { .chat-documents li { flex-wrap: wrap; } .chat-documents button { margin-left: 1.8rem; } }
+@media (max-width: 520px) { .chat-documents li { display: grid; grid-template-columns: 18px minmax(0, 1fr); } .chat-documents li > button { grid-column: 2; justify-self: start; } }
 /* A personal save review stays beside the document being shared. */
 .sharepoint-save { margin-top: 1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink); }
 .save-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -303,6 +303,7 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .document-share { margin-top: 1rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; }
 .document-share p, .document-share h3 { overflow-wrap: anywhere; }
 .document-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.document-actions > button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .document-share .resource-editor { margin-top: .5rem; }
 .document-share .resource-confirm, .document-share .resource-grants label { display: flex; align-items: flex-start; gap: .6rem; }
 .document-share input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin: 2px 0 0; accent-color: var(--red); }

@@ -94,6 +94,13 @@ def test_proposals_require_personal_profile_access_and_real_trial_evidence(routi
     assert client.post(trial_path, headers=alice[2], json=intent).status_code == 404
     trial = client.post(trial_path, headers=bob[2], json=intent).json()
     assert client.post(trial_path, headers=bob[2], json=intent).json() == trial
+    recovery_path = trial_path + "?request_id=" + intent["request_id"]
+    assert client.get(recovery_path, headers=alice[2]).status_code == 404
+    assert client.get(recovery_path, headers=bob[2]).json() == {"trial": trial}
+    assert client.get(trial_path + "?request_id=" + str(uuid4()), headers=bob[2]).json() == {"trial": None}
+    other_proposal = client.get(path, headers=bob[2]).json()["proposals"][1]
+    other_path = base + "/routines/" + other_proposal["id"] + "/trial?request_id=" + intent["request_id"]
+    assert client.get(other_path, headers=bob[2]).status_code == 409
     trial_chat = base + "/chat/conversations/" + trial["conversation_id"]
     job = worker.claim()
     assert worker.tool(job, ["mail"], payload)["status"] == 403

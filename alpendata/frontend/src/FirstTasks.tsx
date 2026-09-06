@@ -45,9 +45,9 @@ function failure(error: unknown, language: Language) {
   return messages[error.code] || c.error;
 }
 
-export function FirstTasks({ organizationId, language, onOpen }: { organizationId: string; language: Language; onOpen: (id: string) => void }) {
+export function FirstTasks({ organizationId, language, initialFocus = '', onOpen }: { organizationId: string; language: Language; initialFocus?: string; onOpen: (id: string) => void }) {
   const c = words[language];
-  const [refinement, setRefinement] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
+  const [refinement, setRefinement] = useState(initialFocus), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
   const pending = useRef<{ request_id: string; language: Language; refinement: string } | null>(null), sending = useRef(false);
   return <section className="first-tasks"><h2>{c.title}</h2><p>{c.intro}</p>
     <form onSubmit={async event => {
