@@ -86,9 +86,11 @@ Sortie attendue : activation des utilisateurs et facturation cohérentes, et par
 
 ## Décisions encore nécessaires au moment approprié
 
-- Environnements Infomaniak et nom de domaine de l’application.
-- Enregistrement Microsoft et comptes de test ; éventuels consentements de l’organisation.
-- Fournisseurs/modèles IA et destinations de traitement retenus.
+- Jelastic Infomaniak et `agent.alpendata.ch` sont retenus ; environnement et capacités d'exécution à inspecter. Voir les [précisions de déploiement](DECISIONS_DEPLOIEMENT.md).
+- Corriger en priorité la connexion exclusivement Microsoft : authentification AlpenData indépendante et onboarding utilisable sans intégration Microsoft. Le choix du parcours d'authentification est demandé.
+- Enregistrement Microsoft et comptes de test seulement pour la recette du connecteur facultatif ; ils ne conditionnent pas l'accès à AlpenData.
+- Mistral est retenu et le compte existe ; modèle précis et configuration serveur à finaliser.
+- Les invitations du pilote seront gérées par le porteur du projet ; adapter l'activation au mode de connexion retenu sans rendre l'envoi automatique d'invitations obligatoire.
 - Tarifs et règles de conservation.
 
 Ces éléments ne bloquent pas le travail local sur le lot 1. Aucun identifiant secret ne doit être inscrit dans ces documents ou dans Git.
