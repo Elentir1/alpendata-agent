@@ -11,6 +11,7 @@ export interface EmailReceipt {
 }
 const words = {
   fr: {
+    receipt: 'E-mail et reçu d’envoi', submitted: 'Le contenu soumis et son résultat sont conservés ci-dessous.',
     agent: 'Envoi demandé par votre assistant selon votre autorisation personnelle.', title: 'Brouillon de mail', private: 'Ce brouillon reste dans AlpenData. Relisez les destinataires, le contenu et les pièces jointes avant de l’envoyer depuis votre compte Microsoft.',
     to: 'À', cc: 'Copie', bcc: 'Copie cachée', subject: 'Objet', body: 'Message', addresses: 'Séparez les adresses par une virgule ou un point-virgule.',
     save: 'Enregistrer le brouillon', send: 'Envoyer ce mail', confirm: 'J’ai vérifié les destinataires, le message et les pièces jointes.',
@@ -26,6 +27,7 @@ const words = {
     invalid: 'Vérifiez les adresses et les champs du message. Les pièces jointes sont limitées à 2 Mo au total.',
   },
   en: {
+    receipt: 'Email and send receipt', submitted: 'The submitted content and its result are retained below.',
     agent: 'Send requested by your assistant under your personal authorization.', title: 'Email draft', private: 'This draft stays in AlpenData. Review recipients, content and attachments before sending it from your Microsoft account.',
     to: 'To', cc: 'Cc', bcc: 'Bcc', subject: 'Subject', body: 'Message', addresses: 'Separate addresses with a comma or semicolon.',
     save: 'Save email draft', send: 'Send this email', confirm: 'I have reviewed the recipients, message and attachments.',
@@ -55,6 +57,19 @@ export function EmailDraft({ item, organizationId, language, licensed }: { item:
   const latest = receipt.attempts.at(-1), sameAttempt = latest?.version === receipt.version;
   const editable = receipt.editable && licensed && !busy && !error;
   function accept(value: EmailReceipt) { setReceipt(value); setDraft(fields(value.message)); setConfirmed(false); }
+  useEffect(() => {
+    if (inFlight.current || item.version < receipt.version || item.attempts.length < receipt.attempts.length) return;
+    const before = receipt.attempts.at(-1), after = item.attempts.at(-1);
+    if (before?.id === after?.id && before && after) {
+      if (before.status !== 'sending' && after.status === 'sending') return;
+      if (before.status === 'accepted' && after.status !== 'accepted') return;
+      if (before.verification?.status === 'found' && after.verification?.status !== 'found') return;
+    }
+    if (JSON.stringify(item) === JSON.stringify(receipt)) return;
+    setReceipt(item); setConfirmed(false); setSaved(false);
+    if (!dirty || !item.editable) { setDraft(fields(item.message)); setError(''); }
+    else setError('email_draft_changed');
+  }, [item, busy]);
   async function refresh() {
     const value = await api<EmailReceipt>(path);
     if (mounted.current) { accept(value); setError(''); }
@@ -88,7 +103,7 @@ export function EmailDraft({ item, organizationId, language, licensed }: { item:
   }
   const statusText: Record<string, string> = { sending: t.sending, accepted: t.accepted, unknown: t.unknown, failed: t.failed };
   return <section className="email-draft" aria-labelledby={id}>
-    <h3 id={id}>{t.title}</h3><p>{t.private}</p>
+    <h3 id={id}>{receipt.editable ? t.title : t.receipt}</h3><p>{receipt.editable ? t.private : t.submitted}</p>
     <fieldset disabled={!editable}>
       {(['to', 'cc', 'bcc'] as const).map(key => <label key={key}>{t[key]}<input value={draft[key]} onChange={event => { setDraft({ ...draft, [key]: event.target.value }); setConfirmed(false); setSaved(false); }} aria-describedby={id + '-addresses'} /></label>)}
       <p id={id + '-addresses'} className="subtle">{t.addresses}</p>

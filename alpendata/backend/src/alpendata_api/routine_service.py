@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from pydantic import Field
 from sqlalchemy import select
 
+from .action_policy import email_autonomy_available
 from .graph import web_link
 from .models import (
     ChatTurn,
@@ -16,6 +17,7 @@ from .models import (
 )
 from .organization_policy import allowed_capabilities
 from .routine_catalog import RECIPES, available_recipes
+from .routine_delivery import delivery_accepted
 from .schemas import Input
 
 
@@ -31,7 +33,10 @@ class ProposalsInput(Input):
 
 
 def proposal_view(item):
-    return {key: getattr(item, key) for key in ("id", "template", "title", "benefit", "focus", "language")}
+    return {
+        **{key: getattr(item, key) for key in ("id", "template", "title", "benefit", "focus", "language")},
+        "sends_email": RECIPES[item.template].sends_email,
+    }
 
 
 def record_proposals(db, turn, payload):
@@ -47,7 +52,8 @@ def record_proposals(db, turn, payload):
     )
     current = connection.capabilities if connection and connection.status == "connected" else []
     available = available_recipes(
-        set(current) & set(conversation.capabilities) & set(allowed_capabilities(db, turn.organization_id))
+        set(current) & set(conversation.capabilities) & set(allowed_capabilities(db, turn.organization_id)),
+        email_autonomy=email_autonomy_available(db, turn.organization_id, turn.owner_id),
     )
     names = [item.template for item in data.proposals]
     if len(set(names)) != len(names) or any(name not in available for name in names):
@@ -118,10 +124,11 @@ def trial_view(db, trial):
         "conversation_id": turn.conversation_id,
         "turn_id": turn.id,
         "schedule_id": schedule.id if schedule else None,
-        "can_replace_schedule": bool(
-            schedule and schedule.status == "blocked" and schedule.reviewed_turn_id != trial.turn_id
-        ),
+        "schedule_version": schedule.version if schedule else None,
+        "can_replace_schedule": bool(schedule and schedule.reviewed_turn_id != trial.turn_id),
         "status": turn.status,
+        "email_delivery": db.get(Conversation, turn.conversation_id).email_delivery,
+        "delivery_accepted": delivery_accepted(db, turn),
         "sources_verified": turn.status == "completed"
         and set(RECIPES[proposal.template].capabilities) <= reads,
     }

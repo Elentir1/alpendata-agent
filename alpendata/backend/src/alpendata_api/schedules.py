@@ -10,7 +10,15 @@ from sqlalchemy import select
 from .access import owned
 from .auth import authenticate, request_authorization
 from .connections import lock_member
-from .models import ChatTurn, RoutineOccurrence, RoutineProposal, RoutineSchedule, RoutineTrial, now
+from .models import (
+    ChatTurn,
+    Conversation,
+    RoutineOccurrence,
+    RoutineProposal,
+    RoutineSchedule,
+    RoutineTrial,
+    now,
+)
 from .routine_catalog import RECIPES
 from .routine_service import trial_view
 from .schedule_state import cancel_occurrences, check_schedule_access, stop_schedule
@@ -24,6 +32,8 @@ class ActivationInput(Cadence):
     request_id: UUID
     reviewed_trial_id: UUID
     reviewed: Literal[True]
+    email_delivery_confirmed: bool = False
+    replaces_schedule_version: int | None = Field(default=None, ge=1)
 
 
 class VersionInput(Input):
@@ -55,6 +65,9 @@ def schedule_view(db, row):
             )
         },
         **cadence_values(row),
+        "email_delivery": db.get(
+            Conversation, db.get(ChatTurn, row.reviewed_turn_id).conversation_id
+        ).email_delivery,
         "title": proposal.title,
         "focus": proposal.focus,
         "capabilities": RECIPES[proposal.template].capabilities,
@@ -106,21 +119,27 @@ def schedules_router(settings, factory):
                 if previous.reviewed_turn_id != trial.turn_id or cadence_values(previous) != values:
                     raise HTTPException(409, "routine_request_conflict")
                 return schedule_view(db, previous)
-            if not trial_view(db, trial)["sources_verified"]:
+            evidence = trial_view(db, trial)
+            if evidence["email_delivery"] and not body.email_delivery_confirmed:
+                raise HTTPException(409, "routine_email_confirmation_required")
+            if not evidence["sources_verified"] or not evidence["delivery_accepted"]:
                 raise HTTPException(409, "routine_trial_required")
             schedule = db.scalar(
                 select(RoutineSchedule).where(RoutineSchedule.proposal_id == trial.proposal_id)
             )
             replacing = (
-                schedule and schedule.status == "blocked" and schedule.reviewed_turn_id != trial.turn_id
+                schedule and schedule.status != "archived" and schedule.reviewed_turn_id != trial.turn_id
             )
             if schedule and schedule.status != "archived" and not replacing:
                 raise HTTPException(409, "routine_already_exists")
+            if replacing and body.replaces_schedule_version != schedule.version:
+                raise HTTPException(409, "routine_version_changed")
             if schedule is None:
                 schedule = RoutineSchedule(
                     organization_id=organization_id, owner_id=user.id, proposal_id=trial.proposal_id
                 )
             else:
+                cancel_occurrences(db, schedule)
                 schedule.version += 1
             schedule.reviewed_turn_id, schedule.activation_request_id = trial.turn_id, str(body.request_id)
             for key, value in values.items():

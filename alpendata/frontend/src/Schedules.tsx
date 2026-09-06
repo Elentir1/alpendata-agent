@@ -4,9 +4,11 @@ import { api, ApiError } from './api';
 import { Notice } from './feedback';
 import type { Language, Text } from './locale';
 import type { Trial } from './FirstTasks';
+import { RoutineTrialAction, DeliverySummary } from './RoutineTrialAction';
+import type { EmailDelivery } from './RoutineTrialAction';
 
 type Cadence = { frequency: 'daily' | 'weekdays' | 'weekly'; local_time: string; timezone: string; weekday: number };
-type Schedule = Cadence & { id: string; proposal_id: string; title: string; focus: string; capabilities: string[]; status: string; version: number; next_run_at: number | null; reason_code: string | null };
+type Schedule = Cadence & { email_delivery?: EmailDelivery | null; id: string; proposal_id: string; title: string; focus: string; capabilities: string[]; status: string; version: number; next_run_at: number | null; reason_code: string | null };
 type Occurrence = { id: string; scheduled_for: number; status: string; error_code: string | null; conversation_id: string | null };
 type History = { occurrences: Occurrence[]; next_before: number | null };
 const initial: Cadence = { frequency: 'weekdays', local_time: '09:00', timezone: 'Europe/Zurich', weekday: 0 };
@@ -57,7 +59,7 @@ const words = {
 function errorMessage(error: unknown, language: Language) {
   if (error instanceof ApiError && error.code === 'company_policy_denied') return language === 'fr' ? 'Les règles de votre entreprise bloquent un accès nécessaire. Contactez votre administrateur.' : 'Your company rules block a required access. Contact your administrator.';
   const c = words[language];
-  const codes: Record<string, string> = { email_confirmation_required: language === 'fr' ? 'Votre choix exige désormais une confirmation des envois. Refaites un essai de cette tâche pour préparer une version adaptée.' : 'Your choice now requires send confirmation. Run a new trial to prepare an updated version of this task.', microsoft_reconnect_required: c.access, agent_access_revoked: c.revoked, routine_version_changed: c.changed, routine_request_conflict: c.changed, chat_model_changed: c.model, routine_trial_required: c.trial, routine_already_exists: c.exists, routine_repeated_failures: c.repeated };
+  const codes: Record<string, string> = { routine_email_confirmation_required: c.trial, routine_email_not_accepted: language === 'fr' ? 'L’envoi prévu n’a pas été confirmé comme accepté. Consultez le résultat et son reçu avant toute autre action.' : 'The expected send was not confirmed as accepted. Review the result and receipt before taking further action.',  email_confirmation_required: language === 'fr' ? 'Votre choix exige désormais une confirmation des envois. Refaites un essai de cette tâche pour préparer une version adaptée.' : 'Your choice now requires send confirmation. Run a new trial to prepare an updated version of this task.', microsoft_reconnect_required: c.access, agent_access_revoked: c.revoked, routine_version_changed: c.changed, routine_request_conflict: c.changed, chat_model_changed: c.model, routine_trial_required: c.trial, routine_already_exists: c.exists, routine_repeated_failures: c.repeated };
   if (error instanceof ApiError && error.code === 'routine_sources_missing') return language === 'fr' ? 'Les sources nécessaires n’ont pas été consultées.' : 'The required sources were not consulted.';
   if (error instanceof ApiError && error.code === 'routine_occurrence_expired') return language === 'fr' ? 'Le créneau de cette occurrence est dépassé.' : 'This occurrence is past its execution window.';
   return error instanceof ApiError ? codes[error.code] || c.generic : c.generic;
@@ -81,19 +83,19 @@ function CadenceFields({ value, onChange, language, disabled }: { value: Cadence
 export function ScheduleActivation({ trial, organizationId, language, disabled, onManage }: { trial: Trial; organizationId: string; language: Language; disabled: boolean; onManage?: () => void }) {
   const c = words[language], [open, setOpen] = useState(false), [reviewed, setReviewed] = useState(false), [cadence, setCadence] = useState<Cadence>(initial);
   const [saved, setSaved] = useState<Schedule | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
-  const pending = useRef<(Cadence & { reviewed: true; reviewed_trial_id: string; request_id: string }) | null>(null), sending = useRef(false);
+  const pending = useRef<(Cadence & { replaces_schedule_version?: number; email_delivery_confirmed?: boolean; reviewed: true; reviewed_trial_id: string; request_id: string }) | null>(null), sending = useRef(false);
   if (trial.schedule_id && !trial.can_replace_schedule || saved) return <div className="schedule-activation">{saved?.next_run_at && <p>{c.next} : {dateLabel(saved.next_run_at, saved.timezone, language)} ({saved.timezone})</p>}{onManage && <button className="secondary" onClick={onManage}><CalendarClock size={17} />{c.manage}</button>}</div>;
-  if (!trial.sources_verified) return null;
+  if (!trial.sources_verified || trial.delivery_accepted === false) return null;
   return <section className="schedule-activation">
     {!open ? <button className="secondary" disabled={disabled} onClick={() => setOpen(true)}><CalendarClock size={17} />{trial.can_replace_schedule ? c.replace : c.plan}</button> : <form onSubmit={async event => {
       event.preventDefault(); if (sending.current) return; sending.current = true; setBusy(true); setError(null);
-      const body = pending.current || { ...cadence, reviewed: true as const, reviewed_trial_id: trial.id, request_id: crypto.randomUUID() }; pending.current = body;
+      const body = pending.current || { ...cadence, ...(trial.can_replace_schedule && trial.schedule_version ? { replaces_schedule_version: trial.schedule_version } : {}), ...(trial.email_delivery ? { email_delivery_confirmed: true } : {}), reviewed: true as const, reviewed_trial_id: trial.id, request_id: crypto.randomUUID() }; pending.current = body;
       try { setSaved(await api<Schedule>(`/api/organizations/${organizationId}/schedules`, body)); pending.current = null; }
       catch (cause) { if (cause instanceof ApiError && cause.status > 0 && cause.status < 500) pending.current = null; setError(cause); }
       finally { sending.current = false; setBusy(false); }
     }}>
-      <h3>{c.plan}</h3><p>{c.note}</p><CadenceFields value={cadence} onChange={setCadence} language={language} disabled={busy || disabled || !!pending.current} />
-      <p className="subtle">{c.dst}</p><label className="review-trial"><input type="checkbox" required checked={reviewed} disabled={busy || disabled || !!pending.current} onChange={event => setReviewed(event.target.checked)} /><span>{c.reviewed}</span></label>
+      <h3>{c.plan}</h3>{trial.email_delivery ? <><p>{language === 'fr' ? 'À chaque exécution, un nouveau briefing sera envoyé depuis votre compte à ces destinataires, sans nouvelle confirmation. Vous pouvez suspendre cette tâche à tout moment.' : 'Each run sends a new briefing from your account to these recipients without another confirmation. You can pause this task at any time.'}</p><DeliverySummary delivery={trial.email_delivery} language={language} /></> : <p>{c.note}</p>}<CadenceFields value={cadence} onChange={setCadence} language={language} disabled={busy || disabled || !!pending.current} />
+      <p className="subtle">{c.dst}</p><label className="review-trial"><input type="checkbox" required checked={reviewed} disabled={busy || disabled || !!pending.current} onChange={event => setReviewed(event.target.checked)} /><span>{trial.email_delivery ? language === 'fr' ? 'J’ai relu le résultat et le reçu de l’essai et j’autorise les prochains envois à ces destinataires selon cet horaire.' : 'I reviewed the trial result and receipt and authorize future sends to these recipients on this schedule.' : c.reviewed}</span></label>
       <Notice>{error ? pending.current ? c.uncertain : errorMessage(error, language) : ''}</Notice>
       <button className="primary" disabled={busy || disabled || !reviewed}>{busy ? c.busy : pending.current ? c.retry : c.activate}</button>
     </form>}
@@ -105,7 +107,6 @@ export function Schedules({ organizationId, licensed, language, t, onOpen }: { o
   const [rows, setRows] = useState<Schedule[] | null>(null), [next, setNext] = useState<number | null>(null), [error, setError] = useState<unknown>(null), [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Schedule | null>(null), [draft, setDraft] = useState<Cadence>(initial), [removing, setRemoving] = useState('');
   const [historyId, setHistoryId] = useState(''), [history, setHistory] = useState<History | null>(null);
-  const trialRequests = useRef(new Map<string, string>());
   const alive = useRef(true), working = useRef(false), listingPages = useRef(1), historyPages = useRef(1);
   async function refresh() {
     let data = await api<{ schedules: Schedule[]; next_offset: number | null }>(base);
@@ -134,13 +135,11 @@ export function Schedules({ organizationId, licensed, language, t, onOpen }: { o
       {row.reason_code && <Notice>{errorMessage(new ApiError(409, row.reason_code), language)}</Notice>}
       <div className="schedule-actions"><button className="secondary" disabled={busy || row.status !== 'active' && !licensed} onClick={() => action(async () => { await api(`${base}/${row.id}/${row.status === 'active' ? 'pause' : 'resume'}`, { version: row.version }); })}>{row.status === 'active' ? <Pause size={16} /> : <Play size={16} />}{row.status === 'active' ? c.pause : c.resume}</button>
         <button className="secondary" disabled={busy || !licensed} onClick={() => { setEditing(row); setDraft({ frequency: row.frequency, local_time: row.local_time, timezone: row.timezone, weekday: row.weekday }); }}><Settings2 size={16} />{c.edit}</button>
-        <button className="secondary" disabled={busy || !licensed} onClick={() => action(async () => {
-          const requestId = trialRequests.current.get(row.id) || crypto.randomUUID(); trialRequests.current.set(row.id, requestId);
-          try { const trial = await api<Trial>(`/api/organizations/${organizationId}/routines/${row.proposal_id}/trial`, { request_id: requestId }); trialRequests.current.delete(row.id); onOpen(trial.conversation_id); }
-          catch (cause) { if (cause instanceof ApiError && cause.status > 0 && cause.status < 500) trialRequests.current.delete(row.id); throw cause; }
-        })}>{c.retest}</button>
+
         <button className="text-button" onClick={() => setHistoryId(historyId === row.id ? '' : row.id)}>{c.history}</button><button className="text-button" disabled={busy} onClick={() => setRemoving(row.id)}><Trash2 size={15} />{c.remove}</button>
       </div>
+      {row.email_delivery && <DeliverySummary delivery={row.email_delivery} language={language} />}
+      <RoutineTrialAction organizationId={organizationId} proposalId={row.proposal_id} language={language} disabled={busy || !licensed} sendsEmail={!!row.email_delivery} initialDelivery={row.email_delivery} label={c.retest} onOpen={onOpen} />
       {editing?.id === row.id && <form className="schedule-edit" onSubmit={event => { event.preventDefault(); void action(async () => { await api(`${base}/${row.id}`, { ...draft, version: editing.version }, 'PATCH'); setEditing(null); }); }}><CadenceFields value={draft} onChange={setDraft} language={language} disabled={busy || !licensed} /><p className="subtle">{c.dst}</p><button className="primary" disabled={busy || !licensed}>{c.save}</button><button type="button" className="text-button" onClick={() => setEditing(null)}>{c.cancel}</button></form>}
       {removing === row.id && <div className="configuration-note"><p>{c.confirmRemove}</p><button className="secondary" disabled={busy} onClick={() => action(async () => { await api(`${base}/${row.id}/archive`, { version: row.version }); setRemoving(''); })}>{c.remove}</button><button className="text-button" disabled={busy} onClick={() => setRemoving('')}>{c.cancel}</button></div>}
       {historyId === row.id && <div className="schedule-history">{history === null ? <p>{c.loading}</p> : !history.occurrences.length ? <p>{c.noRuns}</p> : <ul>{history.occurrences.map(run => <li key={run.id}><div><strong>{dateLabel(run.scheduled_for, row.timezone, language)}</strong><span>{status(run.status)}</span>{run.error_code && <span>{errorMessage(new ApiError(409, run.error_code), language)}</span>}</div>{run.conversation_id && <button className="text-button" onClick={() => onOpen(run.conversation_id!)}>{c.result}</button>}</li>)}</ul>}{history?.next_before && <button className="text-button" disabled={busy} onClick={() => action(async () => { const next = await api<History>(`${base}/${row.id}/occurrences?before=${history.next_before}`); if (alive.current) { historyPages.current++; setHistory(value => value && { ...next, occurrences: [...value.occurrences, ...next.occurrences] }); } })}>{c.more}</button>}</div>}

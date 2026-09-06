@@ -1,6 +1,6 @@
 # Automatisations personnelles
 
-6 septembre 2026 — implémentation locale, migration `0007`.
+6 septembre 2026 — planification depuis la migration `0007`, destination d’envoi depuis `0015`.
 
 ## Parcours utilisateur
 
@@ -8,9 +8,9 @@ Après un essai terminé dont les sources nécessaires ont été effectivement c
 
 L’écran « Automatisations » présente les tâches de la personne connectée, leurs sources, horaires, états et résultats. Il permet de modifier l’horaire, suspendre, reprendre, refaire un essai ou retirer une automatisation. Le retrait arrête les occurrences et masque la tâche de la liste ; les résultats privés restent accessibles dans l’assistant. Un nouvel essai peut servir à recréer sa planification, sans effacer l’historique existant.
 
-Une automatisation bloquée peut être remplacée par la validation d’un nouvel essai de la même proposition. Ce parcours sert notamment après un changement de modèle. La définition et les permissions utilisées pour chaque occurrence viennent du contexte de l’essai approuvé, pas du profil utilisateur éventuellement modifié depuis. Un changement de besoin se fait par une nouvelle proposition et un nouvel essai.
+Une automatisation peut être remplacée par la validation d’un nouvel essai de la même proposition, avec la version courante de la planification. Les occurrences anciennes en attente sont annulées. Ce parcours sert notamment après un changement de modèle. La définition et les permissions utilisées pour chaque occurrence viennent du contexte de l’essai approuvé, pas du profil utilisateur éventuellement modifié depuis. Un changement de besoin se fait par une nouvelle proposition et un nouvel essai.
 
-Les résultats restent dans l’application. Ces tâches utilisent actuellement les lectures Microsoft disponibles et ne réalisent pas d’envois, d’écritures externes ni de notifications par e-mail.
+Les résultats restent dans l’application. Les recettes de lecture et de préparation n’effectuent pas d’envoi. La recette dédiée de briefing par e-mail exige les permissions personnelles, une destination choisie par le propriétaire, un essai d’envoi confirmé et l’autorisation des envois récurrents. Voir [Envois planifiés](ENVOIS_PLANIFIES.md). Les autres écritures et les notifications opérationnelles restent à compléter.
 
 ## Décision d’architecture
 
@@ -53,7 +53,7 @@ Routes personnelles sous `/api/organizations/{organization_id}/schedules` :
 | Route | Fonction |
 |---|---|
 | `GET` | Liste paginée des planifications non retirées. |
-| `POST` | Activation avec `request_id`, `reviewed_trial_id`, `reviewed: true` et horaire. |
+| `POST` | Activation avec `request_id`, `reviewed_trial_id`, `reviewed: true` et horaire ; `email_delivery_confirmed: true` pour un envoi et `replaces_schedule_version` pour remplacer une planification existante. |
 | `PATCH /{id}` | Modification de l’horaire avec la version courante. |
 | `POST /{id}/pause`, `/resume`, `/archive` | Changement d’état avec la version courante. |
 | `GET /{id}/occurrences` | Historique paginé et liens vers les conversations privées. |

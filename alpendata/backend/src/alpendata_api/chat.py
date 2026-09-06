@@ -107,6 +107,7 @@ def create_conversation(
     purpose="chat",
     capabilities=None,
     extra_prompt="",
+    email_delivery=None,
 ):
     """Caller holds the owner's membership lock before creating or enqueuing work."""
     ensure_chat(settings)
@@ -116,7 +117,9 @@ def create_conversation(
     available = connected_capabilities(db, user, organization_id)
     if capabilities is not None and not set(capabilities) <= set(available):
         raise HTTPException(409, "microsoft_reconnect_required")
-    automatic_email = purpose != "onboarding" and email_autonomy_available(db, organization_id, user.id)
+    automatic_email = (purpose == "chat" or email_delivery is not None) and email_autonomy_available(
+        db, organization_id, user.id
+    )
     response_language = "French" if language == "fr" else "English"
     prompt = (
         f"You are AlpenData, the user's workplace assistant. Reply in {response_language}. "
@@ -157,6 +160,7 @@ def create_conversation(
         documents_enabled=True,
         tool_revision=4,
         email_send_enabled=automatic_email,
+        email_delivery=email_delivery,
         title=title or ("Nouvelle conversation" if language == "fr" else "New conversation"),
         provider=settings.model.provider,
         model=settings.model.model,

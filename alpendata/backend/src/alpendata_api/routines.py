@@ -9,6 +9,7 @@ from pydantic import Field
 from sqlalchemy import select
 
 from .access import owned
+from .action_policy import email_autonomy_available, require_email_autonomy
 from .auth import authenticate, request_authorization
 from .chat import (
     connected_capabilities,
@@ -21,6 +22,7 @@ from .chat import (
 from .connections import lock_member
 from .models import Conversation, RoutineProposal, RoutineTrial
 from .routine_catalog import RECIPES, available_recipes
+from .routine_delivery import DeliveryInput
 from .routine_service import trial_view
 from .schemas import Input
 
@@ -35,6 +37,8 @@ class PlanningInput(Input):
 
 class TrialInput(Input):
     request_id: UUID
+    email_delivery: DeliveryInput | None = None
+    email_send_confirmed: bool = False
 
 
 def routines_router(settings, factory):
@@ -59,11 +63,18 @@ def routines_router(settings, factory):
                 ):
                     raise HTTPException(409, "chat_request_conflict")
                 return {"conversation": conversation_view(conversation), "turn": turn_view(previous)}
-            recipes = available_recipes(connected_capabilities(db, user, organization_id))
+            recipes = available_recipes(
+                connected_capabilities(db, user, organization_id),
+                email_autonomy=email_autonomy_available(db, organization_id, user.id),
+            )
             if len(recipes) < 2:
                 raise HTTPException(409, "microsoft_reconnect_required")
             catalog = {
-                name: {"description": item.instruction, "sources": item.capabilities}
+                name: {
+                    "description": item.instruction,
+                    "sources": item.capabilities,
+                    "sends_email": item.sends_email,
+                }
                 for name, item in recipes.items()
             }
             prompt = (
@@ -74,6 +85,8 @@ def routines_router(settings, factory):
                 "and concrete focus instructions. "
                 "Do not execute a trial or activate recurrence: "
                 "the user chooses a proposal with the trial button. "
+                "For a sending recipe, clearly explain that the trial sends one real email and that "
+                "the user will choose recipients and subject and confirm before it runs. "
                 "One immutable batch is saved per conversation; "
                 "a new planning conversation can replace the selection. "
                 "Catalog: " + json.dumps(catalog, ensure_ascii=False)
@@ -99,14 +112,34 @@ def routines_router(settings, factory):
             previous = request_turn(db, user, organization_id, body.request_id)
             if previous:
                 saved = db.scalar(select(RoutineTrial).where(RoutineTrial.turn_id == previous.id))
-                if saved is None or saved.proposal_id != proposal.id:
+                delivery = body.email_delivery.model_dump(mode="json") if body.email_delivery else None
+                if (
+                    saved is None
+                    or saved.proposal_id != proposal.id
+                    or db.get(Conversation, previous.conversation_id).email_delivery != delivery
+                ):
                     raise HTTPException(409, "chat_request_conflict")
                 return trial_view(db, saved)
             recipe = RECIPES[proposal.template]
+            delivery = body.email_delivery.model_dump(mode="json") if body.email_delivery else None
+            if recipe.sends_email:
+                if delivery is None or not body.email_send_confirmed:
+                    raise HTTPException(409, "routine_email_confirmation_required")
+                require_email_autonomy(db, organization_id, user.id)
+                if not email_autonomy_available(db, organization_id, user.id):
+                    raise HTTPException(409, "microsoft_reconnect_required")
+            elif delivery is not None or body.email_send_confirmed:
+                raise HTTPException(409, "routine_email_not_available")
             prompt = (
                 "Perform this task once using the required Microsoft sources. "
                 + recipe.instruction
                 + " State what was actually consulted and any missing information. No recurrence is active. "
+                + (
+                    "Fixed email envelope approved by the user for this single sending trial and any "
+                    "subsequently activated recurrence: " + json.dumps(delivery, ensure_ascii=False) + ". "
+                    if delivery
+                    else "Do not send any emails. "
+                )
                 + "Personal focus data: "
                 + json.dumps(proposal.focus, ensure_ascii=False)
             )
@@ -120,6 +153,7 @@ def routines_router(settings, factory):
                 purpose="routine_trial",
                 capabilities=recipe.capabilities,
                 extra_prompt=prompt,
+                email_delivery=delivery,
             )
             message = "Tester cette tâche une fois." if proposal.language == "fr" else "Try this task once."
             turn = queue_turn(db, settings, user, conversation, body.request_id, message)

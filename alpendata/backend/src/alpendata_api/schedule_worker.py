@@ -75,6 +75,7 @@ class ScheduleWorker:
                         documents_enabled=template.documents_enabled,
                         tool_revision=template.tool_revision,
                         email_send_enabled=template.email_send_enabled,
+                        email_delivery=template.email_delivery,
                         provider=template.provider,
                         model=template.model,
                         capabilities=list(template.capabilities),

@@ -205,6 +205,7 @@ class Conversation(OwnedMixin, Base):
     documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     tool_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     email_send_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    email_delivery: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     language: Mapped[str] = mapped_column(String(2))
     provider: Mapped[str] = mapped_column(String(24))
     model: Mapped[str] = mapped_column(String(200))

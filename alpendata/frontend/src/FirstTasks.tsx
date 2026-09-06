@@ -1,18 +1,20 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { api, ApiError } from './api';
 import { Notice } from './feedback';
 import type { Language } from './locale';
+import { RoutineTrialAction } from './RoutineTrialAction';
+import type { EmailDelivery } from './RoutineTrialAction';
 
-export type Proposal = { id: string; title: string; benefit: string; focus: string };
-export type Trial = { can_replace_schedule?: boolean; schedule_id?: string | null; id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
+export type Proposal = { sends_email?: boolean; id: string; title: string; benefit: string; focus: string };
+export type Trial = { schedule_version?: number | null; email_delivery?: EmailDelivery | null; delivery_accepted?: boolean; can_replace_schedule?: boolean; schedule_id?: string | null; id: string; proposal_id: string; conversation_id: string; status: string; sources_verified: boolean };
 
 const words = {
   fr: {
     title: 'Un premier résultat utile.', intro: 'Après avoir connecté vos outils, choisissez ce qui vous ferait gagner du temps aujourd’hui.',
     question: 'Par quoi aimeriez-vous commencer ?', placeholder: 'Par exemple : repérer les demandes de mes clients qui nécessitent un suivi.',
     propose: 'Trouver mes premières tâches', working: 'Préparation…', try: 'Tester maintenant', retry: 'Réessayer',
-    once: 'Chaque essai consulte vos outils et produit un résultat dans votre conversation. Il ne programme aucune répétition.',
+    once: 'Chaque essai produit un résultat dans votre conversation. Les tâches d’envoi demandent une confirmation supplémentaire. Aucun essai ne programme de répétition.',
     access: 'Connectez les outils nécessaires dans votre espace personnel, puis réessayez.',
     profile: 'Complétez d’abord votre profil dans « Mon espace ».', busy: 'Votre assistant termine déjà une demande. Réessayez ensuite.',
     unavailable: 'AlpenData doit terminer la configuration de votre assistant.',
@@ -24,7 +26,7 @@ const words = {
     title: 'Your first useful result.', intro: 'After connecting your tools, choose what would save you time today.',
     question: 'What would you like to start with?', placeholder: 'For example: identify client requests that need a follow-up.',
     propose: 'Find my first tasks', working: 'Preparing…', try: 'Try now', retry: 'Retry',
-    once: 'Each trial reads your tools and produces a result in your conversation. It does not schedule any recurrence.',
+    once: 'Each trial produces a result in your conversation. Sending tasks require an additional confirmation. No trial schedules a recurrence.',
     access: 'Connect the required tools in your personal workspace, then try again.',
     profile: 'Complete your profile in “My workspace” first.', busy: 'Your assistant is already working on a request. Try again afterwards.',
     unavailable: 'AlpenData needs to finish configuring your assistant.',
@@ -68,22 +70,10 @@ export function FirstTasks({ organizationId, language, onOpen }: { organizationI
 
 export function RoutineCards({ proposals, organizationId, language, disabled, onOpen }: { proposals: Proposal[]; organizationId: string; language: Language; disabled: boolean; onOpen: (id: string) => void }) {
   const c = words[language];
-  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
-  const pending = useRef<{ proposal: string; request_id: string } | null>(null), sending = useRef(false);
-  return <section className="routine-proposals"><p>{c.once}</p><Notice>{error ? failure(error, language) : ''}</Notice>
+  return <section className="routine-proposals"><p>{c.once}</p>
     <div className="routine-grid">{proposals.map(item => <article className="routine-card" key={item.id}>
       <h3>{item.title}</h3><p>{item.benefit}</p><p className="subtle">{item.focus}</p>
-      <button className="secondary" disabled={disabled || busy || !!pending.current && pending.current.proposal !== item.id} onClick={async () => {
-        if (sending.current) return; sending.current = true; setBusy(true); setError(null);
-        const intent = pending.current || { proposal: item.id, request_id: crypto.randomUUID() }; pending.current = intent;
-        try {
-          const trial = await api<Trial>(`/api/organizations/${organizationId}/routines/${intent.proposal}/trial`, { request_id: intent.request_id });
-          pending.current = null; onOpen(trial.conversation_id);
-        } catch (cause) {
-          if (cause instanceof ApiError && cause.status > 0 && cause.status < 500) pending.current = null;
-          setError(cause);
-        } finally { sending.current = false; setBusy(false); }
-      }}><Play size={16} />{busy ? c.working : pending.current ? c.retry : c.try}</button>
+      <RoutineTrialAction organizationId={organizationId} proposalId={item.id} language={language} disabled={disabled} sendsEmail={item.sends_email} onOpen={onOpen} />
     </article>)}</div>
   </section>;
 }

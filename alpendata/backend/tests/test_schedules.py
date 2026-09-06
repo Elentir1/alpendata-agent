@@ -69,6 +69,7 @@ def activation(trial):
     return {
         "request_id": str(uuid4()),
         "reviewed_trial_id": trial["id"],
+        "replaces_schedule_version": trial.get("schedule_version"),
         "reviewed": True,
         "frequency": "weekdays",
         "local_time": "08:30",

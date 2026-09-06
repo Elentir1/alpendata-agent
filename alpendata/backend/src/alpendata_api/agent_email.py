@@ -9,6 +9,7 @@ from sqlalchemy import select
 from .action_policy import require_email_autonomy
 from .email_dispatch import dispatch_email
 from .models import ChatTurn, Conversation, EmailAttempt, EmailDraft
+from .routine_delivery import check_delivery_draft
 from .schemas import Input
 
 
@@ -25,6 +26,8 @@ def send_agent_email(factory, microsoft, authorize_job, job, payload):
         conversation = db.get(Conversation, turn.conversation_id)
         if not conversation.email_send_enabled or conversation.tool_revision < 4:
             raise HTTPException(403, "email_new_conversation_required")
+        if conversation.purpose != "chat" and conversation.email_delivery is None:
+            raise HTTPException(403, "routine_email_not_available")
         version = require_email_autonomy(db, job.organization_id, job.owner_id)
 
     def authorize(db):
@@ -33,6 +36,7 @@ def send_agent_email(factory, microsoft, authorize_job, job, payload):
         return user
 
     def check_draft(db, draft):
+        check_delivery_draft(db, db.get(ChatTurn, job.id), draft)
         if draft.turn_id != job.id:
             raise HTTPException(403, "email_draft_wrong_turn")
         unresolved = db.scalar(

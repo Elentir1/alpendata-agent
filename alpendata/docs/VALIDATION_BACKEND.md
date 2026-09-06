@@ -1,5 +1,16 @@
 # Vérification du premier backend
 
+## Briefing envoyé et récurrence — 6 septembre 2026
+
+La suite complète passe **56 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec le runtime inchangé `sha256:4b433a33ee62fc1cc3bc260f6d98716fc7a3d046ec70a855a91ff67ee6aca0a7`. Le frontend passe **28 scénarios JSDOM**, puis TypeScript et le build Vite. Ruff et la cohérence des migrations passent.
+
+Le nouveau parcours exécute le véritable Hermes pour un essai d’envoi puis pour une occurrence planifiée, avec la même destination confirmée. Les contrôles couvrent les destinataires et l’objet fixes, la lecture préalable des sources, l’absence de deuxième tentative, les refus par défaut, les reçus et la révocation. Les cas supplémentaires de remplacement versionné et d’incertitude ont ensuite été vérifiés sur SQLite et PostgreSQL. Le test de remplacement a d’abord réutilisé la même seconde pour deux échéances forcées : après correction vers deux horaires synthétiques distincts, le scénario PostgreSQL passe sans nouvelle tentative du runner.
+
+Les scénarios d’interface vérifient la confirmation de l’essai, la conservation de la demande après une réponse perdue, la confirmation des futurs envois et la version du remplacement. Ils vérifient aussi qu’un reçu arrivé par le rafraîchissement du chat remplace le brouillon, qu’un ancien résultat ne rétablit pas l’envoi et qu’une édition locale est préservée lors d’un conflit.
+
+Le formulaire et le parcours ont été contrôlés visuellement en anglais et français sur un aperçu fictif séparé, ensuite fermé et arrêté. La base normale a été sauvegardée puis migrée en `0015` et l’API redémarrée. Aucun message réel n’a été envoyé : Entra/Exchange, le modèle commercial, l’hébergement Infomaniak et le pilote restent à valider. Détails dans [Envois planifiés](ENVOIS_PLANIFIES.md).
+
+
 ## Autonomie personnelle des e-mails — 6 septembre 2026
 
 La suite complète passe **54 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image runtime `sha256:4b433a33ee62fc1cc3bc260f6d98716fc7a3d046ec70a855a91ff67ee6aca0a7`. Le frontend passe **24 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.

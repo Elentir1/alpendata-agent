@@ -222,3 +222,9 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .email-draft .email-confirm { display: flex; align-items: flex-start; gap: .65rem; }
 .email-draft .email-confirm input { width: 18px; height: 18px; min-height: 18px; flex: 0 0 18px; margin-top: .15rem; }
 .email-draft > button { margin: .5rem .5rem .5rem 0; }
+
+.routine-trial-action { margin-top: 1rem; }
+.routine-trial-action form { display: grid; gap: .65rem; }
+.routine-trial-action input:not([type=checkbox]) { width: 100%; min-width: 0; }
+.routine-trial-action .review-trial input { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; accent-color: var(--red); }
+.routine-trial-action button { white-space: normal; justify-self: start; }

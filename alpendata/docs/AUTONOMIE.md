@@ -24,7 +24,7 @@ Revenir à la confirmation, retirer l’autorisation commune ou perdre les accè
 
 Les tâches héritent des outils de leur essai relu. Une tâche préparée avec l’autonomie est suspendue si celle-ci est retirée ; ses occurrences en file sont annulées et celles en cours reçoivent une demande d’arrêt. Réautoriser l’autonomie ne réactive pas les tâches. Le parcours demande un nouvel essai avant activation après changement.
 
-Le catalogue actuel reste composé de recettes de lecture et de préparation. L’héritage et la révocation de la capacité d’envoi sont implémentés et testés ; une recette dédiée d’envoi récurrent, sa présentation explicite pendant l’essai et un scénario complet d’envoi planifié restent à réaliser. Activer ce réglage ne transforme pas automatiquement un briefing en e-mail envoyé.
+Le catalogue comprend désormais une recette de briefing envoyé par e-mail, avec destinataires et objet fixés par le propriétaire, essai d’envoi confirmé puis activation explicite de la récurrence. Les recettes de lecture et de préparation restent sans outil d’envoi. Le parcours et ses limites sont décrits dans [Envois planifiés](ENVOIS_PLANIFIES.md). Activer le réglage personnel ne transforme pas automatiquement un briefing existant en e-mail envoyé.
 
 ## Validation et limites
 

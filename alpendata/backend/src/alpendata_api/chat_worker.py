@@ -16,7 +16,18 @@ from .connections import MicrosoftReader, SearchInput, lock_member
 from .database import database_factory
 from .graph_documents import FileInput
 from .model_gateway import ModelError, ModelGateway
-from .models import ChatTurn, Conversation, Membership, ModelCall, RoutineProposal, ToolRead, User, now
+from .models import (
+    ChatTurn,
+    Conversation,
+    Membership,
+    ModelCall,
+    RoutineProposal,
+    RoutineTrial,
+    ToolRead,
+    User,
+    now,
+)
+from .routine_delivery import delivery_accepted
 from .routine_service import read_evidence, record_proposals, source_references
 from .runtime import ContainerRuntime, RuntimeFailure
 from .schedule_state import finish_occurrence, occurrence_for_turn, scheduled_turn_error
@@ -380,6 +391,15 @@ class ChatWorker:
                 capabilities = db.get(Conversation, turn.conversation_id).capabilities
                 if not set(capabilities) <= read_evidence(db, turn)[0]:
                     error = "routine_sources_missing"
+            if (
+                not error
+                and (
+                    occurrence_for_turn(db, turn.id)
+                    or db.scalar(select(RoutineTrial.id).where(RoutineTrial.turn_id == turn.id))
+                )
+                and not delivery_accepted(db, turn)
+            ):
+                error = "routine_email_not_accepted"
             turn.finished_at, turn.lease_expires_at = now(), None
             db.execute(
                 update(ToolRead)

@@ -1,4 +1,4 @@
-"""Reviewed schedules retain their tool authority and stop when it is withdrawn."""
+"""Read-only routines do not acquire email authority from the personal chat setting."""
 
 from uuid import uuid4
 
@@ -15,7 +15,7 @@ from alpendata_api.models import ChatTurn, Conversation, RoutineSchedule, now
 from alpendata_api.schedule_worker import ScheduleWorker
 
 
-def test_personal_revocation_blocks_the_reviewed_schedule_and_its_queued_occurrence(routine_service):
+def test_read_only_schedule_remains_without_email_authority_when_personal_policy_changes(routine_service):
     app, client, settings, provider, graph, org, _, bob = routine_service
     policy = enable_autonomy(routine_service)
     read_consent(routine_service)
@@ -60,15 +60,27 @@ def test_personal_revocation_blocks_the_reviewed_schedule_and_its_queued_occurre
     with app.state.session_factory.begin() as db:
         queued = db.query(ChatTurn).filter_by(owner_id=bob[0], status="queued").one()
         queued_id = queued.id
-        assert db.get(Conversation, queued.conversation_id).email_send_enabled
+        assert not db.get(Conversation, queued.conversation_id).email_send_enabled
     result = client.put(
         base + "/action-policy", headers=bob[2], json={"version": policy["version"], "email_mode": "confirm"}
     )
     assert result.status_code == 200
     with app.state.session_factory.begin() as db:
-        assert db.get(RoutineSchedule, schedule["id"]).status == "blocked"
-        assert db.get(ChatTurn, queued_id).status == "cancelled"
-    assert worker.claim() is None
-    enable_autonomy(routine_service)
+        assert db.get(RoutineSchedule, schedule["id"]).status == "active"
+        assert db.get(ChatTurn, queued_id).status == "queued"
+    assert worker.claim() is not None
+    current = client.get(base + "/action-policy", headers=bob[2]).json()
+    assert (
+        client.put(
+            base + "/action-policy",
+            headers=bob[2],
+            json={
+                "version": current["version"],
+                "email_mode": "automatic",
+                "acknowledged": True,
+            },
+        ).status_code
+        == 200
+    )
     with app.state.session_factory.begin() as db:
-        assert db.get(RoutineSchedule, schedule["id"]).status == "blocked"
+        assert db.get(RoutineSchedule, schedule["id"]).status == "active"
