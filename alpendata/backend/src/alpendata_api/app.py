@@ -18,6 +18,7 @@ from .company_resources import company_resources_router
 from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .email_routes import email_router
+from .health import database_ready, health_router, release_head
 from .mail import SMTPMailer
 from .memory_routes import memory_router
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
@@ -42,17 +43,23 @@ from .signin import signin_router
 def create_app(
     settings: Settings, *, signin_provider=None, mailer=None, microsoft_provider=None, graph=None
 ) -> FastAPI:
+    expected_schema = release_head()
     engine, factory = database_factory(settings.database_url)
     if mailer is None and settings.smtp_enabled:
         mailer = SMTPMailer(settings)
 
     @asynccontextmanager
     async def lifespan(_app):
-        yield
-        engine.dispose()
+        try:
+            if not database_ready(engine, expected_schema):
+                raise RuntimeError("application_database_not_ready")
+            yield
+        finally:
+            engine.dispose()
 
     app = FastAPI(title="AlpenData API", version="0.1.0", lifespan=lifespan)
     app.state.engine, app.state.session_factory = engine, factory
+    app.include_router(health_router(engine, expected_schema))
     app.include_router(signin_router(settings, factory, signin_provider))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
@@ -102,10 +109,6 @@ def create_app(
         return authenticate(db, request_authorization(request, settings))
 
     Actor = Annotated[User, Depends(current_user)]
-
-    @app.get("/health/live")
-    def live():
-        return {"status": "ok"}
 
     @app.get("/api/me")
     def me(actor: Actor, db: DB):

@@ -38,7 +38,7 @@ uv run uvicorn alpendata_api.app:from_environment --factory --host 127.0.0.1 --p
 
 Sous PowerShell, définir la variable avec `$env:ALPENDATA_DATABASE_URL`. Utiliser un compte PostgreSQL dédié et des secrets locaux, jamais des identifiants enregistrés dans Git. Les migrations sont exécutées explicitement avant le démarrage, pas à chaque démarrage de l’API.
 
-`GET /health/live` vérifie que le processus répond. Les routes métier acceptent une session opaque par cookie `HttpOnly; Secure; SameSite=Lax`, ou par `Authorization: Bearer …` pour un client serveur. Toute mutation utilisant le cookie doit fournir l’en-tête `Origin` exact du produit. La capacité initiale du pilote est de trois places ; ce paramètre serveur n’est pas encore piloté par un abonnement payant.
+`GET /health/live` vérifie que le processus répond. `GET /health/ready` vérifie la connexion et la révision Alembic attendue ; une incompatibilité empêche aussi le démarrage de l'API. Voir [Entrée HTTPS et démarrage](../docs/ENTREE_HTTPS.md) pour servir la compilation frontend et l'API sous une même origine. Les routes métier acceptent une session opaque par cookie `HttpOnly; Secure; SameSite=Lax`, ou par `Authorization: Bearer …` pour un client serveur. Toute mutation utilisant le cookie doit fournir l’en-tête `Origin` exact du produit. La capacité initiale du pilote est de trois places ; ce paramètre serveur n’est pas encore piloté par un abonnement payant.
 
 ## Configuration Microsoft
 

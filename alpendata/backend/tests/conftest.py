@@ -17,6 +17,8 @@ from alpendata_api.settings import Settings
 
 
 def pytest_addoption(parser):
+    parser.addoption("--nginx-bin", help="Absolute Nginx binary for isolated real HTTPS tests")
+    parser.addoption("--frontend-dist", help="Built AlpenData frontend for HTTPS integration tests")
     parser.addoption("--age-bin", help="Absolute age binary for real encrypted-backup exercises")
     parser.addoption("--document-qa-output", help="Optional directory for generated document QA artifacts")
     parser.addoption("--runtime-image", help="Pinned Podman image ID for real Linux Hermes runtime tests")

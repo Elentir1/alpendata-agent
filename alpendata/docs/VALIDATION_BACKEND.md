@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Entrée HTTPS et compatibilité au démarrage — 6 septembre 2026
+
+La suite complète finale passe **77 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l'image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`, age 1.2.1 et Nginx **1.26.3**, paquet Debian `1.26.3-3+deb13u7`. La compilation TypeScript/Vite, Ruff, le format des fichiers concernés et la vérification Git passent. Le frontend est recompilé sans modification de ses sources ; ses 38 tests JSDOM du lot précédent n'ont pas été relancés.
+
+Les deux scénarios HTTPS lancent le vrai Nginx avec une configuration produite par la commande opérateur, Uvicorn et PostgreSQL temporaires. Le client valide le certificat éphémère. La page, le lien d'invitation, les scripts, styles et polices compilés retrouvent leurs octets. Les chemins privés, cartes de sources, liens symboliques et hôtes étrangers sont refusés ; une erreur API conserve son contenu JSON. Les requêtes dépassant 8 Mio sont refusées. Les sessions personnelles passent par HTTPS, les mutations par cookie exigent l'origine exacte et les en-têtes de proxy fournis par le client ne contrôlent pas les redirections. Une configuration existante n'est pas écrasée.
+
+Les deux scénarios de santé vérifient la version réelle de la base, sa dégradation puis son rétablissement, une erreur SQL expurgée et le refus de démarrer sur une base vide sans la modifier. La suite complète couvre aussi le démarrage après restauration et les parcours Hermes existants.
+
+Le premier essai Nginx a échoué parce que le binaire Debian cherchait encore son répertoire FastCGI système, même sans route FastCGI. Tous les répertoires temporaires sont désormais explicitement rattachés au répertoire privé de l'instance. Le binaire a été extrait du paquet Debian dans un dossier d'outils local, sans installation ni démarrage d'un service système. Les essais finaux passent sous le compte Linux non privilégié.
+
+Les options `--nginx-bin` et `--frontend-dist` activent les deux exercices HTTPS ; elles s'ajoutent à `--postgresql-bin`, `--runtime-image` et `--age-bin` pour la suite complète. Les tests utilisent des données et sessions synthétiques. Ils vérifient le transport HTTP et les fichiers compilés, sans nouveau parcours visuel dans le navigateur ni compte Entra réel. Aucun domaine public, certificat de production, service Infomaniak ou compte client n'a été configuré. L'API de prévisualisation Windows n'a pas été redémarrée pendant ces essais. Voir [Entrée HTTPS et démarrage](ENTREE_HTTPS.md).
+
 ## Chiffrement des sauvegardes — 6 septembre 2026
 
 La suite complète finale passe **73 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b` et le programme age **1.2.1** du paquet Debian `1.2.1-1+b5`. Ruff, le format des nouveaux fichiers et la vérification Git passent. Aucune migration, route cliente ou modification d’interface n’est ajoutée.
