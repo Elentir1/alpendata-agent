@@ -184,3 +184,11 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .schedule-history ul { list-style: none; padding: 0; }
 .schedule-history li { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; }
 .schedule-history li span { display: block; margin-top: .3rem; font-size: .85rem; color: #626973; }
+/* Confirmed private document receipts, independent of the model's prose. */
+.chat-documents { padding: 1rem; margin: .5rem 0 1rem; border: 1px solid #e5e7eb; border-radius: 12px; background: white; }
+.chat-documents ul { list-style: none; padding: 0; margin: .5rem 0 0; }
+.chat-documents li { display: flex; gap: .75rem; align-items: center; padding: .5rem 0; }
+.chat-documents li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.chat-documents small { display: block; color: #6b7280; margin-top: .2rem; }
+.chat-documents button { flex-shrink: 0; }
+@media (max-width: 520px) { .chat-documents li { flex-wrap: wrap; } .chat-documents button { margin-left: 1.8rem; } }

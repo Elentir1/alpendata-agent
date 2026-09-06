@@ -89,8 +89,12 @@ def model_proxy(channel):
     return server
 
 
-def register_tools(channel, capabilities, *, planning=False):
+def register_tools(channel, capabilities, *, planning=False, documents=False):
     from tools.registry import registry
+    from documents import register_documents
+
+    if documents:
+        register_documents(channel, registry)
 
     if planning:
 
@@ -228,7 +232,10 @@ def run(channel, request):
     capabilities = request.get("capabilities", [])
     scheduled = request.get("purpose") == "scheduled"
     register_tools(
-        channel, capabilities, planning=request.get("purpose") == "onboarding"
+        channel,
+        capabilities,
+        planning=request.get("purpose") == "onboarding",
+        documents=request.get("documents_enabled", False),
     )
     session_db = SessionDB()
     agent = AIAgent(
@@ -249,7 +256,7 @@ def run(channel, request):
         enabled_toolsets=(
             ["file", "terminal"] if scheduled else ["memory", "file", "terminal"]
         )
-        + (["alpendata"] if capabilities else []),
+        + (["alpendata"] if capabilities or request.get("documents_enabled") else []),
         max_iterations=20,
         run_budget_seconds=180 if scheduled else 240,
     )

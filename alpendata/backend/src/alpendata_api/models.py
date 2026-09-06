@@ -11,9 +11,11 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -176,6 +178,7 @@ class Conversation(OwnedMixin, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(160))
     purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
+    documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     language: Mapped[str] = mapped_column(String(2))
     provider: Mapped[str] = mapped_column(String(24))
     model: Mapped[str] = mapped_column(String(200))
@@ -259,6 +262,23 @@ def turn_ownership_constraint(column="turn_id"):
     return ForeignKeyConstraint(
         [column, "organization_id", "owner_id"],
         ["alpendata_chat_turns.id", "alpendata_chat_turns.organization_id", "alpendata_chat_turns.owner_id"],
+    )
+
+
+class Artifact(OwnedMixin, Base):
+    __tablename__ = "alpendata_artifacts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    filename: Mapped[str] = mapped_column(String(180))
+    media_type: Mapped[str] = mapped_column(String(120))
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        UniqueConstraint("turn_id", "filename", "sha256"),
+        CheckConstraint("size > 0 AND size <= 5242880", name="ck_artifact_size"),
     )
 
 

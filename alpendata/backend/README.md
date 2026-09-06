@@ -16,7 +16,9 @@ Premier socle de gestion des entreprises et des espaces personnels, indépendant
 
 Les sessions sont émises uniquement par le serveur après le parcours Microsoft. Aucun endpoint ne permet de déclarer librement son identité ou son rôle ; aucun compte de démonstration n’est intégré. Les tests emploient des identités synthétiques et un transport Microsoft simulé en conservant la véritable bibliothèque MSAL. Aucune connexion à un compte Microsoft réel n’a encore été validée.
 
-Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le runtime isolé du moteur Hermes est implémenté et décrit dans `../runtime/README.md` ; son raccordement aux conversations, les automatisations et Stripe restent à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
+Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le runtime isolé du moteur Hermes est raccordé aux conversations et aux récurrences personnelles, et décrit dans `../runtime/README.md`. Stripe reste à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
+
+La migration `0008` ajoute la publication et le téléchargement de documents personnels depuis le chat. Le contenu reste privé, immuable et rattaché au tour. Les limites et la génération encore à terminer sont décrites dans [Documents](../docs/DOCUMENTS.md).
 
 **Invitations :** après connexion, le collaborateur demande une vérification avec `POST /api/invitations/verify`. Le serveur envoie un lien à la seule adresse enregistrée par l’administrateur. La preuve expire après 15 minutes et ne fonctionne que pour le compte demandeur et cette invitation. `POST /api/invitations/accept` demande le jeton d’invitation et `verification_token`. Une adresse précédemment vérifiée ou déclarée par Microsoft ne contourne jamais cette preuve. Le lien initial est encore retourné à l’administrateur pour partage manuel ; son envoi automatique reste à intégrer. L’écran `/join` est maintenant présent dans `alpendata/frontend`.
 

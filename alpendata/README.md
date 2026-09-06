@@ -16,6 +16,8 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 
 ## Documents
 
+- [Publication et téléchargement de documents privés](docs/DOCUMENTS.md)
+
 - [Audit technique Hermes](docs/AUDIT_HERMES.md)
 - [Architecture AlpenData](docs/ARCHITECTURE.md)
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)

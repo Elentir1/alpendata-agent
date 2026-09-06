@@ -72,6 +72,7 @@ class ScheduleWorker:
                         title=proposal.title,
                         language=template.language,
                         purpose="scheduled",
+                        documents_enabled=template.documents_enabled,
                         provider=template.provider,
                         model=template.model,
                         capabilities=list(template.capabilities),

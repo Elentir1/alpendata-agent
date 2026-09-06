@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Documents privés — 6 septembre 2026
+
+Après la migration `0008`, la suite complète passe **36 scénarios sous Linux/PostgreSQL avec l’image `sha256:acbd8d15b9c59a97425671e677fcae5714ac05ddc0b93f48e853eb2cf22158e8`**, sans échec ni scénario ignoré. Un contrôle supplémentaire des conteneurs Office et des tailles a ensuite été ajouté ; les deux tests du fichier documents passent sous Windows/SQLite. Le frontend passe **15 scénarios JSDOM** et son build TypeScript/Vite.
+
+Le nouveau parcours exécute le vrai Hermes sans connexion Microsoft : création d’un PDF de test dans le terminal, refus des chemins sortants et liens symboliques, publication idempotente, conservation des octets et téléchargement réservé au propriétaire. Les autres tests vérifient la continuité après interruption, les refus d’accès, les noms, les types et les plafonds. Les réponses de modèle restent synthétiques. Les paquets Office du test vérifient uniquement le contrôle de format ; les exemples métier et leur rendu restent à produire.
+
+Le build a été contrôlé dans un navigateur sur un aperçu séparé explicitement fictif : bloc du document, nom, taille, téléchargement indisponible et changement anglais/français. Aucune erreur JavaScript observée. Cet aperçu a été fermé et arrêté. La base de prévisualisation normale a été sauvegardée et migrée en `0008`, puis l’API redémarrée. La route de téléchargement est présente ; Microsoft et SMTP restent correctement annoncés comme non configurés.
+
+Le périmètre et les limites sont décrits dans [Documents](DOCUMENTS.md). L’historique des vérifications précédentes suit ci-dessous.
+
 5 septembre 2026. Périmètre : `alpendata/backend`, migrations `0001` à `0004`.
 
 ## Résultats

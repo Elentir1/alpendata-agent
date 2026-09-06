@@ -39,6 +39,8 @@ Les frames sont plafonnées à 8 Mio et les demandes par tour à 80. L’écritu
 
 ## Vérification
 
+L’extension [documents](../docs/DOCUMENTS.md) publie des fichiers privés depuis les nouvelles conversations, même sans connexion Microsoft. Les octets traversent le broker ; aucun fichier n’est lu par un chemin hôte choisi par le modèle. Image vérifiée pour cette étape : `sha256:acbd8d15b9c59a97425671e677fcae5714ac05ddc0b93f48e853eb2cf22158e8`.
+
 Installer les dépendances de développement du backend et définir `HERMES_PYTHON` vers cet environnement, puis :
 
 ```sh

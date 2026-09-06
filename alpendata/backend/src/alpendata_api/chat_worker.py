@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import select, update
 
+from .artifacts import publish_document
 from .connections import MicrosoftReader, SearchInput, lock_member
 from .database import database_factory
 from .model_gateway import ModelError, ModelGateway
@@ -265,6 +266,16 @@ class ChatWorker:
                         db, db.get(ChatTurn, job.id), {"proposals": payload["proposals"]}
                     )
                 return {"status": 200, "body": result}
+            if isinstance(payload, dict) and payload.get("kind") == "document":
+                with self.factory.begin() as db:
+                    authorize_job(db, job)
+                    turn = db.get(ChatTurn, job.id)
+                    if not db.get(Conversation, turn.conversation_id).documents_enabled:
+                        raise HTTPException(403, "document_new_conversation_required")
+                    result = publish_document(
+                        db, turn, {key: value for key, value in payload.items() if key != "kind"}
+                    )
+                return {"status": 200, "body": result}
             request = ToolRequest.model_validate(payload)
             if request.capability not in capabilities:
                 raise HTTPException(403, "microsoft_permission_required")
@@ -372,6 +383,7 @@ class ChatWorker:
                     "capabilities": conversation.capabilities,
                     "message": turn.message,
                     "purpose": conversation.purpose,
+                    "documents_enabled": conversation.documents_enabled,
                 }
             handlers = {
                 "model": lambda body: self.model(job, body),

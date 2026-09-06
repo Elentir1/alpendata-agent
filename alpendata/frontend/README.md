@@ -33,6 +33,8 @@ L’authentification utilise exclusivement le cookie HttpOnly émis par l’API.
 
 ## Vérification
 
+Le chat présente aussi les [documents reçus](../docs/DOCUMENTS.md) : nom, taille et téléchargement authentifié. Il gère un accès expiré et conserve l’affichage des fichiers réellement reçus quand la suite du tour échoue. Les quinze scénarios JSDOM et le build TypeScript/Vite passent après cet ajout.
+
 ```sh
 npm test
 npm run build
