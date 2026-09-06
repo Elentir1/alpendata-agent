@@ -132,7 +132,7 @@ La migration `0020` et les routes `/api/organizations/{organization_id}/billing`
 
 ## Services continus
 
-Les workers terminent leur itération courante sur SIGTERM/SIGINT, puis quittent sans prendre le travail suivant. Le générateur `python -m alpendata_api.service_units` prépare les unités utilisateur de l'API, du worker et du planificateur. Voir [Services continus et maintenance](../docs/SERVICES_CONTINUS.md) pour le démarrage, les arrêts, la limite de redémarrages et les vérifications avant sauvegarde.
+Les workers terminent leur itération courante sur SIGTERM/SIGINT, puis quittent sans prendre le travail suivant. Le générateur `python -m alpendata_api.service_units` prépare les unités utilisateur de l'API, du worker et du planificateur ; `--with-billing` ajoute l'actualisation automatique des abonnements Stripe. Voir [Services continus et maintenance](../docs/SERVICES_CONTINUS.md) pour le démarrage, les arrêts, la limite de redémarrages et les vérifications avant sauvegarde.
 
 ## Récupération opérateur
 

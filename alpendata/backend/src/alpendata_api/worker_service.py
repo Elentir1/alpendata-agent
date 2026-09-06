@@ -77,20 +77,22 @@ def run_loop(engine, step, *, service, interval, delay_when_idle=False):
 
 
 def main(service):
+    from .billing_worker import BillingWorker
     from .chat_worker import ChatWorker
     from .schedule_worker import ScheduleWorker
 
     constructors = {
-        "chat": (ChatWorker, "run_once", 1, True),
-        "scheduler": (ScheduleWorker, "tick", 30, False),
+        "chat": (ChatWorker, "run_once", 1, True, "chat_enabled"),
+        "scheduler": (ScheduleWorker, "tick", 30, False, "chat_enabled"),
+        "billing": (BillingWorker, "run_once", 5, True, "billing"),
     }
     engine = None
     try:
         settings = Settings.from_environment()
-        if not settings.chat_enabled:
-            raise ValueError("Workers require model and runtime settings")
+        constructor, method, interval, idle, prerequisite = constructors[service]
+        if not getattr(settings, prerequisite):
+            raise ValueError("Worker configuration is incomplete")
         engine, factory = database_factory(settings.database_url)
-        constructor, method, interval, idle = constructors[service]
         worker = constructor(settings, factory)
         return run_loop(
             engine, getattr(worker, method), service=service, interval=interval, delay_when_idle=idle

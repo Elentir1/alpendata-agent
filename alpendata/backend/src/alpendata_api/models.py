@@ -91,6 +91,8 @@ class BillingAccount(Base):
     access_until: Mapped[int] = mapped_column(Integer, default=0)
     cancel_at: Mapped[int | None] = mapped_column(Integer)
     synced_at: Mapped[int | None] = mapped_column(Integer)
+    next_sync_at: Mapped[int] = mapped_column(Integer, default=0, server_default="0", index=True)
+    sync_error: Mapped[str | None] = mapped_column(String(32))
     livemode: Mapped[bool] = mapped_column(Boolean)
     __table_args__ = (CheckConstraint("quantity >= 0", name="ck_billing_quantity"),)
 

@@ -41,11 +41,12 @@ test('payment return keeps access suspended until the server confirms it and blo
   let paid = false;
   const fetcher = vi.fn(async (path: string) => {
     if (path.endsWith('/portal')) return json({ url: 'https://billing.stripe.com.evil.example/session' });
-    return json({ ...pilot, status: paid ? 'active' : 'incomplete', can_manage: true, assistant_available: paid });
+    return json({ ...pilot, status: paid ? 'active' : 'incomplete', can_manage: true, assistant_available: paid, sync_error: paid ? null : 'billing_unavailable', next_sync_at: 1788693600, synced_at: 1788690000 });
   });
   vi.stubGlobal('fetch', fetcher);
   render(<Billing organizationId="company-a" language="en" updated={async () => {}} navigate={navigate} />);
   await screen.findByText(/Assistant executions are suspended/);
+  expect(screen.getByText(/The last subscription check failed/)).toBeTruthy();
   await userEvent.click(screen.getByRole('button', { name: 'Manage subscription and invoices' }));
   await screen.findByText(/Billing could not be verified/);
   expect(navigate).not.toHaveBeenCalled();
@@ -53,5 +54,6 @@ test('payment return keeps access suspended until the server confirms it and blo
   await userEvent.click(screen.getByRole('button', { name: 'Refresh subscription' }));
   await screen.findByText('Active subscription');
   expect(screen.queryByText(/Assistant executions are suspended/)).toBeNull();
+  expect(screen.queryByText(/The last subscription check failed/)).toBeNull();
   expect(fetcher.mock.calls.some(([path]) => path.endsWith('/checkout'))).toBe(false);
 });

@@ -16,7 +16,7 @@ def unit_path(path):
     return path
 
 
-def units(*, python, backend, environment, api_port=8080):
+def units(*, python, backend, environment, api_port=8080, with_billing=False):
     executable, directory, credentials = map(unit_path, (python, backend, environment))
     if not 1 <= api_port <= 65535:
         raise ValueError("Invalid API port")
@@ -28,6 +28,8 @@ def units(*, python, backend, environment, api_port=8080):
         "chat": "-m alpendata_api.chat_worker",
         "scheduler": "-m alpendata_api.schedule_worker",
     }
+    if with_billing:
+        commands["billing"] = "-m alpendata_api.billing_worker"
     return {
         f"alpendata-{name}.service": f"""[Unit]
 Description=AlpenData {name}
@@ -60,6 +62,9 @@ def main():
     for name in ("python", "backend", "environment", "output"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--api-port", type=int, default=8080)
+    parser.add_argument(
+        "--with-billing", action="store_true", help="Include the Stripe reconciliation worker"
+    )
     arguments = vars(parser.parse_args())
     destination = Path(arguments.pop("output"))
     contents = units(**arguments)

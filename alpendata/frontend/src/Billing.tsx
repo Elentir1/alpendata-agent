@@ -8,6 +8,7 @@ interface BillingState {
   configured: boolean; status: string; capacity: number; assistant_available: boolean;
   access_until: number; cancel_at: number | null; synced_at: number | null; can_manage: boolean;
   checkout?: Checkout | null; price?: { currency: string; unit_amount: number; interval: string };
+  next_sync_at?: number | null; sync_error?: string | null;
 }
 const words = {
   fr: {
@@ -16,6 +17,7 @@ const words = {
     quantity: 'Nombre de places', month: 'par place et par mois', total: 'Licences par mois', terms: 'Le montant final est présenté par Stripe avant confirmation. La consommation IA et les prestations ne sont pas facturées par ce parcours.',
     checkout: 'Continuer vers le paiement', resume: 'Reprendre le même paiement', portal: 'Gérer l’abonnement et les factures', refresh: 'Actualiser l’abonnement', busy: 'Vérification…',
     cancel: 'Fin prévue le', paid: 'Accès confirmé jusqu’au', error: 'La facturation n’a pas pu être vérifiée. Réessayez ; une demande déjà engagée conserve sa référence.',
+    retrySync: 'La dernière vérification de l’abonnement a échoué. Une nouvelle tentative automatique est prévue.', lastSync: 'Dernière vérification réussie', nextSync: 'Nouvelle tentative prévue',
     pending: 'Un paiement est déjà en préparation. Actualisez puis reprenez la même demande.', occupied: 'Choisissez au moins autant de places que de licences attribuées et d’invitations en attente.', review: 'AlpenData doit vérifier cette demande avant un nouveau paiement. Aucun nouvel abonnement n’a été demandé.',
   },
   en: {
@@ -24,6 +26,7 @@ const words = {
     quantity: 'Number of seats', month: 'per seat per month', total: 'Monthly licences', terms: 'Stripe shows the final amount before confirmation. AI usage and services are not billed through this flow.',
     checkout: 'Continue to payment', resume: 'Resume the same payment', portal: 'Manage subscription and invoices', refresh: 'Refresh subscription', busy: 'Checking…',
     cancel: 'Scheduled to end on', paid: 'Access confirmed until', error: 'Billing could not be verified. Try again; a request already started keeps its reference.',
+    retrySync: 'The last subscription check failed. An automatic retry is scheduled.', lastSync: 'Last successful check', nextSync: 'Retry scheduled for',
     pending: 'A payment is already being prepared. Refresh and resume the same request.', occupied: 'Choose at least as many seats as assigned licences and pending invitations.', review: 'AlpenData needs to review this request before a new payment. No new subscription was requested.',
   },
 };
@@ -70,6 +73,8 @@ export function Billing({ organizationId, language, updated, navigate = (url: st
     {state?.configured && <>
       <p><strong>{state.status === 'pilot' ? t.pilot : state.assistant_available ? t.active : t.attention}</strong></p>
       {!state.assistant_available && <Notice>{t.suspended}</Notice>}
+      {state.sync_error && <Notice>{t.retrySync}{state.next_sync_at ? ` ${t.nextSync} : ${new Date(state.next_sync_at * 1000).toLocaleString(language === 'fr' ? 'fr-CH' : 'en-CH')}.` : ''}</Notice>}
+      {!!state.synced_at && <p>{t.lastSync} : {new Date(state.synced_at * 1000).toLocaleString(language === 'fr' ? 'fr-CH' : 'en-CH')}</p>}
       {!!state.access_until && <p>{t.paid} {date(state.access_until)}</p>}{!!state.cancel_at && <p>{t.cancel} {date(state.cancel_at)}</p>}
       {canSubscribe && <form onSubmit={event => { event.preventDefault(); void run(async () => {
         request.current ??= { request_id: crypto.randomUUID(), quantity, language };

@@ -71,6 +71,11 @@ def managed(service, request):
             "ALPENDATA_MICROSOFT_CLIENT_SECRET=\nALPENDATA_CREDENTIAL_KEYS=\n"
             "ALPENDATA_SMTP_HOST=\nALPENDATA_SMTP_PORT=465\nALPENDATA_SMTP_SENDER=\n"
             "ALPENDATA_SMTP_USERNAME=\nALPENDATA_SMTP_PASSWORD=\nALPENDATA_MODEL_ALLOWED_PROVIDERS=\n"
+            "ALPENDATA_STRIPE_API_KEY=rk_"
+            "test_syntheticunit\n"
+            "ALPENDATA_STRIPE_WEBHOOK_SECRET=whsec_"
+            "syntheticunit\n"
+            "ALPENDATA_STRIPE_PRICE_ID=price_seats\nALPENDATA_STRIPE_PORTAL_CONFIGURATION_ID=bpc_portal\n"
         )
         environment.chmod(0o600)
         with socket.socket() as reservation:
@@ -93,6 +98,7 @@ def managed(service, request):
             str(port),
             "--output",
             str(output),
+            "--with-billing",
         ]
         subprocess.run(generate, check=True, capture_output=True, timeout=15)
         assert subprocess.run(generate, capture_output=True, timeout=15).returncode != 0
@@ -100,7 +106,7 @@ def managed(service, request):
         names = {}
         linked = []
         try:
-            for name in ("api", "chat", "scheduler"):
+            for name in ("api", "chat", "scheduler", "billing"):
                 path = output / f"{prefix}-{name}.service"
                 (output / f"alpendata-{name}.service").rename(path)
                 control("link", "--runtime", str(path))
@@ -127,7 +133,7 @@ def test_generated_units_serve_restart_after_crash_and_stop_cleanly(managed):
 
         wait_for(ready)
         assert client.get("/api/me").status_code == 401
-    for name in ("chat", "scheduler"):
+    for name in ("chat", "scheduler", "billing"):
         wait_for(lambda: '"status": "ready"' in journal(names[name]))
     before = state(names["chat"])
     readies = journal(names["chat"]).count('"status": "ready"')
@@ -147,6 +153,7 @@ def test_generated_units_serve_restart_after_crash_and_stop_cleanly(managed):
         assert stopped["ActiveState"] == "inactive"
         assert stopped["ExecMainStatus"] == "0"
         assert "private-synthetic-unit-key" not in journal(name)
+        assert "syntheticunit" not in journal(name)
 
 
 def test_incompatible_service_hits_restart_limit_and_can_recover_after_correction(managed):

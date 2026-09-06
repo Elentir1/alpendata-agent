@@ -21,6 +21,10 @@ class StripePeer:
         )
         self.received, self.subscriptions, self.sessions = [], [], {}
         self.customers = {}
+        self.subscription_reader = lambda body: (
+            200,
+            {"object": "list", "data": self.subscriptions, "has_more": False},
+        )
         self.fail_customer = self.fail_checkout = False
         self.portal = {
             "id": "bpc_portal",
@@ -84,10 +88,7 @@ class StripePeer:
             ("GET", "/v1/prices/price_seats"): lambda: (200, self.price),
             ("POST", "/v1/customers"): lambda: self.customer(body, headers),
             ("POST", "/v1/checkout/sessions"): lambda: self.checkout(body, headers),
-            ("GET", "/v1/subscriptions"): lambda: (
-                200,
-                {"object": "list", "data": self.subscriptions, "has_more": False},
-            ),
+            ("GET", "/v1/subscriptions"): lambda: self.subscription_reader(body),
             ("POST", "/v1/billing_portal/sessions"): lambda: (
                 200,
                 {

@@ -78,7 +78,7 @@ def suspend_restored_work(factory):
         db.execute(
             update(BillingAccount)
             .where(BillingAccount.subscription_id.is_not(None))
-            .values(status="review", access_until=0, synced_at=None)
+            .values(status="review", access_until=0, synced_at=None, next_sync_at=0, sync_error=None)
         )
         db.execute(update(AuthSession).values(revoked=True))
         for model in (SignInFlow, MicrosoftConnectionFlow, InvitationProof):

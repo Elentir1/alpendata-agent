@@ -129,9 +129,25 @@ def test_worker_commands_stop_idle_and_refuse_wrong_schema_without_logging_secre
             "ALPENDATA_RUNTIME_IMAGE": "sha256:" + "0" * 64,
         }
     )
-    for name in ("chat", "schedule"):
+    billing_environment = {
+        key: value
+        for key, value in environment.items()
+        if not key.startswith(("ALPENDATA_MODEL_", "ALPENDATA_RUNTIME_"))
+    }
+    billing_environment.update(
+        {
+            "ALPENDATA_STRIPE_API_KEY": "rk_" + "test_syntheticprocess",
+            "ALPENDATA_STRIPE_WEBHOOK_SECRET": "whsec_" + "syntheticprocess",
+            "ALPENDATA_STRIPE_PRICE_ID": "price_seats",
+            "ALPENDATA_STRIPE_PORTAL_CONFIGURATION_ID": "bpc_portal",
+        }
+    )
+    environments = {"chat": environment, "schedule": environment, "billing": billing_environment}
+    for name, process_environment in environments.items():
         command = [sys.executable, "-m", f"alpendata_api.{name}_worker"]
-        process = subprocess.Popen(command, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(
+            command, env=process_environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         try:
             with selectors.DefaultSelector() as selector:
                 selector.register(process.stdout, selectors.EVENT_READ)
@@ -143,16 +159,17 @@ def test_worker_commands_stop_idle_and_refuse_wrong_schema_without_logging_secre
             assert process.returncode == 0
             assert b'"status": "stopped"' in stdout
             assert b"private-synthetic-service-key" not in stdout + stderr
+            assert b"syntheticprocess" not in stdout + stderr
         finally:
             if process.poll() is None:
                 process.kill()
                 process.communicate(timeout=10)
     with app.state.engine.begin() as db:
         db.execute(text("UPDATE alembic_version SET version_num = 'wrong-version'"))
-    for name in ("chat", "schedule"):
+    for name, process_environment in environments.items():
         result = subprocess.run(
             [sys.executable, "-m", f"alpendata_api.{name}_worker"],
-            env=environment,
+            env=process_environment,
             capture_output=True,
             timeout=20,
         )

@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Actualisation autonome de la facturation — 6 septembre 2026
+
+La suite complète passe **90 scénarios Linux/PostgreSQL**, dans 47 fichiers, sans échec, scénario ignoré ni relance automatique. Les exercices incluent le runtime Hermes inchangé, age, Nginx et les unités systemd. Les six scénarios Stripe ciblés donnent quatre succès sur Windows/SQLite et deux exclusions Linux explicites. Le frontend passe **42 scénarios JSDOM** et son build TypeScript/Vite ; Ruff et la vérification Git passent.
+
+Le nouveau service lit les abonnements via le SDK officiel sur un vrai serveur HTTP local, sans notification Stripe ni clic administrateur. Un renouvellement prolonge la confirmation à la nouvelle échéance, une panne conserve exactement la confirmation précédente, puis une résiliation retire l'accès au contrôle suivant. Les échéances de reprise survivent au remplacement de l'objet worker et empêchent une boucle immédiate de nouvelles tentatives.
+
+Un scénario PostgreSQL retient la réponse d'une première entreprise pendant qu'une seconde instance vérifie la suivante. Les deux clients ne sont lus qu'une fois, le client en erreur conserve sa confirmation antérieure et un client d'un autre environnement Stripe n'est jamais appelé. Les scénarios de services lancent aussi la commande de facturation sans configuration de modèle ou runtime, contrôlent ses signaux d'arrêt et son refus d'une base incompatible. L'unité facultative est réellement chargée puis arrêtée et retirée du gestionnaire systemd utilisateur avec les trois autres unités temporaires. Aucun appel commercial n'est fait par cet exercice système, dont la base ne contient aucun client Stripe lié.
+
+L'interface vérifie en JSDOM l'affichage de l'erreur d'actualisation puis sa disparition après confirmation côté serveur. La base locale dispose de `preview.before-0021.db`, est migrée en `0021` et son API redémarrée répond à `/health/ready`. Microsoft, SMTP et Stripe restent non configurés dans l'aperçu réel. Le service de facturation permanent, sa surveillance externe et ses appels Stripe réels restent à déployer et valider ; voir [Facturation Stripe](FACTURATION_STRIPE.md) et [Services continus](SERVICES_CONTINUS.md).
+
 ## Abonnements et licences Stripe — 6 septembre 2026
 
 La suite complète passe **88 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, dans 46 fichiers. Elle inclut les exercices Hermes conteneurisés, age, Nginx et systemd, avec l'image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Les nouveaux scénarios Stripe passent également sous Windows/SQLite, sauf le contrôle du worker marqué Linux. Le frontend passe **42 scénarios JSDOM** ; son build TypeScript/Vite final et Ruff passent. Le verrou uv est cohérent et conserve les versions précédentes des autres paquets.

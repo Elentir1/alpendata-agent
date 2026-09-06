@@ -1,6 +1,6 @@
 # Abonnements et licences Stripe
 
-6 septembre 2026 — migration `0020`, SDK Python officiel `15.6.1`, API `2026-08-26.dahlia`.
+6 septembre 2026 — migrations `0020` et `0021`, SDK Python officiel `15.6.1`, API `2026-08-26.dahlia`.
 
 L'administrateur retrouve « Abonnement et factures » dans « Mon entreprise ». Il choisit un nombre de places puis confirme son paiement sur Stripe Checkout. Le portail Stripe permet ensuite de gérer la quantité, le moyen de paiement, les factures et la résiliation. Le retour ouvre l'entreprise concernée et relit l'état côté serveur. Chaque collaborateur garde ses connexions, sa mémoire et ses contenus personnels.
 
@@ -12,7 +12,19 @@ Une création de Checkout, une URL de succès ou la quantité envoyée dans une 
 
 Le raccordement accepte un abonnement comportant une seule ligne du Price configuré, de 1 à 1 000 places, avec le client, l'environnement et la référence d'entreprise attendus. Plusieurs abonnements non terminés ou une structure différente conduisent à un état à vérifier. L'accès exige un abonnement `active`, sa dernière facture `paid` et une échéance future. Une annulation planifiée borne également cette échéance. La capacité affichée suit la quantité de l'abonnement ; la disponibilité de l'assistant dépend séparément de son paiement.
 
-Cette première politique suspend les exécutions pendant un impayé, une activation incomplète ou un état à vérifier. Elle n'accorde pas de délai de grâce supplémentaire. Les règles commerciales d'essai et d'impayés doivent être finalisées avant ouverture. En cas de notification manquante, un accès déjà confirmé ne dépasse pas son échéance ; l'administrateur peut demander une actualisation. Une réconciliation périodique indépendante et la surveillance de réception des webhooks restent à ajouter pour l'exploitation.
+Cette première politique suspend les exécutions pendant un impayé, une activation incomplète ou un état à vérifier. Elle n'accorde pas de délai de grâce supplémentaire. Les règles commerciales d'essai et d'impayés doivent être finalisées avant ouverture. En cas de notification manquante, un accès déjà confirmé ne dépasse pas son échéance ; l'administrateur peut demander une actualisation. Un service indépendant relit aussi périodiquement les abonnements. La surveillance externe de ce service et de la réception des webhooks reste à installer pour l'exploitation.
+
+## Actualisation automatique
+
+`python -m alpendata_api.billing_worker` vérifie les clients Stripe déjà associés en base, dans le même environnement test ou live que sa configuration. Il ne crée ni client, ni paiement, ni abonnement. Il exige la configuration Stripe et la base, sans avoir besoin d'un modèle IA ou d'un runtime Hermes.
+
+Chaque lecture réussie, qu'elle vienne d'une notification, d'un administrateur ou du service, fixe la prochaine vérification cinq minutes plus tard. Les échéances sont en base et survivent aux redémarrages. Le worker traite une entreprise par itération, dans l'ordre des échéances, et attend cinq secondes quand aucune n'est due. Cette cadence dépend de sa disponibilité et de la charge ; elle ne garantit pas un délai maximum de cinq minutes sur un hôte indisponible ou saturé.
+
+Les instances concurrentes utilisent les verrous PostgreSQL des entreprises. Une entreprise déjà prise est ignorée temporairement pour laisser une autre instance travailler sur la suivante. Les notifications et les actualisations administrateur utilisent le même verrou. Une erreur Stripe ne bloque donc pas les autres entreprises : son échéance est repoussée de cinq minutes et son code d'erreur nettoyé est conservé. La dernière confirmation d'accès et son échéance restent inchangées, sans prolongation. Une réponse invalide ne doit pas laisser de mise à jour partielle ; la lecture est appliquée dans une transaction annulable.
+
+L'écran de facturation affiche la dernière vérification réussie et, après un échec automatique, la prochaine tentative prévue. Le journal du service reçoit `sync_failed`, sans identifiant client, contenu de facture ou détail privé du fournisseur. Les erreurs de base font échouer le processus pour que son superviseur puisse le relancer. Un arrêt demandé termine la lecture déjà admise puis quitte sans prendre la suivante.
+
+Après une restauration, les abonnements connus sont à vérifier immédiatement, mais les autres suspensions de restauration continuent de s'appliquer : une confirmation de facturation ne relance pas les anciennes tâches. Générer et installer l'unité facultative avec `--with-billing`, puis démarrer `alpendata-billing` comme décrit dans [Services continus](SERVICES_CONTINUS.md). Il ne faut pas l'activer dans un environnement sans configuration Stripe.
 
 Si une diminution du nombre de places passe sous le nombre de membres licenciés, les exécutions sont suspendues jusqu'à régularisation. L'administrateur conserve l'accès à la facturation et choisit les licences à retirer, ou augmente la quantité. Aucun collaborateur n'est sélectionné automatiquement. Les invitations excédentaires doivent être annulées avant leur acceptation. Une diminution ne supprime aucun historique.
 

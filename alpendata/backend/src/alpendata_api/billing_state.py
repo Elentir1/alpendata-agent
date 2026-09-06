@@ -4,6 +4,8 @@ from sqlalchemy import func, select
 
 from .models import BillingAccount, Membership, now
 
+SYNC_INTERVAL = 300
+
 
 def billing_access(db, organization_id):
     account = db.get(BillingAccount, organization_id)
@@ -27,6 +29,8 @@ def reconcile(db, organization, account, gateway):
     subscriptions = gateway.subscriptions(account.customer_id)
     live = [s for s in subscriptions if s.get("status") not in {"canceled", "incomplete_expired"}]
     account.synced_at = now()
+    account.next_sync_at = account.synced_at + SYNC_INTERVAL
+    account.sync_error = None
     if not subscriptions:
         if account.subscription_id:
             account.status, account.access_until = "review", 0
@@ -78,5 +82,7 @@ def billing_view(db, organization, account, configured):
         "access_until": account.access_until if account else 0,
         "cancel_at": account.cancel_at if account else None,
         "synced_at": account.synced_at if account else None,
+        "next_sync_at": account.next_sync_at if account else None,
+        "sync_error": account.sync_error if account else None,
         "can_manage": bool(configured and account and account.customer_id),
     }
