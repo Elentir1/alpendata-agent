@@ -137,7 +137,12 @@ export default function App() {
   const [user, setUser] = useState<Person | null>(null), [options, setOptions] = useState<Options | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]), [companyId, setCompanyId] = useState('');
   const [chatId, setChatId] = useState('');
-  const [section, setSection] = useState<'personal' | 'team' | 'chat' | 'schedules'>('personal'), [loading, setLoading] = useState(true), [error, setError] = useState('');
+  const [section, setSection] = useState<'personal' | 'team' | 'chat' | 'schedules'>(() => {
+    const query = new URLSearchParams(location.search);
+    if (query.get('billing') !== 'return') return 'personal';
+    query.delete('billing'); history.replaceState(null, '', location.pathname + (query.size ? '?' + query : '') + location.hash);
+    return 'team';
+  }), [loading, setLoading] = useState(true), [error, setError] = useState('');
   const generation = useRef(0); const signOutAction = useAction(t);
   async function refresh(preferred?: string) {
     const request = ++generation.current; setError('');

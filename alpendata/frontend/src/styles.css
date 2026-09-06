@@ -307,3 +307,6 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .document-share .resource-confirm, .document-share .resource-grants label { display: flex; align-items: flex-start; gap: .6rem; }
 .document-share input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin: 2px 0 0; accent-color: var(--red); }
 .document-share button { white-space: normal; }
+
+.billing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+#billing-quantity { max-width: 220px; }

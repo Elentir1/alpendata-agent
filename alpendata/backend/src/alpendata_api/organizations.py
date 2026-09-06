@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .access import lock_organization, member
 from .auth import token_digest
+from .billing_state import billing_access
 from .mail import invitation_message
 from .models import Invitation, InvitationProof, Membership, Onboarding, Organization, User, now
 from .schemas import MembershipInput
@@ -53,6 +54,8 @@ def occupied_seats(db: Session, organization_id: str) -> int:
 def invite(db: Session, user: User, organization_id: str, email: str, lifetime: int):
     organization = lock_organization(db, organization_id)
     member(db, user, organization_id, admin=True, licensed=False)
+    if not billing_access(db, organization_id):
+        raise HTTPException(403, "billing_access_required")
     existing = db.scalar(
         select(Membership)
         .join(User)
@@ -144,6 +147,11 @@ def request_proof(db: Session, user: User, token: str, language: str, settings: 
 
 def accept(db: Session, user: User, token: str, verification_token: str | None = None) -> str:
     invitation = locked_invitation(db, token)
+    organization = db.get(Organization, invitation.organization_id)
+    if not billing_access(db, invitation.organization_id):
+        raise HTTPException(403, "billing_access_required")
+    if occupied_seats(db, invitation.organization_id) > organization.seat_capacity:
+        raise HTTPException(409, "no_available_license")
     # A remembered email or a Microsoft claim is never sufficient. The proof
     # must be fresh and bound to BOTH this invitation and the authenticated user.
     proof = db.scalar(

@@ -93,7 +93,7 @@ export function errorText(error: unknown, t: Text): string {
     invitation_not_found: t.expired, invitation_email_verification_required: t.proofRequired,
     no_available_license: t.full, already_member_or_invited: t.duplicate,
     microsoft_signin_not_configured: t.unavailable, transactional_mail_not_configured: t.noMail,
-    license_required: t.license, microsoft_reconnect_required: t.reconnect,
+    license_required: t.license, billing_access_required: t.license, microsoft_reconnect_required: t.reconnect,
     microsoft_permission_required: t.permission, microsoft_access_denied: t.permission,
     company_policy_denied: t.companyPolicy,
   };

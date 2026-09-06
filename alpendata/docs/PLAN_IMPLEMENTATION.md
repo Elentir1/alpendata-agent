@@ -73,7 +73,7 @@ Sortie attendue : les automatisations restent compréhensibles et contrôlables,
 
 ## Lot 6 — Commercialisation
 
-L’[administration des membres et licences](MEMBRES_LICENCES.md) est reliée à l’API : modifications versionnées, capacité disponible et réservations par invitation. La quantité de places reste celle du pilote ; elle n’est pas encore synchronisée avec Stripe.
+L’[administration des membres et licences](MEMBRES_LICENCES.md) est reliée à l’API : modifications versionnées, capacité disponible et réservations par invitation. Le [raccordement Stripe des abonnements](FACTURATION_STRIPE.md) ajoute Checkout, portail, notifications signées et synchronisation des places après lecture de l'abonnement. Les tests utilisent le SDK officiel et HTTP local. Configuration du compte Stripe, paiement de test réel, surusage, durée du pilote et politique d'impayés restent à finaliser avant commercialisation.
 
 - Définir licence en CHF, consommation incluse, surusage, plafonds et règles de cycle de vie.
 - Implémenter Stripe et le provisionnement correspondant ; tester les paiements sans facturation réelle.

@@ -126,6 +126,10 @@ Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les c
 
 La commande locale `python -m alpendata_api.backup` crée un ensemble PostgreSQL + états privés et restaure uniquement vers une base vide et un dossier neuf. Les tâches restaurées sont suspendues et les connexions doivent être rétablies. Aucun service n’est démarré automatiquement. La commande distincte `python -m alpendata_api.backup_encryption` [chiffre ces ensembles avec age](../docs/CHIFFREMENT_SAUVEGARDES.md) avant leur conservation hors hôte. Aucun transfert distant n’est encore intégré ; voir la [procédure et ses limites](../docs/SAUVEGARDE_RESTAURATION.md).
 
+## Abonnements et licences
+
+La migration `0020` et les routes `/api/organizations/{organization_id}/billing` relient les licences à Stripe Checkout et au portail. Les notifications signées relisent l'abonnement actuel avant de modifier les droits ; voir [Abonnements et licences Stripe](../docs/FACTURATION_STRIPE.md) pour les secrets serveur, la configuration du Price CHF et du portail, les reprises et les validations externes restantes.
+
 ## Services continus
 
 Les workers terminent leur itération courante sur SIGTERM/SIGINT, puis quittent sans prendre le travail suivant. Le générateur `python -m alpendata_api.service_units` prépare les unités utilisateur de l'API, du worker et du planificateur. Voir [Services continus et maintenance](../docs/SERVICES_CONTINUS.md) pour le démarrage, les arrêts, la limite de redémarrages et les vérifications avant sauvegarde.

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from .billing_gateway import BillingSettings
 from .model_gateway import ModelSettings
 from .runtime import RuntimeSettings
 
@@ -24,6 +25,7 @@ class Settings:
     smtp_password: str = field(default="", repr=False)
     model: ModelSettings | None = None
     runtime: RuntimeSettings | None = None
+    billing: BillingSettings | None = None
 
     def __post_init__(self):
         if not self.database_url:
@@ -76,6 +78,14 @@ class Settings:
 
     @classmethod
     def from_environment(cls):
+        billing_names = (
+            "STRIPE_API_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "STRIPE_PRICE_ID",
+            "STRIPE_PORTAL_CONFIGURATION_ID",
+        )
+        billing_values = [os.environ.get("ALPENDATA_" + name, "") for name in billing_names]
+        billing = BillingSettings(*billing_values) if any(billing_values) else None
         model, runtime = None, None
         names = ("MODEL_PROVIDER", "MODEL_ID", "MODEL_API_KEY", "RUNTIME_STATE_ROOT", "RUNTIME_IMAGE")
         values = {name: os.environ.get("ALPENDATA_" + name, "") for name in names}
@@ -110,4 +120,5 @@ class Settings:
             smtp_password=os.environ.get("ALPENDATA_SMTP_PASSWORD", ""),
             model=model,
             runtime=runtime,
+            billing=billing,
         )

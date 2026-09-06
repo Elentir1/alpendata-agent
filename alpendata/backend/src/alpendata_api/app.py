@@ -13,6 +13,7 @@ from .access import lock_organization, member, owned
 from .action_policy import action_policy_router
 from .artifacts import artifacts_router
 from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
+from .billing_routes import billing_router
 from .chat import chat_router
 from .company_resources import company_resources_router
 from .connections import CONNECT_COOKIE, microsoft_router
@@ -42,7 +43,13 @@ from .signin import signin_router
 
 
 def create_app(
-    settings: Settings, *, signin_provider=None, mailer=None, microsoft_provider=None, graph=None
+    settings: Settings,
+    *,
+    signin_provider=None,
+    mailer=None,
+    microsoft_provider=None,
+    graph=None,
+    billing_gateway=None,
 ) -> FastAPI:
     expected_schema = release_head()
     engine, factory = database_factory(settings.database_url)
@@ -61,6 +68,7 @@ def create_app(
     app = FastAPI(title="AlpenData API", version="0.1.0", lifespan=lifespan)
     app.state.engine, app.state.session_factory = engine, factory
     app.include_router(health_router(engine, expected_schema))
+    app.include_router(billing_router(settings, factory, billing_gateway))
     app.include_router(invitation_delivery_router(settings, factory, mailer))
     app.include_router(signin_router(settings, factory, signin_provider))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))

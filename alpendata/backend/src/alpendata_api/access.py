@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .billing_state import billing_access
 from .models import Membership, Organization, User
 
 
@@ -14,6 +15,8 @@ def member(db: Session, user: User, organization_id: str, *, admin=False, licens
         raise HTTPException(403, "administrator_required")
     if licensed and not membership.licensed:
         raise HTTPException(403, "license_required")
+    if licensed and not billing_access(db, organization_id):
+        raise HTTPException(403, "billing_access_required")
     return membership
 
 

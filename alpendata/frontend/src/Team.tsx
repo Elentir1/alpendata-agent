@@ -11,6 +11,7 @@ import { InvitationForm, invitationWords } from './InvitationForm';
 import type { InvitationReceipt } from './InvitationForm';
 import { MemberAccess, seatWords } from './MemberAccess';
 import type { Seats } from './MemberAccess';
+import { Billing } from './Billing';
 
 interface InvitationRow extends InvitationReceipt { expires_at: number }
 export function Team({ company, user, t, language, refreshAccount }: { company: Company; user: Person; t: Text; language: Language; refreshAccount: () => Promise<void> }) {
@@ -31,6 +32,7 @@ export function Team({ company, user, t, language, refreshAccount }: { company: 
   }
   useEffect(() => { void refresh().catch(error => setLoadError(errorText(error, t))); }, [company.id]);
   return <section className="team-page"><h1>{t.manageTitle}</h1><p className="lead">{t.manageText}</p><Notice>{loadError || action.error}</Notice>
+    <Billing key={company.id} organizationId={company.id} language={language} updated={refresh} />
     {seats && <section className="seat-summary" aria-label={words.title}><h2>{words.title}</h2><p>{seats.capacity} {words.capacity}</p><dl><div><dt>{words.assigned}</dt><dd>{seats.assigned}</dd></div><div><dt>{words.reserved}</dt><dd>{seats.reserved}</dd></div><div><dt>{words.available}</dt><dd>{seats.available}</dd></div></dl><p>{words.explanation}</p></section>}
     <button className="secondary" disabled={action.busy || !!editing} onClick={() => void action.run(async () => { await refreshAccount(); await refresh(); })}>{words.reload}</button>
     <div className="team-grid"><div>

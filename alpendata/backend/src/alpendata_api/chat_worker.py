@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import select, update
 
 from .artifacts import publish_document
+from .billing_state import billing_access
 from .connections import MicrosoftReader, SearchInput, lock_member
 from .graph_documents import FileInput
 from .model_gateway import ModelError, ModelGateway
@@ -207,7 +208,12 @@ class ChatWorker:
                         turn.lease_expires_at = now() + LEASE_SECONDS
                         membership = db.get(Membership, (job.organization_id, job.owner_id))
                         user = db.get(User, job.owner_id)
-                        if not user.active or not membership.active or not membership.licensed:
+                        if (
+                            not user.active
+                            or not membership.active
+                            or not membership.licensed
+                            or not billing_access(db, job.organization_id)
+                        ):
                             reason[0] = "agent_access_revoked"
                             interrupted.set()
                         if turn.cancel_requested:
@@ -388,7 +394,12 @@ class ChatWorker:
             if turn.lease_expires_at <= now():
                 error = "agent_lease_lost"
             user = db.get(User, job.owner_id)
-            if not user.active or not membership.active or not membership.licensed:
+            if (
+                not user.active
+                or not membership.active
+                or not membership.licensed
+                or not billing_access(db, job.organization_id)
+            ):
                 error = "agent_access_revoked"
             if turn.cancel_requested:
                 error = "agent_cancelled"

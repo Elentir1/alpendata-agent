@@ -79,6 +79,36 @@ class Membership(Base):
     __table_args__ = (CheckConstraint("role IN ('admin', 'member')", name="ck_membership_role"),)
 
 
+class BillingAccount(Base):
+    __tablename__ = "alpendata_billing_accounts"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("alpendata_organizations.id"), primary_key=True)
+    customer_key: Mapped[str] = mapped_column(String(36), default=new_id, unique=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    customer_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    status: Mapped[str] = mapped_column(String(32), default="pilot")
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    access_until: Mapped[int] = mapped_column(Integer, default=0)
+    cancel_at: Mapped[int | None] = mapped_column(Integer)
+    synced_at: Mapped[int | None] = mapped_column(Integer)
+    livemode: Mapped[bool] = mapped_column(Boolean)
+    __table_args__ = (CheckConstraint("quantity >= 0", name="ck_billing_quantity"),)
+
+
+class BillingCheckout(Base):
+    __tablename__ = "alpendata_billing_checkouts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("alpendata_billing_accounts.organization_id"))
+    request_id: Mapped[str] = mapped_column(String(36))
+    quantity: Mapped[int] = mapped_column(Integer)
+    language: Mapped[str] = mapped_column(String(2))
+    price_id: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    session_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    status: Mapped[str] = mapped_column(String(16), default="prepared")
+    __table_args__ = (UniqueConstraint("organization_id", "request_id"),)
+
+
 class OrganizationPolicy(Base):
     __tablename__ = "alpendata_organization_policies"
     organization_id: Mapped[str] = mapped_column(ForeignKey("alpendata_organizations.id"), primary_key=True)

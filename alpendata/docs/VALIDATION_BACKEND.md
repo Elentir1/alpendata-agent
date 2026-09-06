@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Abonnements et licences Stripe — 6 septembre 2026
+
+La suite complète passe **88 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, dans 46 fichiers. Elle inclut les exercices Hermes conteneurisés, age, Nginx et systemd, avec l'image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Les nouveaux scénarios Stripe passent également sous Windows/SQLite, sauf le contrôle du worker marqué Linux. Le frontend passe **42 scénarios JSDOM** ; son build TypeScript/Vite final et Ruff passent. Le verrou uv est cohérent et conserve les versions précédentes des autres paquets.
+
+Le SDK Stripe officiel `15.6.1` effectue les appels HTTP vers un serveur local. Les tests vérifient les demandes avec réponses perdues, le remplacement de l'application, les clés durables, deux reprises concurrentes PostgreSQL, la reprise d'une session expirée et les frontières administrateur/entreprise. Les signatures réelles sont vérifiées par le SDK. Une facture non payée retire les droits, puis le même événement rejoué relit l'état payé ; sa réutilisation après résiliation ne réactive pas l'abonnement. Le véritable worker refuse l'autorisation du travail et la livraison d'une réponse après révocation. La réduction de capacité conserve l'administration, et le retrait d'une licence excédentaire rétablit l'accès. Une restauration impose une nouvelle confirmation Stripe.
+
+Les scénarios de navigateur simulé vérifient la conservation de la quantité, de la langue et de la référence après rechargement, l'absence de navigation en cas de réponse perdue, le contrôle des destinations Stripe et la suspension jusqu'à confirmation côté serveur. Le build est également vérifié visuellement en français et anglais sur un aperçu affichant explicitement des données et prix fictifs ; l'espacement des boutons a été corrigé. Cette vérification n'accède pas aux pages de paiement réelles de Stripe.
+
+La base locale a été sauvegardée dans `preview.before-0020.db`, migrée vers `0020`, puis l'API redémarrée. `/health/ready` répond, les cinq routes de facturation sont présentes, l'accès non authentifié est refusé et le webhook répond `billing_not_configured`. Aucun compte ou paiement Stripe réel n'a été utilisé. Le prix commercial, les conditions d'impayés, Stripe Tax, la consommation et la recette Stripe publique restent à finaliser. Voir [Abonnements et licences Stripe](FACTURATION_STRIPE.md).
+
 ## Invitations directes par e-mail — 6 septembre 2026
 
 La suite complète finale passe **84 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique. Les services systemd temporaires, Nginx, age et l'image Hermes inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b` sont inclus. Le frontend passe **40 scénarios JSDOM** ; TypeScript, Vite, Ruff et la vérification Git passent. Les quatre scénarios ciblés migration/invitation/propriété passent également sur Windows/SQLite.

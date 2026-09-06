@@ -14,6 +14,7 @@ from .backup import BackupFailure, checksum, postgres_command, safe_member
 from .models import (
     AuthSession,
     Base,
+    BillingAccount,
     ChatTurn,
     EmailAttempt,
     Invitation,
@@ -74,6 +75,11 @@ def extract_states(archive, destination):
 def suspend_restored_work(factory):
     at = now()
     with factory.begin() as db:
+        db.execute(
+            update(BillingAccount)
+            .where(BillingAccount.subscription_id.is_not(None))
+            .values(status="review", access_until=0, synced_at=None)
+        )
         db.execute(update(AuthSession).values(revoked=True))
         for model in (SignInFlow, MicrosoftConnectionFlow, InvitationProof):
             db.execute(delete(model))
