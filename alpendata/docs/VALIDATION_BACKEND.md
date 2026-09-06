@@ -1,5 +1,14 @@
 # Vérification du premier backend
 
+## Vérification des copies envoyées — 6 septembre 2026
+
+La suite complète passe **50 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré. Le runtime reste `sha256:c2cc47b857dc65752cd0f74c67b115bbf37ef82b8cbeaef052a280e1eb96f566` : cette étape ajoute le suivi côté API et interface. Le frontend passe **22 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.
+
+Les scénarios vérifient la recherche avec le consentement de lecture personnel, les règles communes, l’absence de correspondance, les en-têtes ou destinataires incorrects, les erreurs Microsoft et les anciennes tentatives sans marqueur. Une copie trouvée est conservée comme observation indépendante du statut d’envoi ; aucun résultat ne déverrouille une répétition. Les tests de navigateur couvrent une réponse de vérification perdue, puis la récupération du reçu sans nouvelle recherche ni envoi.
+
+L’aperçu fictif a été contrôlé en anglais pour la sélection sans correspondance et en français pour la copie trouvée avec lien Outlook. Il a ensuite été fermé et arrêté. La base normale a été sauvegardée avant migration `0013`. Les requêtes Microsoft sont synthétiques : la conservation des en-têtes et la sélection réelle dans Exchange restent à valider avant le pilote. Détails dans [E-mails](EMAILS.md).
+
+
 ## Brouillons et envoi confirmé — 6 septembre 2026
 
 La suite complète passe **48 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image runtime `sha256:c2cc47b857dc65752cd0f74c67b115bbf37ef82b8cbeaef052a280e1eb96f566`. Le frontend passe **20 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.

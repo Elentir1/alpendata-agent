@@ -55,13 +55,16 @@ def attachments(db, organization_id, owner_id, message):
 
 
 def attempt_view(item):
+    status = "unknown" if item.status == "sending" and item.created_at + 180 < now() else item.status
     return {
         "id": item.id,
         "version": item.version,
-        "status": "unknown" if item.status == "sending" and item.created_at + 180 < now() else item.status,
+        "status": status,
         "error_code": item.error_code,
         "created_at": item.created_at,
         "finished_at": item.finished_at,
+        "can_verify": bool(item.correlation_id) and status in ("unknown", "accepted"),
+        "verification": item.verification,
     }
 
 

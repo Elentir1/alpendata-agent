@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { api, ApiError } from './api';
+import { EmailVerification } from './EmailVerification';
+import type { EmailAttemptReceipt } from './EmailVerification';
 import type { Language } from './locale';
 
 interface Message { to: string[]; cc: string[]; bcc: string[]; subject: string; body: string; attachment_ids: string[] }
-interface Attempt { id: string; version: number; status: string; error_code: string | null }
 export interface EmailReceipt {
   id: string; version: number; message: Message; editable: boolean;
-  attachments: { id: string; filename: string; size: number }[]; attempts: Attempt[];
+  attachments: { id: string; filename: string; size: number }[]; attempts: EmailAttemptReceipt[];
 }
 const words = {
   fr: {
@@ -95,7 +96,8 @@ export function EmailDraft({ item, organizationId, language, licensed }: { item:
       <label>{t.body}<textarea required maxLength={32000} rows={9} value={draft.body} onChange={event => { setDraft({ ...draft, body: event.target.value }); setConfirmed(false); setSaved(false); }} /></label>
       {draft.attachment_ids.length > 0 && <div><h4>{t.attachments}</h4><ul>{receipt.attachments.filter(file => draft.attachment_ids.includes(file.id)).map(file => <li key={file.id}>{file.filename} <button type="button" className="secondary" onClick={() => { setDraft({ ...draft, attachment_ids: draft.attachment_ids.filter(value => value !== file.id) }); setConfirmed(false); }}>{t.remove} {file.filename}</button></li>)}</ul></div>}
     </fieldset>
-    {latest && <p role="status">{statusText[latest.status]}</p>}
+    {latest && latest.verification?.status !== 'found' && <p role="status">{statusText[latest.status]}</p>}
+    {latest && <EmailVerification key={latest.id} attempt={latest} path={path} language={language} licensed={licensed} onUpdated={accept} />}
     {receipt.editable && licensed && <>
       <button type="button" className="secondary" disabled={!editable || (!dirty && !sameAttempt)} onClick={() => void act('save')}>{t.save}</button>
       {dirty && <p>{t.dirty}</p>}{saved && <p role="status">{t.saved}</p>}

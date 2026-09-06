@@ -7,11 +7,14 @@ import requests
 
 from .graph import GraphError
 
+CORRELATION_HEADER = "x-alpendata-message-id"
 
-def send_email(graph, token, message, files):
+
+def send_email(graph, token, message, files, correlation_id):
     payload = {
         "subject": message["subject"],
         "body": {"contentType": "Text", "content": message["body"]},
+        "internetMessageHeaders": [{"name": CORRELATION_HEADER, "value": correlation_id}],
         **{
             key + "Recipients": [{"emailAddress": {"address": address}} for address in message[key]]
             for key in ("to", "cc", "bcc")

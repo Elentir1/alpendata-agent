@@ -348,6 +348,8 @@ class EmailAttempt(OwnedMixin, Base):
     draft_id: Mapped[str] = mapped_column(String(36), index=True)
     version: Mapped[int] = mapped_column(Integer)
     message: Mapped[dict] = mapped_column(JSON)
+    correlation_id: Mapped[str | None] = mapped_column(String(36))
+    verification: Mapped[dict | None] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(24), default="sending")
     error_code: Mapped[str | None] = mapped_column(String(80))
     created_at: Mapped[int] = mapped_column(Integer, default=now)
