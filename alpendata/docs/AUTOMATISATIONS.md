@@ -46,7 +46,7 @@ uv run python -m alpendata_api.schedule_worker
 uv run python -m alpendata_api.chat_worker
 ```
 
-La première commande inspecte les échéances toutes les 30 secondes ; la seconde exécute la file. Elles se lancent depuis `alpendata/backend`, sur l’environnement d’exploitation configuré. Le scheduler n’a pas besoin d’accéder aux volumes des agents. Sa supervision et son redémarrage automatique feront partie du déploiement Infomaniak ; une exception opérationnelle doit être traitée par ce superviseur.
+La première commande inspecte les échéances toutes les 30 secondes ; la seconde exécute la file. Elles se lancent depuis `alpendata/backend`, sur l’environnement d’exploitation configuré. Le scheduler n’a pas besoin d’accéder aux volumes des agents. Les [unités systemd et l'arrêt propre](SERVICES_CONTINUS.md) sont préparés : redémarrage après échec, limite de tentatives et fin du lot courant avant arrêt. Leur installation persistante et leur validation sur Infomaniak restent à réaliser.
 
 Routes personnelles sous `/api/organizations/{organization_id}/schedules` :
 

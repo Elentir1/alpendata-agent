@@ -1,6 +1,5 @@
 """One database schedule authority; each occurrence runs through the existing Hermes queue."""
 
-import time
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -8,12 +7,10 @@ from sqlalchemy import select
 
 from .chat import queue_turn
 from .connections import lock_member
-from .database import database_factory
 from .models import Conversation, RoutineOccurrence, RoutineProposal, RoutineSchedule, User, now
 from .notification_events import record_notification
 from .schedule_state import CATCH_UP_SECONDS, check_schedule_access, stop_schedule
 from .schedule_time import next_occurrence
-from .settings import Settings
 
 
 class ScheduleWorker:
@@ -111,18 +108,10 @@ class ScheduleWorker:
 
 
 def main():
-    settings = Settings.from_environment()
-    engine, factory = database_factory(settings.database_url)
-    try:
-        worker = ScheduleWorker(settings, factory)
-        while True:
-            worker.tick()
-            time.sleep(30)
-    except KeyboardInterrupt:
-        return
-    finally:
-        engine.dispose()
+    from .worker_service import main as service_main
+
+    return service_main("scheduler")
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -17,6 +17,9 @@ from alpendata_api.settings import Settings
 
 
 def pytest_addoption(parser):
+    parser.addoption(
+        "--systemd-user", action="store_true", help="Exercise temporary units in a live user manager"
+    )
     parser.addoption("--nginx-bin", help="Absolute Nginx binary for isolated real HTTPS tests")
     parser.addoption("--frontend-dist", help="Built AlpenData frontend for HTTPS integration tests")
     parser.addoption("--age-bin", help="Absolute age binary for real encrypted-backup exercises")

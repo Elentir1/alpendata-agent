@@ -126,6 +126,10 @@ Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les c
 
 La commande locale `python -m alpendata_api.backup` crée un ensemble PostgreSQL + états privés et restaure uniquement vers une base vide et un dossier neuf. Les tâches restaurées sont suspendues et les connexions doivent être rétablies. Aucun service n’est démarré automatiquement. La commande distincte `python -m alpendata_api.backup_encryption` [chiffre ces ensembles avec age](../docs/CHIFFREMENT_SAUVEGARDES.md) avant leur conservation hors hôte. Aucun transfert distant n’est encore intégré ; voir la [procédure et ses limites](../docs/SAUVEGARDE_RESTAURATION.md).
 
+## Services continus
+
+Les workers terminent leur itération courante sur SIGTERM/SIGINT, puis quittent sans prendre le travail suivant. Le générateur `python -m alpendata_api.service_units` prépare les unités utilisateur de l'API, du worker et du planificateur. Voir [Services continus et maintenance](../docs/SERVICES_CONTINUS.md) pour le démarrage, les arrêts, la limite de redémarrages et les vérifications avant sauvegarde.
+
 ## Récupération opérateur
 
 L'outil local `python -m alpendata_api.runtime_recovery` permet le diagnostic et la récupération ciblée des conteneurs orphelins, sous verrous PostgreSQL et du volume personnel. Il ne demande aucune clé modèle ou Microsoft. Voir la [procédure opérateur](../docs/RECUPERATION_RUNTIME.md).

@@ -39,10 +39,12 @@ def model_http(handler):
     server.daemon_threads = True
 
     class LoopbackAdapter(HTTPAdapter):
+        local_origin = f"http://127.0.0.1:{server.server_port}"
+
         def send(self, request, **kwargs):
             destinations.append(request.url)
             local = request.copy()
-            local.url = f"http://127.0.0.1:{server.server_port}" + urlsplit(request.url).path
+            local.url = self.local_origin + urlsplit(request.url).path
             return super().send(local, **kwargs)
 
     session = requests.Session()

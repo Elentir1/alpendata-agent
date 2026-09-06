@@ -21,6 +21,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Audit technique Hermes](docs/AUDIT_HERMES.md)
 - [Architecture AlpenData](docs/ARCHITECTURE.md)
 - [Entrée HTTPS et contrôle de démarrage](docs/ENTREE_HTTPS.md)
+- [Services continus et maintenance](docs/SERVICES_CONTINUS.md)
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
 - [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
 - [Chat personnel et exécutions durables](docs/CHAT_PERSONNEL.md)

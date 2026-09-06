@@ -13,7 +13,6 @@ from sqlalchemy import select, update
 
 from .artifacts import publish_document
 from .connections import MicrosoftReader, SearchInput, lock_member
-from .database import database_factory
 from .graph_documents import FileInput
 from .model_gateway import ModelError, ModelGateway
 from .models import (
@@ -31,7 +30,6 @@ from .routine_delivery import delivery_accepted
 from .routine_service import read_evidence, record_proposals, source_references
 from .runtime import ContainerRuntime, RuntimeFailure
 from .schedule_state import finish_occurrence, occurrence_for_turn, scheduled_turn_error
-from .settings import Settings
 
 # A credential refresh followed by a Graph read holds the authorization locks.
 # Its bounded network work must fit before the next heartbeat can acquire them.
@@ -486,18 +484,10 @@ class ChatWorker:
 
 
 def main():
-    settings = Settings.from_environment()
-    engine, factory = database_factory(settings.database_url)
-    try:
-        worker = ChatWorker(settings, factory)
-        while True:
-            if not worker.run_once():
-                time.sleep(1)
-    except KeyboardInterrupt:
-        return
-    finally:
-        engine.dispose()
+    from .worker_service import main as service_main
+
+    return service_main("chat")
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

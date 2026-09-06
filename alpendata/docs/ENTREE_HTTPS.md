@@ -66,6 +66,6 @@ Les accès HTTP et erreurs Nginx de requêtes ne sont pas journalisés, pour év
 
 Les exercices utilisent Nginx Debian, Uvicorn, PostgreSQL, l'interface réellement compilée et un certificat éphémère dont la chaîne est vérifiée par le client de test. L'authentification du test est une session synthétique du serveur, pas un parcours Entra réel. Les options `--nginx-bin` et `--frontend-dist` du lanceur de tests activent ces exercices ; sans elles, les deux scénarios HTTPS sont explicitement ignorés.
 
-Les unités de service, le renouvellement du certificat, la supervision, la protection de l'hôte, les accès Infomaniak et le parcours réel Microsoft restent à préparer ou valider avant le pilote. Aucun service système ni adresse publique n'est créé par ces tests.
+Les [unités API et workers](SERVICES_CONTINUS.md) sont préparées séparément. Leur installation persistante, le renouvellement du certificat, la supervision, la protection de l'hôte, les accès Infomaniak et le parcours réel Microsoft restent à préparer ou valider avant le pilote. Aucun service système ni adresse publique n'est créé par ces tests.
 
 Références : [proxy HTTP Nginx](https://nginx.org/en/docs/http/ngx_http_proxy_module.html), [fichiers et limites HTTP](https://nginx.org/en/docs/http/ngx_http_core_module.html), [TLS Nginx](https://nginx.org/en/docs/http/ngx_http_ssl_module.html).
