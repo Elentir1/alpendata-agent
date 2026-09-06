@@ -23,6 +23,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Séquence d’implémentation](docs/PLAN_IMPLEMENTATION.md)
 - [Passerelle Mistral/OpenRouter](docs/PASSERELLE_MODELES.md)
 - [Chat personnel et exécutions durables](docs/CHAT_PERSONNEL.md)
+- [Consultation et correction de la mémoire personnelle](docs/MEMOIRE_PERSONNELLE.md)
 - [Onboarding et premier résultat](docs/PREMIER_RESULTAT.md)
 - [Automatisations et autorité de planification](docs/AUTOMATISATIONS.md)
 - [Révision d’origine et référence du cahier des charges](upstream.lock.json)

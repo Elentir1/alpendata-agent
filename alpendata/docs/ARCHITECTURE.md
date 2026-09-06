@@ -91,6 +91,8 @@ Lors d’une révocation : marquer la connexion inactive, empêcher immédiateme
 
 Conserver la mémoire privée dans l’environnement de son propriétaire. Les connaissances partagées passent par un service de ressources commun, contrôlé à chaque recherche et téléchargement.
 
+La consultation et la correction personnelles sont implémentées dans l'interface et utilisent le véritable magasin mémoire Hermes du propriétaire, sous verrou d'exécution. Elles n'appellent pas le modèle et prennent effet dans les nouvelles conversations. Le retrait d'une licence ne retire pas le contrôle de cette mémoire à un membre actif. Voir [Mémoire personnelle](MEMOIRE_PERSONNELLE.md) pour les limites de l'effacement et les garanties de concurrence.
+
 Pour le pilote, privilégier une recherche sur les sources avec les droits courants de l’utilisateur. Tout index ou cache futur devra inclure l’entreprise, l’utilisateur ou les droits applicables, la source et sa version. Une révocation doit invalider les résultats concernés ; une nouvelle requête ne doit pas restituer un document perdu via un ancien cache.
 
 Les copies téléchargées, résumés déjà produits et souvenirs dérivés d’une source posent une question de conservation distincte : leur sort après révocation doit être défini et testé. Ne pas promettre une suppression rétroactive de toutes les connaissances dérivées sans avoir implémenté leur traçabilité.

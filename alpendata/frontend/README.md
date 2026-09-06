@@ -4,6 +4,8 @@ Première interface web du produit, construite avec React, TypeScript et Vite, d
 
 ## Parcours implémentés
 
+- Consultation, correction et retrait de la mémoire personnelle réelle d'Hermes, avec versions et récupération après réponse perdue. Voir [Mémoire personnelle](../docs/MEMOIRE_PERSONNELLE.md).
+
 - Écran de connexion Microsoft et retour compréhensible après interruption de connexion.
 - Création d’une entreprise après authentification.
 - Invitation : demande de preuve de boîte mail, confirmation avec le compte demandeur, puis accès à un onboarding neuf.

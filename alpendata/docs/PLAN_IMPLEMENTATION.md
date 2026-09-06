@@ -15,6 +15,7 @@ Résultats : révision d’origine enregistrée, diagnostic reproductible, princ
 - Créer l’API AlpenData, les entreprises, les utilisateurs, les membres et les invitations.
 - Préparer un environnement Hermes neuf par utilisateur, sans copie de connexions ou de mémoires personnelles.
 - Implémenter l’autorisation des ressources et la passerelle d’accès aux agents.
+- Consultation, correction et retrait de la mémoire active depuis l'interface : implémentés, sans accès administrateur aux contenus des collaborateurs. Voir [Mémoire personnelle](MEMOIRE_PERSONNELLE.md).
 - Valider le flux de conversation structuré avec une instance réelle d’Hermes.
 - Vérifier les accès croisés entre deux utilisateurs d’une entreprise et un utilisateur d’une autre entreprise, ainsi que le rôle administrateur.
 

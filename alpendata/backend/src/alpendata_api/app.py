@@ -18,6 +18,7 @@ from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .email_routes import email_router
 from .mail import SMTPMailer
+from .memory_routes import memory_router
 from .models import AuthSession, Invitation, Membership, Onboarding, Organization, PersonalResource, User
 from .policy_routes import policy_router
 from .routines import routines_router
@@ -57,6 +58,7 @@ def create_app(
     app.include_router(sharepoint_router(settings, factory, microsoft_provider, graph))
     app.include_router(email_router(settings, factory, microsoft_provider, graph))
     app.include_router(action_policy_router(settings, factory))
+    app.include_router(memory_router(settings, factory))
     app.include_router(routines_router(settings, factory))
     app.include_router(schedules_router(settings, factory))
     app.include_router(policy_router(settings, factory))

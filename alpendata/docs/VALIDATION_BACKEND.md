@@ -1,5 +1,13 @@
 # Vérification du premier backend
 
+## Mémoire personnelle — 6 septembre 2026
+
+La suite complète passe **58 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l'image `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Le frontend passe **30 scénarios JSDOM**, puis TypeScript et le build Vite. Ruff passe. Aucune migration n'est ajoutée.
+
+Le parcours mémoire utilise l'API authentifiée, PostgreSQL et le véritable outil mémoire Hermes. Une préférence apprise par Hermes est corrigée depuis l'API et reprise dans une nouvelle conversation ; le contexte d'une conversation existante reste inchangé. Les scénarios vérifient les accès croisés, l'absence de contournement administrateur, les versions, l'exécution concurrente, la licence retirée, la désactivation du membre et les fichiers invalides. Le premier lancement ciblé a révélé une requête de test incomplète pour modifier une adhésion ; après fourniture des trois champs requis, la suite complète passe sans relance automatique.
+
+L'interface conserve les éditions non enregistrées de l'autre liste et oblige à relire après une réponse perdue. Le rendu, la modification, le retrait des préférences et leur relecture ont été contrôlés en français et anglais sur un aperçu fictif séparé, ensuite arrêté et fermé. L'API normale a été redémarrée : santé et routes mémoire vérifiées, base inchangée en `0015`. Les fournisseurs externes restent synthétiques. L'effacement concerne la mémoire active, pas les conversations ni les sauvegardes ; détails dans [Mémoire personnelle](MEMOIRE_PERSONNELLE.md).
+
 ## Briefing envoyé et récurrence — 6 septembre 2026
 
 La suite complète passe **56 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec le runtime inchangé `sha256:4b433a33ee62fc1cc3bc260f6d98716fc7a3d046ec70a855a91ff67ee6aca0a7`. Le frontend passe **28 scénarios JSDOM**, puis TypeScript et le build Vite. Ruff et la cohérence des migrations passent.

@@ -22,7 +22,7 @@ La migration `0008` ajoute la publication et le téléchargement de documents pe
 
 **Invitations :** après connexion, le collaborateur demande une vérification avec `POST /api/invitations/verify`. Le serveur envoie un lien à la seule adresse enregistrée par l’administrateur. La preuve expire après 15 minutes et ne fonctionne que pour le compte demandeur et cette invitation. `POST /api/invitations/accept` demande le jeton d’invitation et `verification_token`. Une adresse précédemment vérifiée ou déclarée par Microsoft ne contourne jamais cette preuve. Le lien initial est encore retourné à l’administrateur pour partage manuel ; son envoi automatique reste à intégrer. L’écran `/join` est maintenant présent dans `alpendata/frontend`.
 
-`personal-resources` sert à vérifier le contrat de propriété du stockage AlpenData. Ces données ne sont pas encore les conversations ou la mémoire du moteur Hermes. Le champ `step` de l’onboarding reste à `connect_tools` après les premières réponses : cette sauvegarde ne simule pas une connexion Microsoft réussie.
+`personal-resources` sert à vérifier le contrat de propriété du stockage AlpenData. Ces données sont distinctes des conversations et de la mémoire du moteur Hermes. Le véritable magasin mémoire est accessible au seul propriétaire via les routes `memory`, décrites dans [Mémoire personnelle](../docs/MEMOIRE_PERSONNELLE.md). Le champ `step` de l’onboarding reste à `connect_tools` après les premières réponses : cette sauvegarde ne simule pas une connexion Microsoft réussie.
 
 ## Installation et démarrage local
 

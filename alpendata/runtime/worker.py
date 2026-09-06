@@ -209,6 +209,18 @@ def register_tools(
 
 
 def run(channel, request):
+    if request.get("operation") == "memory":
+        # Maintenance never imports AIAgent or exposes a model/tool broker.
+        sys.stdout = sys.stderr
+        from memory_access import manage
+
+        channel.send({
+            "type": "result",
+            "response": "",
+            "messages": [],
+            **manage(request),
+        })
+        return
     # All paths are internal constants. Only /state is a per-owner writable mount.
     home = Path(os.environ["HERMES_HOME"])
     home.mkdir(mode=0o700, exist_ok=True)
