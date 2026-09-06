@@ -9,6 +9,7 @@ from requests import RequestException
 from .microsoft_identity import MicrosoftIdentity, MicrosoftSignIn, validated_identity
 
 SCOPES = {
+    "mail_send": "Mail.Send",
     "mail": "Mail.Read",
     "calendar": "Calendars.Read",
     "files": "Files.Read.All",

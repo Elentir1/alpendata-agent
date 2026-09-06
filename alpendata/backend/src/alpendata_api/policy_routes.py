@@ -16,7 +16,9 @@ from .schemas import Input
 
 class PolicyInput(Input):
     version: int = Field(ge=0)
-    allowed_capabilities: list[Literal["mail", "calendar", "files", "files_write"]] = Field(max_length=4)
+    allowed_capabilities: list[Literal["mail", "calendar", "files", "files_write", "mail_send"]] = Field(
+        max_length=5
+    )
 
     @model_validator(mode="after")
     def document_access(self):

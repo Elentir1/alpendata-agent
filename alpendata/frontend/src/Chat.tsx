@@ -8,11 +8,13 @@ import { RoutineCards, TrialEvidence } from './FirstTasks';
 import type { Proposal, Trial } from './FirstTasks';
 import { ScheduleActivation } from './Schedules';
 import { Documents } from './Documents';
+import { EmailDraft } from './EmailDraft';
+import type { EmailReceipt } from './EmailDraft';
 import type { DocumentReceipt } from './Documents';
 
 type Conversation = { id: string; title: string; language: Language; created_at: number };
 type Source = { kind: string; label: string; url: string | null };
-type Turn = { artifacts?: DocumentReceipt[]; sources?: Source[]; id: string; request_id: string; sequence: number; message: string; response: string | null; status: string; error_code: string | null; cancel_requested: boolean };
+type Turn = { emails?: EmailReceipt[]; artifacts?: DocumentReceipt[]; sources?: Source[]; id: string; request_id: string; sequence: number; message: string; response: string | null; status: string; error_code: string | null; cancel_requested: boolean };
 type Detail = Conversation & { proposals?: Proposal[]; trials?: Trial[]; turns: Turn[]; next_after: number | null };
 type Listing = { available: boolean; conversations: Conversation[]; next_offset: number | null };
 
@@ -151,6 +153,7 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
             {turn.response !== null && <article className="chat-message from-assistant"><strong>{c.assistant}</strong><p>{turn.response}</p>{!!turn.sources?.length && <div className="chat-sources"><strong>{language === 'fr' ? 'Sources consultées' : 'Sources consulted'}</strong><ul>{turn.sources.map((source, index) => <li key={index}>{source.url && source.url.startsWith('https://') ? <a href={source.url} target="_blank" rel="noreferrer">{source.label || source.kind}</a> : <span>{source.label || source.kind}</span>}</li>)}</ul></div>}</article>}
             {turn.status !== 'completed' && <p className="chat-status" role="status">{turn.error_code ? messages[turn.error_code] || labels[turn.status] : labels[turn.status]}</p>}
             <Documents key={`${organizationId}/${turn.id}`} items={turn.artifacts || []} organizationId={organizationId} language={language} />
+            {(turn.emails || []).map(item => <EmailDraft key={`${organizationId}/${item.id}`} item={item} organizationId={organizationId} language={language} licensed={licensed} />)}
           </div>)}
         </div>}
         {!!detail?.proposals?.length && <RoutineCards key={selected} proposals={detail.proposals} organizationId={organizationId} language={language} disabled={busy || uncertain || !!running || !licensed || !listing?.available} onOpen={id => {

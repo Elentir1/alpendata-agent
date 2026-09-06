@@ -4,12 +4,12 @@ import { api, ApiError } from './api';
 import { Notice } from './feedback';
 import type { Language } from './locale';
 
-type Capability = 'mail' | 'calendar' | 'files' | 'files_write';
+type Capability = 'mail' | 'calendar' | 'files' | 'files_write' | 'mail_send';
 interface Policy { version: number; allowed_capabilities: Capability[] }
-const capabilities: Capability[] = ['mail', 'calendar', 'files', 'files_write'];
+const capabilities: Capability[] = ['mail', 'calendar', 'files', 'files_write', 'mail_send'];
 const words = {
   fr: { title: 'Règles de votre entreprise', intro: 'Choisissez les accès que chaque personne pourra autoriser avec son propre compte. Ces règles s’appliquent aussi à vous.',
-    mail: 'Lire les mails', calendar: 'Consulter les agendas', files: 'Rechercher et lire les documents', files_write: 'Enregistrer des documents dans Microsoft 365',
+    mail_send: 'Envoyer des mails après confirmation', mail: 'Lire les mails', calendar: 'Consulter les agendas', files: 'Rechercher et lire les documents', files_write: 'Enregistrer des documents dans Microsoft 365',
     note: 'Un accès autorisé ici exige toujours la connexion personnelle du collaborateur. Les enregistrements de documents restent soumis à confirmation.',
     effect: 'Retirer un accès bloque les prochains appels et suspend les automatisations concernées. Les appels déjà en cours peuvent se terminer avant l’application des règles. Réautoriser un accès ne relance pas les tâches suspendues.',
     privacy: 'Ces réglages ne donnent aucun accès aux conversations, mémoires ou connexions personnelles. Ils ne suppriment pas les documents déjà conservés.',
@@ -17,7 +17,7 @@ const words = {
     changed: 'Les règles ont changé depuis leur ouverture. Rechargez la version actuelle avant de modifier vos choix.', reload: 'Recharger les règles actuelles',
     error: 'Les règles n’ont pas pu être confirmées. Rechargez leur état avant de réessayer.', },
   en: { title: 'Your company’s rules', intro: 'Choose the access each person may authorize with their own account. These rules also apply to you.',
-    mail: 'Read email', calendar: 'View calendars', files: 'Find and read documents', files_write: 'Save documents to Microsoft 365',
+    mail_send: 'Send email after confirmation', mail: 'Read email', calendar: 'View calendars', files: 'Find and read documents', files_write: 'Save documents to Microsoft 365',
     note: 'Access allowed here still requires each colleague’s personal connection. Document saves continue to require confirmation.',
     effect: 'Removing access blocks subsequent calls and suspends affected automations. Calls already in progress may finish before the rules apply. Restoring access does not restart suspended tasks.',
     privacy: 'These settings do not give access to personal conversations, memories or connections. They do not delete previously saved documents.',

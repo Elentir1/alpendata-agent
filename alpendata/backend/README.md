@@ -18,7 +18,7 @@ Les sessions sont émises uniquement par le serveur après le parcours Microsoft
 
 Les premiers accès de lecture Microsoft 365 sont implémentés ; leur validation avec Entra/Graph réels reste à réaliser. Le runtime isolé du moteur Hermes est raccordé aux conversations et aux récurrences personnelles, et décrit dans `../runtime/README.md`. Stripe reste à intégrer. La connexion à AlpenData n’accorde aucun accès aux e-mails ou aux fichiers.
 
-La migration `0008` ajoute la publication et le téléchargement de documents personnels depuis le chat. Le contenu reste privé, immuable et rattaché au tour. Les limites et la génération encore à terminer sont décrites dans [Documents](../docs/DOCUMENTS.md).
+La migration `0008` ajoute la publication et le téléchargement de documents personnels depuis le chat. Le contenu reste privé, immuable et rattaché au tour. Les limites et la génération des quatre formats sont décrites dans [Documents](../docs/DOCUMENTS.md).
 
 **Invitations :** après connexion, le collaborateur demande une vérification avec `POST /api/invitations/verify`. Le serveur envoie un lien à la seule adresse enregistrée par l’administrateur. La preuve expire après 15 minutes et ne fonctionne que pour le compte demandeur et cette invitation. `POST /api/invitations/accept` demande le jeton d’invitation et `verification_token`. Une adresse précédemment vérifiée ou déclarée par Microsoft ne contourne jamais cette preuve. Le lien initial est encore retourné à l’administrateur pour partage manuel ; son envoi automatique reste à intégrer. L’écran `/join` est maintenant présent dans `alpendata/frontend`.
 
@@ -92,7 +92,7 @@ Ces tests portent sur l’API et sa base. La séparation des processus Hermes et
 
 ## Connexions Microsoft 365 personnelles
 
-Après son onboarding, chaque utilisateur choisit les accès de lecture à activer. Le consentement est séparé de la connexion à AlpenData et utilise le même compte, dans le même annuaire Microsoft. Les permissions déléguées sont `Mail.Read`, `Calendars.Read` et `Files.Read.All` selon le choix ; MSAL ajoute les scopes OIDC et `offline_access`. Les politiques de l’organisation Microsoft peuvent exiger un consentement administrateur. Aucune permission d’application ni permission d’envoi ou de modification n’est demandée.
+Après son onboarding, chaque utilisateur choisit les accès de lecture à activer. Le consentement est séparé de la connexion à AlpenData et utilise le même compte, dans le même annuaire Microsoft. Les permissions déléguées sont `Mail.Read`, `Calendars.Read` et `Files.Read.All` selon le choix ; MSAL ajoute les scopes OIDC et `offline_access`. Les politiques de l’organisation Microsoft peuvent exiger un consentement administrateur. Les enregistrements SharePoint confirmés demandent séparément `Files.ReadWrite.All` ; les envois confirmés demandent `Mail.Send`. Les règles de l’entreprise doivent aussi les permettre. Aucune permission d’application n’est demandée. Voir [E-mails](../docs/EMAILS.md) et [Enregistrement SharePoint](../docs/ENREGISTREMENT_SHAREPOINT.md).
 
 | Route sous `/api/organizations/{organization_id}/microsoft` | Fonction |
 |---|---|

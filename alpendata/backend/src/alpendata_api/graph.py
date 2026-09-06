@@ -106,6 +106,9 @@ class GraphReader:
                         "name", ""
                     ),
                     "received_at": item.get("receivedDateTime"),
+                    "sender_address": object_value(object_value(item.get("from")).get("emailAddress")).get(
+                        "address", ""
+                    ),
                     "preview": item.get("bodyPreview", ""),
                     "url": web_link(item.get("webLink")),
                     "is_read": item.get("isRead", False),

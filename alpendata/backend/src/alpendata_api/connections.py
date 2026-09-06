@@ -37,8 +37,8 @@ PREFIX = "/api/organizations/{organization_id}/microsoft"
 
 class ConnectInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    capabilities: list[Literal["mail", "calendar", "files", "files_write"]] = Field(
-        min_length=1, max_length=4
+    capabilities: list[Literal["mail", "calendar", "files", "files_write", "mail_send"]] = Field(
+        min_length=1, max_length=5
     )
 
 

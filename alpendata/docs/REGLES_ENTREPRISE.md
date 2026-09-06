@@ -4,11 +4,11 @@
 
 ## Parcours
 
-L’administrateur retrouve quatre choix dans « Mon entreprise » : lecture des mails, consultation des agendas, recherche/lecture des documents et enregistrement Microsoft 365. Interdire l’accès documentaire interdit aussi l’enregistrement. Les règles s’appliquent à tous les membres, administrateurs compris. Elles limitent les possibilités du collaborateur sans lui fournir de connexion ni remplacer son consentement personnel.
+L’administrateur retrouve cinq choix dans « Mon entreprise » : lecture des mails, consultation des agendas, recherche/lecture des documents enregistrement Microsoft 365 et envoi de mails après confirmation. Interdire l’accès documentaire interdit aussi l’enregistrement. Les règles s’appliquent à tous les membres, administrateurs compris. Elles limitent les possibilités du collaborateur sans lui fournir de connexion ni remplacer son consentement personnel.
 
-En l’absence de règle enregistrée, les quatre capacités peuvent être autorisées personnellement. Aucune connexion n’est créée et aucun consentement Microsoft n’est obtenu par défaut. Un administrateur actif sans licence peut gérer les règles, comme il peut déjà gérer les membres.
+En l’absence de règle enregistrée, les quatre capacités peuvent être autorisées personnellement. L’envoi de mails est interdit par défaut, y compris pour les entreprises déjà créées. Aucune connexion n’est créée et aucun consentement Microsoft n’est obtenu par défaut. Un administrateur actif sans licence peut gérer les règles, comme il peut déjà gérer les membres.
 
-Les choix restreints sont désactivés dans les outils personnels, avec une explication en français ou anglais. Les erreurs d’accès du chat, de la planification et de l’enregistrement renvoient également vers les règles de l’entreprise. Les autorisations d’action autonome de l’agent et les règles propres aux envois d’e-mails restent à réaliser ; les dépôts documentaires exigent encore la confirmation du propriétaire.
+Les choix restreints sont désactivés dans les outils personnels, avec une explication en français ou anglais. Les erreurs d’accès du chat, de la planification et de l’enregistrement renvoient également vers les règles de l’entreprise. Les envois de mails confirmés sont maintenant soumis à ces mêmes règles et au consentement personnel `Mail.Send`, décrit dans [E-mails](EMAILS.md). Les autorisations d’action autonome de l’agent restent à réaliser ; envois et dépôts documentaires exigent encore la confirmation du propriétaire.
 
 ## Application côté serveur
 

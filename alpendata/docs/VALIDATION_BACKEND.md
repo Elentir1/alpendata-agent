@@ -1,5 +1,14 @@
 # Vérification du premier backend
 
+## Brouillons et envoi confirmé — 6 septembre 2026
+
+La suite complète passe **48 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image runtime `sha256:c2cc47b857dc65752cd0f74c67b115bbf37ef82b8cbeaef052a280e1eb96f566`. Le frontend passe **20 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.
+
+Le nouveau parcours vérifie préparation privée par le vrai Hermes isolé, relecture versionnée, confirmation personnelle, consentement `Mail.Send`, refus par défaut des règles d’entreprise, pièces jointes exactes et absence de deuxième requête Microsoft après double confirmation concurrente ou résultat réseau incertain. Un résultat HTTP 202 est présenté comme une demande acceptée, sans prétendre à la livraison. Les transports Microsoft et modèle restent synthétiques ; aucune boîte réelle n’a été contactée.
+
+Le formulaire, sa modification, sa confirmation et le reçu ont été contrôlés dans le navigateur en français et anglais sur un aperçu local explicitement fictif, ensuite fermé et arrêté. La prévisualisation normale a été sauvegardée avant migration `0012`. Les limites et les étapes restantes sont précisées dans [E-mails](EMAILS.md).
+
+
 ## Règles d’entreprise — 6 septembre 2026
 
 La suite complète passe **45 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré. Le runtime reste `sha256:3d58b390f8943cdb18fed899ab9d79f4dc8238290134ea7f12a2dc4934e525d2` ; cette étape modifie l’API et l’interface. Le frontend passe **18 scénarios JSDOM** et le build TypeScript/Vite. Un cas supplémentaire de consentement commencé avant une restriction est ajouté puis vérifié sous Windows/SQLite ; le scénario de concurrence PostgreSQL est volontairement ignoré sur Windows.

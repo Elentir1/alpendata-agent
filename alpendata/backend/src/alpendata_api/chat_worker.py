@@ -278,6 +278,18 @@ class ChatWorker:
                         db, turn, {key: value for key, value in payload.items() if key != "kind"}
                     )
                 return {"status": 200, "body": result}
+            if isinstance(payload, dict) and payload.get("kind") == "mail_draft":
+                from .email_drafts import prepare_email
+
+                with self.factory.begin() as db:
+                    authorize_job(db, job)
+                    turn = db.get(ChatTurn, job.id)
+                    if db.get(Conversation, turn.conversation_id).tool_revision < 3:
+                        raise HTTPException(403, "email_new_conversation_required")
+                    result = prepare_email(
+                        db, turn, {key: value for key, value in payload.items() if key != "kind"}
+                    )
+                return {"status": 200, "body": result}
             request = ToolRequest.model_validate(payload)
             if request.capability not in capabilities:
                 raise HTTPException(403, "microsoft_permission_required")

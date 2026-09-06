@@ -325,6 +325,50 @@ class SharePointSave(OwnedMixin, Base):
     )
 
 
+class EmailDraft(OwnedMixin, Base):
+    __tablename__ = "alpendata_email_drafts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    initial_hash: Mapped[str] = mapped_column(String(64))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    message: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        UniqueConstraint("turn_id", "initial_hash"),
+        UniqueConstraint("id", "organization_id", "owner_id", name="uq_email_draft_owner"),
+        CheckConstraint("version > 0", name="ck_email_draft_version"),
+    )
+
+
+class EmailAttempt(OwnedMixin, Base):
+    __tablename__ = "alpendata_email_attempts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    draft_id: Mapped[str] = mapped_column(String(36), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    message: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(24), default="sending")
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    finished_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["draft_id", "organization_id", "owner_id"],
+            [
+                "alpendata_email_drafts.id",
+                "alpendata_email_drafts.organization_id",
+                "alpendata_email_drafts.owner_id",
+            ],
+            name="fk_email_attempt_draft_owner",
+        ),
+        UniqueConstraint("draft_id", "version"),
+        CheckConstraint(
+            "status IN ('sending', 'accepted', 'failed', 'unknown')", name="ck_email_attempt_status"
+        ),
+    )
+
+
 class ToolRead(OwnedMixin, Base):
     __tablename__ = "alpendata_tool_reads"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)

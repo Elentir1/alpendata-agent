@@ -4,12 +4,14 @@ from fastapi import HTTPException
 
 from .models import OrganizationPolicy
 
-CAPABILITIES = ("mail", "calendar", "files", "files_write")
+DEFAULT_CAPABILITIES = ("mail", "calendar", "files", "files_write")
+CAPABILITIES = (*DEFAULT_CAPABILITIES, "mail_send")
 
 
 def allowed_capabilities(db, organization_id):
     policy = db.get(OrganizationPolicy, organization_id, populate_existing=True)
-    return [item for item in CAPABILITIES if policy is None or item in policy.allowed_capabilities]
+    permitted = DEFAULT_CAPABILITIES if policy is None else policy.allowed_capabilities
+    return [item for item in CAPABILITIES if item in permitted]
 
 
 def require_allowed(db, organization_id, capabilities):

@@ -5,7 +5,7 @@ import { Notice, useAction } from './feedback';
 import { copy, errorText } from './locale';
 import type { Language } from './locale';
 
-type Capability = 'mail' | 'calendar' | 'files' | 'files_write';
+type Capability = 'mail' | 'calendar' | 'files' | 'files_write' | 'mail_send';
 type Connection = { available: boolean; status: 'disconnected' | 'connected' | 'reconnect_required'; capabilities: Capability[]; allowed_capabilities?: Capability[]; restricted_capabilities?: Capability[] };
 type MailItem = { id: string; subject: string; sender: string; preview: string; url: string | null };
 type FileItem = { id: string; drive_id: string; name: string; url: string | null };
@@ -17,7 +17,7 @@ const text = {
     calendar: 'Mon calendrier', calendarDetail: 'Consulter vos rendez-vous à venir.',
     files: 'Mes documents et SharePoint', filesDetail: 'Rechercher et lire les fichiers auxquels votre compte a accès, y compris les fichiers partagés.',
     reading: 'La lecture ne modifie rien. Si vous autorisez l’enregistrement, chaque dépôt ou remplacement sera confirmé depuis le document créé.',
-    write: 'Enregistrer mes documents', writeDetail: 'Déposer un document dans un dossier Microsoft 365 après votre confirmation.',
+    sendMail: 'Envoyer mes mails', sendMailDetail: 'Envoyer depuis mon compte après relecture et confirmation.', write: 'Enregistrer mes documents', writeDetail: 'Déposer un document dans un dossier Microsoft 365 après votre confirmation.',
     blocked: 'Limité par votre entreprise', rules: 'Les règles de votre entreprise limitent certains accès. Seul votre administrateur peut les réautoriser.',
     permission: 'Utilisez le même compte que pour AlpenData. Selon les règles Microsoft de votre entreprise, une validation de votre administrateur Microsoft peut être nécessaire.',
     connect: 'Connecter mes outils', change: 'Modifier mes accès', disconnect: 'Déconnecter mes outils', connected: 'Vos outils sont connectés.',
@@ -33,7 +33,7 @@ const text = {
     calendar: 'My calendar', calendarDetail: 'View your upcoming appointments.',
     files: 'My documents and SharePoint', filesDetail: 'Find and read files your account can access, including shared files.',
     reading: 'Reading changes nothing. If you allow saving, each upload or replacement is confirmed from the created document.',
-    write: 'Save my documents', writeDetail: 'Save a document to a Microsoft 365 folder after your confirmation.',
+    sendMail: 'Send my email', sendMailDetail: 'Send from my account after review and confirmation.', write: 'Save my documents', writeDetail: 'Save a document to a Microsoft 365 folder after your confirmation.',
     blocked: 'Restricted by your company', rules: 'Your company rules restrict some access. Only your administrator can allow it again.',
     permission: 'Use the same account as for AlpenData. Your company’s Microsoft policies may require approval from your Microsoft administrator.',
     connect: 'Connect my tools', change: 'Change my access', disconnect: 'Disconnect my tools', connected: 'Your tools are connected.',
@@ -84,6 +84,7 @@ export function Tools({ companyId, language }: { companyId: string; language: La
     { id: 'mail' as const, title: c.mail, description: c.mailDetail, Icon: Mail },
     { id: 'calendar' as const, title: c.calendar, description: c.calendarDetail, Icon: CalendarDays },
     { id: 'files' as const, title: c.files, description: c.filesDetail, Icon: FileSearch },
+    { id: 'mail_send' as const, title: c.sendMail, description: c.sendMailDetail, Icon: Mail },
     { id: 'files_write' as const, title: c.write, description: c.writeDetail, Icon: FileSearch },
   ];
   if (loadError) return <Notice>{loadError}</Notice>;
