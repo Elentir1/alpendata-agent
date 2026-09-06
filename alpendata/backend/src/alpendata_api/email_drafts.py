@@ -65,6 +65,8 @@ def attempt_view(item):
         "finished_at": item.finished_at,
         "can_verify": bool(item.correlation_id) and status in ("unknown", "accepted"),
         "verification": item.verification,
+        "initiator": item.initiator,
+        "autonomy_version": item.autonomy_version,
     }
 
 

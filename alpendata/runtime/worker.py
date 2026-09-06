@@ -97,13 +97,14 @@ def register_tools(
     documents=False,
     file_download=False,
     emails=False,
+    email_send=False,
 ):
     from tools.registry import registry
     from documents import register_documents, register_download
     from emails import register_emails
 
     if emails:
-        register_emails(channel, registry)
+        register_emails(channel, registry, send_enabled=email_send)
 
     if documents:
         register_documents(channel, registry)
@@ -252,6 +253,8 @@ def run(channel, request):
         documents=request.get("documents_enabled", False),
         file_download=request.get("tool_revision", 1) >= 2,
         emails=request.get("tool_revision", 1) >= 3,
+        email_send=request.get("tool_revision", 1) >= 4
+        and request.get("email_send_enabled", False),
     )
     session_db = SessionDB()
     agent = AIAgent(

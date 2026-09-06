@@ -60,3 +60,7 @@ Le script résout l’image locale puis utilise obligatoirement `scripts/run_tes
 Le scénario `test_chat_worker.py` vérifie également le parcours API/file/agent et les droits Microsoft pendant le chat. Un test de qualité avec Mistral/OpenRouter et des identités Microsoft réelles reste nécessaire avant le pilote. Le scénario `test_routines_worker.py` exerce maintenant une occurrence planifiée issue d’un essai approuvé. La planification est décrite dans [Automatisations](../docs/AUTOMATISATIONS.md).
 
 Les occurrences planifiées ont un budget maximal de 180 secondes et n’activent pas les fournisseurs de mémoire. Le contrôleur reste réactif aux délais et annulations pendant l’attente du broker ; les reçus tardifs restent liés au tour initial. Image validée pour cette étape : `sha256:4031b65db47e83b5216fc4d0b882472c351221da012590006be02868a8e30fa0`.
+
+## Envoi personnel optionnel
+
+Les conversations de révision `4` peuvent recevoir `alpendata_send_email` uniquement lorsque leur instantané autorise cette capacité. Le broker revérifie les règles communes, le choix personnel et la connexion Microsoft ; le runtime ne reçoit aucun jeton Microsoft. Le message doit avoir été préparé pendant le tour courant. Les conversations de proposition d’onboarding ne disposent jamais de cet outil. Voir [Autonomie personnelle](../docs/AUTONOMIE.md).

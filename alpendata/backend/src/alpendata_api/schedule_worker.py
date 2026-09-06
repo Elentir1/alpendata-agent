@@ -74,13 +74,19 @@ class ScheduleWorker:
                         purpose="scheduled",
                         documents_enabled=template.documents_enabled,
                         tool_revision=template.tool_revision,
+                        email_send_enabled=template.email_send_enabled,
                         provider=template.provider,
                         model=template.model,
                         capabilities=list(template.capabilities),
                         system_prompt=template.system_prompt
                         + "\nSchedule context: the owner has now explicitly "
                         "activated this reviewed task. Perform this occurrence once. Return the result here. "
-                        "Do not change schedules, create other tasks or perform external writes.",
+                        + (
+                            "Do not change schedules or create other tasks. Send email only when this "
+                            "reviewed task requests it, through the authorized email tool."
+                            if template.email_send_enabled
+                            else "Do not change schedules, create other tasks or perform external writes."
+                        ),
                     )
                     db.add(conversation)
                     db.flush()

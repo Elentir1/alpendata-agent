@@ -34,7 +34,7 @@ def stop_schedule(db, schedule, status, reason=None):
     cancel_occurrences(db, schedule)
 
 
-def block_owner_schedules(db, organization_id, owner_id, reason, *, available=None):
+def block_owner_schedules(db, organization_id, owner_id, reason, *, available=None, autonomous_only=False):
     rows = db.scalars(
         select(RoutineSchedule)
         .where(
@@ -45,9 +45,15 @@ def block_owner_schedules(db, organization_id, owner_id, reason, *, available=No
         .with_for_update()
     ).all()
     for row in rows:
+        turn = db.get(ChatTurn, row.reviewed_turn_id)
+        conversation = db.get(Conversation, turn.conversation_id)
+        if autonomous_only and not conversation.email_send_enabled:
+            continue
         if available is not None:
-            turn = db.get(ChatTurn, row.reviewed_turn_id)
-            if set(db.get(Conversation, turn.conversation_id).capabilities) <= set(available):
+            required = set(conversation.capabilities) | (
+                {"mail_send"} if conversation.email_send_enabled else set()
+            )
+            if required <= set(available):
                 continue
         stop_schedule(db, row, "blocked", reason)
 
@@ -56,6 +62,10 @@ def check_schedule_access(db, settings, schedule):
     turn = db.get(ChatTurn, schedule.reviewed_turn_id)
     conversation = db.get(Conversation, turn.conversation_id)
     require_allowed(db, schedule.organization_id, conversation.capabilities)
+    if conversation.email_send_enabled:
+        from .action_policy import require_email_autonomy
+
+        require_email_autonomy(db, schedule.organization_id, schedule.owner_id)
     if not settings.chat_enabled:
         raise HTTPException(503, "chat_not_configured")
     if (conversation.provider, conversation.model) != (settings.model.provider, settings.model.model):
@@ -70,6 +80,7 @@ def check_schedule_access(db, settings, schedule):
         connection is None
         or connection.status != "connected"
         or not set(conversation.capabilities) <= set(connection.capabilities)
+        or (conversation.email_send_enabled and "mail_send" not in connection.capabilities)
     ):
         raise HTTPException(409, "microsoft_reconnect_required")
     return conversation

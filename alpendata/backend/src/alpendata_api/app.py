@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from . import organizations
 from .access import lock_organization, member, owned
+from .action_policy import action_policy_router
 from .artifacts import artifacts_router
 from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
 from .chat import chat_router
@@ -55,6 +56,7 @@ def create_app(
     app.include_router(artifacts_router(settings, factory))
     app.include_router(sharepoint_router(settings, factory, microsoft_provider, graph))
     app.include_router(email_router(settings, factory, microsoft_provider, graph))
+    app.include_router(action_policy_router(settings, factory))
     app.include_router(routines_router(settings, factory))
     app.include_router(schedules_router(settings, factory))
     app.include_router(policy_router(settings, factory))

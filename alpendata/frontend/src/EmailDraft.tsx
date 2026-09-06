@@ -11,7 +11,7 @@ export interface EmailReceipt {
 }
 const words = {
   fr: {
-    title: 'Brouillon de mail', private: 'Ce brouillon reste dans AlpenData. Relisez les destinataires, le contenu et les pièces jointes avant de l’envoyer depuis votre compte Microsoft.',
+    agent: 'Envoi demandé par votre assistant selon votre autorisation personnelle.', title: 'Brouillon de mail', private: 'Ce brouillon reste dans AlpenData. Relisez les destinataires, le contenu et les pièces jointes avant de l’envoyer depuis votre compte Microsoft.',
     to: 'À', cc: 'Copie', bcc: 'Copie cachée', subject: 'Objet', body: 'Message', addresses: 'Séparez les adresses par une virgule ou un point-virgule.',
     save: 'Enregistrer le brouillon', send: 'Envoyer ce mail', confirm: 'J’ai vérifié les destinataires, le message et les pièces jointes.',
     saved: 'Le brouillon est enregistré. Vous pouvez maintenant confirmer son envoi.', dirty: 'Enregistrez vos modifications avant de confirmer l’envoi.',
@@ -26,7 +26,7 @@ const words = {
     invalid: 'Vérifiez les adresses et les champs du message. Les pièces jointes sont limitées à 2 Mo au total.',
   },
   en: {
-    title: 'Email draft', private: 'This draft stays in AlpenData. Review recipients, content and attachments before sending it from your Microsoft account.',
+    agent: 'Send requested by your assistant under your personal authorization.', title: 'Email draft', private: 'This draft stays in AlpenData. Review recipients, content and attachments before sending it from your Microsoft account.',
     to: 'To', cc: 'Cc', bcc: 'Bcc', subject: 'Subject', body: 'Message', addresses: 'Separate addresses with a comma or semicolon.',
     save: 'Save email draft', send: 'Send this email', confirm: 'I have reviewed the recipients, message and attachments.',
     saved: 'The draft has been saved. You can now confirm sending it.', dirty: 'Save your changes before confirming the send.',
@@ -96,6 +96,7 @@ export function EmailDraft({ item, organizationId, language, licensed }: { item:
       <label>{t.body}<textarea required maxLength={32000} rows={9} value={draft.body} onChange={event => { setDraft({ ...draft, body: event.target.value }); setConfirmed(false); setSaved(false); }} /></label>
       {draft.attachment_ids.length > 0 && <div><h4>{t.attachments}</h4><ul>{receipt.attachments.filter(file => draft.attachment_ids.includes(file.id)).map(file => <li key={file.id}>{file.filename} <button type="button" className="secondary" onClick={() => { setDraft({ ...draft, attachment_ids: draft.attachment_ids.filter(value => value !== file.id) }); setConfirmed(false); }}>{t.remove} {file.filename}</button></li>)}</ul></div>}
     </fieldset>
+    {latest?.initiator === 'agent' && <p>{t.agent}</p>}
     {latest && latest.verification?.status !== 'found' && <p role="status">{statusText[latest.status]}</p>}
     {latest && <EmailVerification key={latest.id} attempt={latest} path={path} language={language} licensed={licensed} onUpdated={accept} />}
     {receipt.editable && licensed && <>

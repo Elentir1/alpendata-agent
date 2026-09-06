@@ -9,6 +9,7 @@ interface Verification {
 }
 export interface EmailAttemptReceipt {
   id: string; version: number; status: string; error_code: string | null;
+  initiator?: 'browser' | 'agent'; autonomy_version?: number | null;
   can_verify?: boolean; verification?: Verification | null;
 }
 const words = {

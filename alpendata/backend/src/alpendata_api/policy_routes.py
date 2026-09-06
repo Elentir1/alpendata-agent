@@ -16,12 +16,14 @@ from .schemas import Input
 
 class PolicyInput(Input):
     version: int = Field(ge=0)
-    allowed_capabilities: list[Literal["mail", "calendar", "files", "files_write", "mail_send"]] = Field(
-        max_length=5
-    )
+    allowed_capabilities: list[
+        Literal["mail", "calendar", "files", "files_write", "mail_send", "mail_autonomous"]
+    ] = Field(max_length=6)
 
     @model_validator(mode="after")
     def document_access(self):
+        if "mail_autonomous" in self.allowed_capabilities and "mail_send" not in self.allowed_capabilities:
+            raise ValueError("Autonomous email also requires permission to send")
         if "files_write" in self.allowed_capabilities and "files" not in self.allowed_capabilities:
             raise ValueError("Saving documents also requires document access")
         return self
@@ -69,6 +71,10 @@ def policy_router(settings, factory):
             policy.version, policy.updated_by, policy.updated_at = body.version + 1, user.id, now()
             db.flush()
             for membership in members:
+                if "mail_autonomous" not in allowed:
+                    block_owner_schedules(
+                        db, organization_id, membership.user_id, "company_policy_denied", autonomous_only=True
+                    )
                 block_owner_schedules(
                     db, organization_id, membership.user_id, "company_policy_denied", available=allowed
                 )

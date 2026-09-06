@@ -76,7 +76,7 @@ def permit_email(service):
             headers=alice[2],
             json={
                 "version": policy["version"],
-                "allowed_capabilities": [*policy["allowed_capabilities"], "mail_send"],
+                "allowed_capabilities": list(dict.fromkeys([*policy["allowed_capabilities"], "mail_send"])),
             },
         ).status_code
         == 200

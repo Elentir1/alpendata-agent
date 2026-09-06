@@ -1,9 +1,9 @@
-"""Preparation only. Sending is exclusively an authenticated application action."""
+"""Private preparation and optional dispatch, authorized by the host broker."""
 
 import json
 
 
-def register_emails(channel, registry):
+def register_emails(channel, registry, *, send_enabled=False):
     name = "alpendata_prepare_email"
     description = (
         "Prepare a private editable email in chat for the user to review and send. "
@@ -51,3 +51,39 @@ def register_emails(channel, registry):
             },
         },
     )
+
+    if send_enabled:
+
+        def send(arguments, **_):
+            response = channel.exchange("tool", {**arguments, "kind": "mail_send"})
+            return json.dumps(
+                {"status": response["status"], "result": response["body"]},
+                ensure_ascii=False,
+            )
+
+        send_name = "alpendata_send_email"
+        send_description = (
+            "Send an email prepared in this turn, only if the user's task calls for sending. "
+            "The user enabled this autonomy; current permissions are checked by the broker. "
+            "Pass the exact draft ID and version from preparation. Never resend or create a "
+            "replacement after an unknown result. Accepted does not mean delivered."
+        )
+        registry.register(
+            name=send_name,
+            toolset="alpendata",
+            description=send_description,
+            handler=send,
+            schema={
+                "name": send_name,
+                "description": send_description,
+                "parameters": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["draft_id", "version"],
+                    "properties": {
+                        "draft_id": {"type": "string", "format": "uuid"},
+                        "version": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+        )

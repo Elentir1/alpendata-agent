@@ -255,40 +255,50 @@ class ChatWorker:
             authorize_job(db, job)
         return result.reply()
 
+    def proposals_tool(self, job, payload):
+        if set(payload) != {"proposals"}:
+            raise HTTPException(400, "agent_tool_arguments_invalid")
+        with self.factory.begin() as db:
+            authorize_job(db, job)
+            return record_proposals(db, db.get(ChatTurn, job.id), payload)
+
+    def document_tool(self, job, payload):
+        with self.factory.begin() as db:
+            authorize_job(db, job)
+            turn = db.get(ChatTurn, job.id)
+            if not db.get(Conversation, turn.conversation_id).documents_enabled:
+                raise HTTPException(403, "document_new_conversation_required")
+            return publish_document(db, turn, payload)
+
+    def email_draft_tool(self, job, payload):
+        from .email_drafts import prepare_email
+
+        with self.factory.begin() as db:
+            authorize_job(db, job)
+            turn = db.get(ChatTurn, job.id)
+            if db.get(Conversation, turn.conversation_id).tool_revision < 3:
+                raise HTTPException(403, "email_new_conversation_required")
+            return prepare_email(db, turn, payload)
+
+    def email_send_tool(self, job, payload):
+        from .agent_email import send_agent_email
+
+        return send_agent_email(self.factory, self.microsoft, authorize_job, job, payload)
+
     def tool(self, job, capabilities, payload):
         with self.factory.begin() as db:
             authorize_job(db, job)
         try:
-            if isinstance(payload, dict) and payload.get("kind") == "routine_proposals":
-                if set(payload) != {"kind", "proposals"}:
-                    raise HTTPException(400, "agent_tool_arguments_invalid")
-                with self.factory.begin() as db:
-                    authorize_job(db, job)
-                    result = record_proposals(
-                        db, db.get(ChatTurn, job.id), {"proposals": payload["proposals"]}
-                    )
-                return {"status": 200, "body": result}
-            if isinstance(payload, dict) and payload.get("kind") == "document":
-                with self.factory.begin() as db:
-                    authorize_job(db, job)
-                    turn = db.get(ChatTurn, job.id)
-                    if not db.get(Conversation, turn.conversation_id).documents_enabled:
-                        raise HTTPException(403, "document_new_conversation_required")
-                    result = publish_document(
-                        db, turn, {key: value for key, value in payload.items() if key != "kind"}
-                    )
-                return {"status": 200, "body": result}
-            if isinstance(payload, dict) and payload.get("kind") == "mail_draft":
-                from .email_drafts import prepare_email
-
-                with self.factory.begin() as db:
-                    authorize_job(db, job)
-                    turn = db.get(ChatTurn, job.id)
-                    if db.get(Conversation, turn.conversation_id).tool_revision < 3:
-                        raise HTTPException(403, "email_new_conversation_required")
-                    result = prepare_email(
-                        db, turn, {key: value for key, value in payload.items() if key != "kind"}
-                    )
+            handlers = {
+                "routine_proposals": self.proposals_tool,
+                "document": self.document_tool,
+                "mail_draft": self.email_draft_tool,
+                "mail_send": self.email_send_tool,
+            }
+            if isinstance(payload, dict) and payload.get("kind") in handlers:
+                result = handlers[payload["kind"]](
+                    job, {key: value for key, value in payload.items() if key != "kind"}
+                )
                 return {"status": 200, "body": result}
             request = ToolRequest.model_validate(payload)
             if request.capability not in capabilities:
@@ -412,6 +422,7 @@ class ChatWorker:
                     "purpose": conversation.purpose,
                     "documents_enabled": conversation.documents_enabled,
                     "tool_revision": conversation.tool_revision,
+                    "email_send_enabled": conversation.email_send_enabled,
                 }
             handlers = {
                 "model": lambda body: self.model(job, body),

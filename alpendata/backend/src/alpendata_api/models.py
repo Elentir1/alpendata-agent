@@ -141,6 +141,20 @@ class Onboarding(OwnedMixin, Base):
     )
 
 
+class PersonalActionPolicy(OwnedMixin, Base):
+    __tablename__ = "alpendata_personal_action_policies"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    email_mode: Mapped[str] = mapped_column(String(16), default="confirm")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ownership_constraint(),
+        UniqueConstraint("organization_id", "owner_id"),
+        CheckConstraint("email_mode IN ('confirm', 'automatic')", name="ck_personal_email_mode"),
+        CheckConstraint("version > 0", name="ck_personal_action_version"),
+    )
+
+
 class PersonalResource(OwnedMixin, Base):
     __tablename__ = "alpendata_personal_resources"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -190,6 +204,7 @@ class Conversation(OwnedMixin, Base):
     purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
     documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     tool_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    email_send_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     language: Mapped[str] = mapped_column(String(2))
     provider: Mapped[str] = mapped_column(String(24))
     model: Mapped[str] = mapped_column(String(200))
@@ -350,6 +365,8 @@ class EmailAttempt(OwnedMixin, Base):
     message: Mapped[dict] = mapped_column(JSON)
     correlation_id: Mapped[str | None] = mapped_column(String(36))
     verification: Mapped[dict | None] = mapped_column(JSON)
+    initiator: Mapped[str] = mapped_column(String(16), default="browser", server_default="browser")
+    autonomy_version: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(24), default="sending")
     error_code: Mapped[str | None] = mapped_column(String(80))
     created_at: Mapped[int] = mapped_column(Integer, default=now)

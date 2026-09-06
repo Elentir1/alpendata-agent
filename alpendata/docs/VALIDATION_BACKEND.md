@@ -1,5 +1,14 @@
 # Vérification du premier backend
 
+## Autonomie personnelle des e-mails — 6 septembre 2026
+
+La suite complète passe **54 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image runtime `sha256:4b433a33ee62fc1cc3bc260f6d98716fc7a3d046ec70a855a91ff67ee6aca0a7`. Le frontend passe **24 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.
+
+Les nouveaux scénarios exercent les règles communes, le choix individuel explicite et versionné, la séparation des propriétaires, la stabilité des anciennes conversations et la soumission par le véritable Hermes isolé. Ils contrôlent la révocation pendant un appel Microsoft, la conservation du reçu, le refus de recréer un message après une réponse incertaine, ainsi que l’héritage et la révocation de la capacité dans les tâches. Le scénario d’envoi Hermes concerne le chat ; un envoi planifié complet reste à vérifier.
+
+Le réglage a été contrôlé visuellement en français et anglais sur un aperçu fictif séparé. La taille des boutons radio a été corrigée, le build repassé et le rendu revérifié. L’aperçu fictif a ensuite été fermé et arrêté. La base normale a été sauvegardée avant migration `0014`, puis l’API redémarrée. Les transports Microsoft et modèle restent synthétiques ; aucun message réel n’a été envoyé. Détails et limites dans [Autonomie personnelle](AUTONOMIE.md).
+
+
 ## Vérification des copies envoyées — 6 septembre 2026
 
 La suite complète passe **50 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré. Le runtime reste `sha256:c2cc47b857dc65752cd0f74c67b115bbf37ef82b8cbeaef052a280e1eb96f566` : cette étape ajoute le suivi côté API et interface. Le frontend passe **22 scénarios JSDOM** et le build TypeScript/Vite. Ruff et la cohérence des migrations passent également.
