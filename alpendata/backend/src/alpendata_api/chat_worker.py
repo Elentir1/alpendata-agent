@@ -301,6 +301,13 @@ class ChatWorker:
 
         return send_agent_email(self.factory, self.microsoft, authorize_job, job, payload)
 
+    def company_resource_tool(self, job, payload):
+        from .company_resource_tool import read_company_resource
+
+        with self.factory.begin() as db:
+            authorize_job(db, job)
+            return read_company_resource(db, db.get(ChatTurn, job.id), payload)
+
     def tool(self, job, capabilities, payload):
         with self.factory.begin() as db:
             authorize_job(db, job)
@@ -310,6 +317,7 @@ class ChatWorker:
                 "document": self.document_tool,
                 "mail_draft": self.email_draft_tool,
                 "mail_send": self.email_send_tool,
+                "company_resource": self.company_resource_tool,
             }
             if isinstance(payload, dict) and payload.get("kind") in handlers:
                 result = handlers[payload["kind"]](

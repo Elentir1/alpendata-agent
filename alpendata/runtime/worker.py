@@ -98,10 +98,16 @@ def register_tools(
     file_download=False,
     emails=False,
     email_send=False,
+    company_resources=False,
 ):
     from tools.registry import registry
     from documents import register_documents, register_download
     from emails import register_emails
+
+    if company_resources:
+        from company_resources import register_company_resources
+
+        register_company_resources(channel, registry)
 
     if emails:
         register_emails(channel, registry, send_enabled=email_send)
@@ -265,6 +271,7 @@ def run(channel, request):
         documents=request.get("documents_enabled", False),
         file_download=request.get("tool_revision", 1) >= 2,
         emails=request.get("tool_revision", 1) >= 3,
+        company_resources=request.get("tool_revision", 1) >= 5,
         email_send=request.get("tool_revision", 1) >= 4
         and request.get("email_send_enabled", False),
     )

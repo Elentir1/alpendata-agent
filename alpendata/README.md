@@ -26,6 +26,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 - [Consultation et correction de la mémoire personnelle](docs/MEMOIRE_PERSONNELLE.md)
 - [Récupération opérateur d'un assistant interrompu](docs/RECUPERATION_RUNTIME.md)
 - [Notifications personnelles des automatisations](docs/NOTIFICATIONS.md)
+- [Ressources d’entreprise et partages explicites](docs/RESSOURCES_ENTREPRISE.md)
 - [Onboarding et premier résultat](docs/PREMIER_RESULTAT.md)
 - [Automatisations et autorité de planification](docs/AUTOMATISATIONS.md)
 - [Révision d’origine et référence du cahier des charges](upstream.lock.json)

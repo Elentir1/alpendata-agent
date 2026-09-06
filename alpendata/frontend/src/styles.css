@@ -262,3 +262,28 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
   .top-actions { gap: 4px; }
   .language-select > svg { display: none; }
 }
+.company-resources { margin-top: 24px; padding: 20px; border: 1px solid var(--border, #dce4e8); border-radius: 14px; background: #fff; min-width: 0; }
+.company-resources summary { cursor: pointer; font-weight: 700; font-size: 1.08rem; }
+.company-resources p { overflow-wrap: anywhere; }
+.resource-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.resource-search { margin-top: 18px; }
+.resource-search input { flex: 1 1 150px; min-width: 0; width: auto; }
+.resource-list { padding: 0; list-style: none; }
+.resource-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e5ebed; padding: 14px 0; }
+.resource-list li > div { min-width: 0; overflow-wrap: anywhere; }
+.resource-list small { display: block; margin-top: 5px; color: #53656b; }
+.resource-list button { flex-shrink: 0; }
+.resource-detail, .resource-editor { border-top: 1px solid #dce4e8; margin-top: 20px; padding-top: 8px; min-width: 0; }
+.resource-note { white-space: pre-wrap; max-height: 480px; overflow: auto; }
+.resource-editor fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.resource-editor input[type=file] { max-width: 100%; }
+.resource-grants { margin: 16px 0; }
+.resource-grants label, .resource-confirm { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; font-weight: 400; }
+.company-resources input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin: 2px 0 0; accent-color: var(--red); }
+.company-resources h3 { overflow-wrap: anywhere; }
+.company-resources select { width: 100%; min-width: 0; }
+@media (max-width: 540px) {
+  .company-resources { padding: 14px; }
+  .resource-list li { align-items: flex-start; flex-direction: column; }
+  .resource-actions > button { max-width: 100%; white-space: normal; }
+}

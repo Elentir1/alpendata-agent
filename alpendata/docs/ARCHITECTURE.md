@@ -89,6 +89,8 @@ Lors d’une révocation : marquer la connexion inactive, empêcher immédiateme
 
 ## Mémoire, recherche et partage
 
+Les [ressources d’entreprise](RESSOURCES_ENTREPRISE.md) sont désormais implémentées sous forme de copies publiées par un administrateur, avec une audience explicite. Elles disposent d’un contrôle d’accès indépendant des connexions personnelles et de versions vérifiées à la lecture. Le stockage actuel est en base avec quotas ; l’orientation stockage objet reste à mettre en œuvre lors du dimensionnement de l’hébergement.
+
 Conserver la mémoire privée dans l’environnement de son propriétaire. Les connaissances partagées passent par un service de ressources commun, contrôlé à chaque recherche et téléchargement.
 
 La consultation et la correction personnelles sont implémentées dans l'interface et utilisent le véritable magasin mémoire Hermes du propriétaire, sous verrou d'exécution. Elles n'appellent pas le modèle et prennent effet dans les nouvelles conversations. Le retrait d'une licence ne retire pas le contrôle de cette mémoire à un membre actif. Voir [Mémoire personnelle](MEMOIRE_PERSONNELLE.md) pour les limites de l'effacement et les garanties de concurrence.

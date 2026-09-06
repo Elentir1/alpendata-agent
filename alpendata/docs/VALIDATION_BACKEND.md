@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Ressources partagées d’entreprise — 6 septembre 2026
+
+La suite complète passe **65 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **34 scénarios JSDOM** ; les deux scénarios du partage passent à nouveau après ajout du dépôt de fichier et de la protection contre les réponses après changement d’utilisateur. TypeScript, Vite, Ruff et la cohérence des migrations passent.
+
+Les tests API couvrent les copies publiées, les accès croisés, les confirmations, l’idempotence, les versions, la validation du fichier et le retrait. PostgreSQL confirme par `pg_blocking_pids` que la révocation attend la transaction de lecture courante. Le parcours OCI utilise Hermes réel pour lire une note, télécharger un PDF, l’ouvrir avec `pypdf`, puis constater le refus après retrait du partage. Les sources portent le titre et la version, et le contexte système de la conversation reprise demeure inchangé. Les réponses de modèle restent synthétiques ; aucun appel Microsoft n’est nécessaire à ce parcours.
+
+L’interface a été contrôlée en français, anglais et sur une largeur mobile de 360 pixels avec un aperçu fictif distinct, ensuite fermé et arrêté. Le test de sélection de fichier vérifie les octets envoyés ; JSDOM exige un événement de soumission explicite car sa validation native de champ fichier ignore le `FileList` fourni par userEvent. Ce test ne remplace pas un dépôt via navigateur avec les services du pilote.
+
+La base normale a été sauvegardée dans `preview.before-0017.db`, migrée en `0017`, puis l’API redémarrée. Sa santé et les quatre chemins de ressources sont vérifiés. Les connexions personnelles et les données client n’ont pas été utilisées. L’hébergement Infomaniak, les services externes réels et le pilote restent à valider. Voir [Ressources d’entreprise](RESSOURCES_ENTREPRISE.md).
+
 ## Notifications personnelles — 6 septembre 2026
 
 La suite complète passe **62 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l'image runtime inchangée `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Les contrôles supplémentaires sur les notifications d'échec et d'interruption ont ensuite passé les deux scénarios concernés sur PostgreSQL. Le frontend passe **32 scénarios JSDOM**, TypeScript et le build Vite. Ruff et la cohérence des migrations passent.

@@ -14,6 +14,7 @@ import { CompanyRules } from './CompanyRules';
 import { PersonalAutonomy } from './PersonalAutonomy';
 import { PersonalMemory } from './PersonalMemory';
 import { Notifications } from './Notifications';
+import { CompanyResources } from './CompanyResources';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -105,7 +106,7 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
     <div className="profile-main">
       <div className="eyebrow">{company.name}</div>
       <h1>{saved ? t.nextTitle : t.profileTitle}</h1><p className="lead">{saved ? t.nextText : t.profileText}</p>
-      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button><Tools companyId={company.id} language={language} /><PersonalAutonomy organizationId={company.id} language={language} licensed={membership.licensed} /><PersonalMemory organizationId={company.id} language={language} /><FirstTasks organizationId={company.id} language={language} onOpen={onOpen} /></> :
+      {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button><Tools companyId={company.id} language={language} /><PersonalAutonomy organizationId={company.id} language={language} licensed={membership.licensed} /><PersonalMemory organizationId={company.id} language={language} /><CompanyResources organizationId={company.id} userId={membership.user_id} admin={membership.role === 'admin'} language={language} /><FirstTasks organizationId={company.id} language={language} onOpen={onOpen} /></> :
         <form onSubmit={save}>
           <label htmlFor="role">{t.role}</label><input id="role" value={role} onChange={e => setRole(e.target.value)} required maxLength={160} placeholder={t.roleExample} autoComplete="organization-title" />
           <label htmlFor="activity">{t.activity}</label><textarea id="activity" value={activity} onChange={e => setActivity(e.target.value)} maxLength={500} rows={2} placeholder={t.activityExample} />
@@ -151,6 +152,7 @@ function Team({ company, user, t, language }: { company: Company; user: Person; 
         }); }}><label htmlFor="invite-email">{t.inviteEmail}</label><input id="invite-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={320} autoComplete="email" /><button className="primary" disabled={action.busy}>{action.busy ? t.inviting : t.invite}<ArrowRight size={17} /></button></form>}
     </div></div>
     <CompanyRules organizationId={company.id} language={language} />
+    <CompanyResources organizationId={company.id} userId={user.id} admin language={language} />
   </section>;
 }
 

@@ -158,7 +158,7 @@ def create_conversation(
         language=language,
         purpose=purpose,
         documents_enabled=True,
-        tool_revision=4,
+        tool_revision=5,
         email_send_enabled=automatic_email,
         email_delivery=email_delivery,
         title=title or ("Nouvelle conversation" if language == "fr" else "New conversation"),

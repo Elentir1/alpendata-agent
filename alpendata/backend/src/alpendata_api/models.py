@@ -546,3 +546,53 @@ class PersonalNotification(OwnedMixin, Base):
             name="ck_personal_notification_status",
         ),
     )
+
+
+class CompanyResource(Base):
+    __tablename__ = "alpendata_company_resources"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    created_by: Mapped[str] = mapped_column(String(36))
+    request_id: Mapped[str] = mapped_column(String(36))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    title: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(16))
+    audience: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text, default="")
+    filename: Mapped[str | None] = mapped_column(String(180))
+    media_type: Mapped[str | None] = mapped_column(String(120))
+    content: Mapped[bytes | None] = mapped_column(LargeBinary)
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["organization_id", "created_by"],
+            ["alpendata_memberships.organization_id", "alpendata_memberships.user_id"],
+        ),
+        UniqueConstraint("id", "organization_id"),
+        UniqueConstraint("organization_id", "created_by", "request_id"),
+        CheckConstraint("kind IN ('note', 'document')", name="ck_company_resource_kind"),
+        CheckConstraint("audience IN ('team', 'selected')", name="ck_company_resource_audience"),
+        CheckConstraint("version > 0 AND size >= 0", name="ck_company_resource_values"),
+    )
+
+
+class CompanyResourceGrant(Base):
+    __tablename__ = "alpendata_company_resource_grants"
+    resource_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(36))
+    user_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["resource_id", "organization_id"],
+            ["alpendata_company_resources.id", "alpendata_company_resources.organization_id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "user_id"],
+            ["alpendata_memberships.organization_id", "alpendata_memberships.user_id"],
+        ),
+    )
