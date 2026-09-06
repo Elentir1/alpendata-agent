@@ -63,4 +63,30 @@ Le point d'entrée public est `POST /api/billing/stripe/webhook`. Configurer les
 
 Les tests utilisent le vrai SDK Stripe sur un serveur HTTP local, PostgreSQL, des signatures HMAC vérifiées par Stripe et les véritables contrôles du worker. Ils couvrent les réponses perdues, le redémarrage de l'API, la concurrence, les accès administrateur, les quantités, les factures non payées, les événements répétés ou périmés, l'expiration de Checkout, les configurations incompatibles et la restauration. Les appels Stripe réels, le rendu des pages Stripe, les paiements de test et les notifications publiques ne sont pas encore validés. Aucun abonnement ou paiement commercial n'a été créé.
 
+### Parcours à vérifier dans le bac à sable Stripe
+
+État au 6 septembre 2026 : CLI officielle `1.50.10` installée pour la recette locale. La commande de création exige une adresse e-mail explicite ; la demande est en attente de réponse. Aucun environnement Stripe utilisable n'est encore confirmé. Cette préparation ne constitue pas une validation de paiement.
+
+Utiliser une base et un profil CLI dédiés, avec des entreprises et personnes fictives. Conserver le profil, les clés et le secret du relais de notifications hors du dépôt et de tout dossier synchronisé. Sous Windows, créer ce répertoire avec le même compte système que celui qui exécutera la CLI ; un répertoire temporaire créé par le compte du sandbox peut être inaccessible au compte hôte. Désactiver la télémétrie facultative avec `STRIPE_CLI_TELEMETRY_OPTOUT=1` et retirer les variables Stripe héritées du processus de recette pour éviter de sélectionner un autre compte. Vérifier l'identité avec `stripe whoami --format json`, sans afficher le contenu du profil.
+
+Créer un produit de test clairement identifié, un Price CHF mensuel fictif et une configuration de portail conforme aux paramètres ci-dessus. Le montant de recette n'engage pas le futur tarif commercial. Utiliser le secret propre au relais Stripe CLI pour les notifications locales ; le futur point d'entrée HTTPS aura son propre secret. Le relais local valide la réception applicative mais ne prouve pas l'accessibilité depuis Stripe du serveur Infomaniak.
+
+Tous les scénarios ci-dessous restent **à exécuter contre Stripe**. Conserver pour chacun la date, le commit testé, les références des objets de test, le résultat observé et les écarts ; exclure les clés, les URL de session complètes et les données de paiement des preuves partagées.
+
+| Scénario | Résultat attendu |
+| --- | --- |
+| Administrateur, trois places, Checkout en français puis en anglais | Devise CHF, montant et quantité conformes au Price ; page dans la langue demandée. Aucune place payante activée par la seule ouverture de Checkout. |
+| Paiement de test accepté | Facture payée et abonnement courant retrouvés par le serveur ; capacité et échéance mises à jour. Le retour navigateur seul ne suffit pas. |
+| Paiement refusé ou authentification supplémentaire interrompue | Aucun droit payé accordé sans facture payée. L'administrateur peut reprendre le parcours. |
+| Fermeture de Checkout, rechargement de l'application, reprise | La demande conservée retrouve la même session ouverte ; aucun second abonnement créé. |
+| Webhook absent, puis service de facturation exécuté | La relecture retrouve l'état Stripe ; les droits ne dépassent jamais la dernière échéance confirmée en cas de panne prolongée. |
+| Notifications répétées ou anciennes renvoyées après résiliation | La relecture conserve l'état actuel ; une ancienne notification payée ne réactive pas l'abonnement. |
+| Augmentation de quantité dans le portail | Prorata présenté puis facture vérifiée ; capacité cohérente avec l'abonnement relu. Vérifier aussi un paiement de prorata refusé. |
+| Diminution sous le nombre de collaborateurs licenciés | Les exécutions sont suspendues ; l'administrateur peut retirer des licences ou augmenter la quantité, sans perte d'historique. |
+| Résiliation à l'échéance | Date de fin affichée ; accès conservé seulement jusqu'à l'échéance payée, puis suspendu. |
+| Factures et moyen de paiement dans le portail | Consultation des factures et modification du moyen de paiement disponibles ; retour vers la bonne entreprise. |
+| Collaborateur sans rôle administrateur | Pas de création de Checkout, de portail ou de modification de facturation pour son entreprise ou une autre. |
+
+Après la recette locale, répéter le paiement accepté et la réception de notification sur le point d'entrée HTTPS Infomaniak de test, sans relais CLI. La recette reste partielle tant que ce parcours hébergé, les renouvellements et impayés, ainsi que les règles commerciales définitives n'ont pas été vérifiés.
+
 Références primaires : [SDK Python officiel](https://github.com/stripe/stripe-python), [cycle de vie des abonnements](https://docs.stripe.com/billing/subscriptions/overview), [notifications d'abonnement](https://docs.stripe.com/billing/subscriptions/webhooks), [portail client](https://docs.stripe.com/customer-management/integrate-customer-portal), [configuration du portail](https://docs.stripe.com/api/customer_portal/configurations/create). Pour la consommation IA à venir, l'intégration devra être choisie après définition des unités et plafonds ; la documentation Stripe oriente les nouvelles intégrations vers [Metronome](https://docs.stripe.com/billing/usage-based).
