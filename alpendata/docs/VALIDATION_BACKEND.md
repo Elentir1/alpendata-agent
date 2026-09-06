@@ -1,5 +1,17 @@
 # Vérification du premier backend
 
+## Sauvegarde et restauration locales — 6 septembre 2026
+
+La suite complète passe **71 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Ruff, le format des fichiers concernés et la vérification Git passent. Ce lot ajoute uniquement un outil opérateur et sa documentation : aucune migration, route client ou modification d’interface.
+
+Le premier exercice crée un PDF privé via le broker, une mémoire avec le vrai magasin Hermes exécuté en OCI, une récurrence revue et un tour en attente. Il sauvegarde PostgreSQL et les fichiers sous verrous, modifie ensuite un fichier source, puis restaure vers une nouvelle base PostgreSQL et un nouveau dossier. Le PDF récupéré garde les octets sauvegardés ; Hermes relit la mémoire restaurée. Les anciennes sessions sont refusées, les connexions Microsoft sont déconnectées, la tâche reste suspendue et le tour devient interrompu. Un administrateur ne peut pas lire le document ou le chat du collègue. Les états de la source restent inchangés.
+
+Le second exercice vérifie les refus pendant une écriture PostgreSQL, une prise du verrou propriétaire ou la présence d’un vrai conteneur orphelin. Il exécute également la commande de sauvegarde dans un sous-processus. Un lien sortant empêche la création du manifeste final ; une altération de l’archive est détectée avant création des cibles. Même avec un manifeste recalculé, une archive qui tente de sortir de l’espace propriétaire est refusée avant restauration de la base. Les cibles existantes ne sont pas écrasées.
+
+La première exécution a révélé que les arguments de connexion du pilote SQLAlchemy contenaient aussi son contexte Python d’adaptation. Les outils PostgreSQL utilisent désormais les paramètres de connexion de l’URL avec une liste explicite de variables libpq ; aucun contexte Python ni secret de service tiers n’est transmis. Les exercices ciblés puis la suite complète finale passent après correction.
+
+Les bases, comptes, fichiers et services externes sont synthétiques. Les processus PostgreSQL, pg_dump, pg_restore, les verrous Linux et les conteneurs sont réels. L’API de prévisualisation normale n’a pas été modifiée et sa base reste en `0018`. L’outil produit pour l’instant un ensemble local non chiffré ; copie indépendante, chiffrement et reprise sur Infomaniak restent à réaliser. Voir [Procédure de sauvegarde et restauration](SAUVEGARDE_RESTAURATION.md).
+
 ## Partage volontaire par les collaborateurs — 6 septembre 2026
 
 La suite complète passe **69 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **38 scénarios JSDOM** ; TypeScript, Vite, Ruff et la vérification Git passent.

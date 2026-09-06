@@ -89,7 +89,7 @@ Lors d’une révocation : marquer la connexion inactive, empêcher immédiateme
 
 ## Mémoire, recherche et partage
 
-Les [ressources d’entreprise](RESSOURCES_ENTREPRISE.md) sont désormais implémentées sous forme de copies publiées par un administrateur, avec une audience explicite. Elles disposent d’un contrôle d’accès indépendant des connexions personnelles et de versions vérifiées à la lecture. Le stockage actuel est en base avec quotas ; l’orientation stockage objet reste à mettre en œuvre lors du dimensionnement de l’hébergement.
+Les [ressources d’entreprise](RESSOURCES_ENTREPRISE.md) sont désormais implémentées sous forme de copies publiées volontairement par les membres, avec une audience explicite. Elles disposent d’un contrôle d’accès indépendant des connexions personnelles et de versions vérifiées à la lecture. Le stockage actuel est en base avec quotas ; l’orientation stockage objet reste à mettre en œuvre lors du dimensionnement de l’hébergement.
 
 Conserver la mémoire privée dans l’environnement de son propriétaire. Les connaissances partagées passent par un service de ressources commun, contrôlé à chaque recherche et téléchargement.
 
@@ -115,7 +115,7 @@ Stripe recevra les événements de facturation après définition des tarifs. La
 
 Prévoir sauvegardes séparées des données métier et des états utilisateurs, restauration testée, journaux sans jetons ni corps de messages privés par défaut, suivi des tâches en erreur et déploiements versionnés. Aucune mise à jour automatique depuis `upstream/main` en production : construire une version AlpenData et vérifier les parcours concernés avant déploiement.
 
-La [récupération locale des conteneurs orphelins](RECUPERATION_RUNTIME.md) exige l'identifiant exact inspecté, le montage personnel attendu et les verrous du propriétaire. Elle clôture les baux expirés sans rejouer les actions ni effacer les fichiers. Elle est réservée à l'exploitation, sans endpoint administrateur client. La collecte du reçu opérateur et les exercices de restauration restent à mettre en place sur l'hébergement.
+La [récupération locale des conteneurs orphelins](RECUPERATION_RUNTIME.md) exige l'identifiant exact inspecté, le montage personnel attendu et les verrous du propriétaire. Elle clôture les baux expirés sans rejouer les actions ni effacer les fichiers. Elle est réservée à l'exploitation, sans endpoint administrateur client. La [restauration locale](SAUVEGARDE_RESTAURATION.md) conserve les données privées et suspend les actions dans des cibles neuves. La collecte du reçu opérateur, le chiffrement des sauvegardes et les exercices depuis un stockage indépendant restent à mettre en place sur l’hébergement.
 
 ## Critères qui conditionnent le premier accès client
 

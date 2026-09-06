@@ -120,6 +120,10 @@ La [passerelle de modèles](../docs/PASSERELLE_MODELES.md) est implémentée et 
 
 Le [chat personnel](../docs/CHAT_PERSONNEL.md) ajoute la migration `0005`, les conversations, les tours idempotents et les relevés de modèle par propriétaire. Ses routes se trouvent sous `/api/organizations/{organization_id}/chat`. L’API enregistre le travail ; le processus séparé `uv run python -m alpendata_api.chat_worker` l’exécute sur Linux. Le document lié décrit la configuration complète, les droits, les interruptions et les limites restantes. Les modèles commerciaux et services Microsoft réels restent à valider.
 
+## Sauvegarde et restauration
+
+La commande locale `python -m alpendata_api.backup` crée un ensemble PostgreSQL + états privés et restaure uniquement vers une base vide et un dossier neuf. Les tâches restaurées sont suspendues et les connexions doivent être rétablies. Aucun service n’est démarré automatiquement. Les ensembles locaux ne sont pas encore chiffrés ni transférés hors hôte ; voir la [procédure et ses limites](../docs/SAUVEGARDE_RESTAURATION.md).
+
 ## Récupération opérateur
 
 L'outil local `python -m alpendata_api.runtime_recovery` permet le diagnostic et la récupération ciblée des conteneurs orphelins, sous verrous PostgreSQL et du volume personnel. Il ne demande aucune clé modèle ou Microsoft. Voir la [procédure opérateur](../docs/RECUPERATION_RUNTIME.md).
