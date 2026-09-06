@@ -10,6 +10,7 @@ from .chat import queue_turn
 from .connections import lock_member
 from .database import database_factory
 from .models import Conversation, RoutineOccurrence, RoutineProposal, RoutineSchedule, User, now
+from .notification_events import record_notification
 from .schedule_state import CATCH_UP_SECONDS, check_schedule_access, stop_schedule
 from .schedule_time import next_occurrence
 from .settings import Settings
@@ -101,6 +102,9 @@ class ScheduleWorker:
                     )
                     occurrence.turn_id, occurrence.outcome = turn.id, "queued"
                 db.add(occurrence)
+                if occurrence.outcome == "missed":
+                    db.flush()
+                    record_notification(db, row, f"occurrence:{occurrence.id}", "missed")
                 row.next_run_at = next_occurrence(row, at)
                 processed += 1
         return processed

@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from .models import ChatTurn, Conversation, MicrosoftConnection, RoutineOccurrence, RoutineSchedule, now
+from .notification_events import record_notification
 from .organization_policy import require_allowed
 
 CATCH_UP_SECONDS = 7200
@@ -32,6 +33,10 @@ def stop_schedule(db, schedule, status, reason=None):
     schedule.version += 1
     schedule.updated_at = now()
     cancel_occurrences(db, schedule)
+    if status == "blocked":
+        record_notification(
+            db, schedule, f"blocked:{schedule.id}:{schedule.version}", "blocked", error=reason
+        )
 
 
 def block_owner_schedules(db, organization_id, owner_id, reason, *, available=None, autonomous_only=False):
@@ -106,6 +111,10 @@ def finish_occurrence(db, turn, error):
     if occurrence is None:
         return
     schedule = db.get(RoutineSchedule, occurrence.schedule_id)
+    if turn.status in {"completed", "failed", "interrupted"}:
+        record_notification(
+            db, schedule, f"occurrence:{occurrence.id}", turn.status, turn=turn, error=turn.error_code
+        )
     if schedule.status != "active" or schedule.version != occurrence.schedule_version:
         return
     schedule.failure_count = schedule.failure_count + 1 if error else 0

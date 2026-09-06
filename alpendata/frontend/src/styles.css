@@ -237,3 +237,28 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .memory-entry textarea { width: 100%; min-width: 0; resize: vertical; }
 .memory-entry button { justify-self: end; }
 .memory-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+
+.notification-trigger { position: relative; }
+.notification-badge { position: absolute; top: -3px; right: -7px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: var(--red); color: white; font-size: .68rem; display: grid; place-items: center; font-weight: 700; }
+.notification-panel { position: fixed; z-index: 60; top: 76px; right: 24px; width: min(470px, calc(100vw - 32px)); max-height: calc(100dvh - 100px); overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 16px 55px #132a3b26; color: var(--ink); }
+.notification-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.notification-heading h2 { margin: 0; font-size: 1.35rem; }
+.notification-panel > p { color: var(--muted); line-height: 1.5; }
+.notification-panel ul { list-style: none; padding: 0; margin: 1rem 0 0; }
+.notification-panel li { padding: 1.1rem 1rem; border: 1px solid var(--line); border-radius: 12px; margin: .75rem 0; overflow-wrap: anywhere; }
+.notification-panel li.unread { border-left: 3px solid var(--red); background: #fcf8f7; }
+.notification-panel h3 { font-size: 1rem; margin: .6rem 0; }
+.notification-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; font-size: .75rem; font-weight: 650; }
+.notification-panel time { font-size: .8rem; color: #626973; }
+.notification-panel li p { font-size: .9rem; line-height: 1.5; }
+.notification-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+.notification-actions button { white-space: normal; }
+@media (max-width: 520px) { .notification-panel { right: 16px; padding: 1rem; } }
+@media (max-width: 520px) {
+  .topbar { padding: 0 12px; gap: 8px; }
+  .brand { gap: 4px; }
+  .brand img { width: 40px; height: 40px; }
+  .brand > span { font-size: 1.15rem; }
+  .top-actions { gap: 4px; }
+  .language-select > svg { display: none; }
+}

@@ -125,4 +125,6 @@ L'outil local `python -m alpendata_api.runtime_recovery` permet le diagnostic et
 
 ## Onboarding et essais personnels
 
+La migration `0016` ajoute les [notifications personnelles](../docs/NOTIFICATIONS.md), écrites avec les résultats et blocages des automatisations. Les routes de liste, compteur et lecture conservent les mêmes frontières de propriétaire, y compris face à l'administrateur de l'entreprise.
+
 La migration `0006` ajoute les propositions personnalisées, les essais et les reçus de lecture. Le [parcours du premier résultat](../docs/PREMIER_RESULTAT.md) documente les routes, la validation par le broker et les limites. La création d’une conversation exige maintenant un rôle et un besoin enregistrés dans le profil personnel. Les répétitions sont activables après revue d’un essai depuis la migration `0007`. Le processus `uv run python -m alpendata_api.schedule_worker` alimente la file du chat ; voir [Automatisations](../docs/AUTOMATISATIONS.md).

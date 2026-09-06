@@ -13,6 +13,7 @@ import { Schedules } from './Schedules';
 import { CompanyRules } from './CompanyRules';
 import { PersonalAutonomy } from './PersonalAutonomy';
 import { PersonalMemory } from './PersonalMemory';
+import { Notifications } from './Notifications';
 
 function Brand() {
   return <a className="brand" href="/" aria-label="AlpenData"><img src="/brand/logo.webp" alt="" /><span>Alpen<span>Data</span></span></a>;
@@ -194,6 +195,7 @@ export default function App() {
   const membership = user?.memberships.find(item => item.organization_id === companyId);
   return <div className={`app ${user && company && !pendingInvitation ? 'with-sidebar' : ''}`}>
     <header className="topbar"><Brand /><div className="top-actions">
+      {user && company && membership && !pendingInvitation && <Notifications key={`${company.id}:${user.id}`} organizationId={company.id} language={language} onOpen={id => { setChatId(id); setSection('chat'); }} onManage={() => setSection('schedules')} />}
       <label className="language-select"><Globe2 size={17} /><span className="sr-only">{t.language}</span><select aria-label={t.language} value={language} onChange={e => setLanguage(e.target.value as Language)}><option value="fr">FR</option><option value="en">EN</option></select></label>
       {user && <button className="icon-button sign-out" aria-label={pendingInvitation ? t.anotherAccount : t.signOut} title={t.signOut} disabled={signOutAction.busy} onClick={() => signOutAction.run(async () => {
         await api('/api/logout', {}).catch(cause => { if (!(cause instanceof ApiError && cause.status === 401)) throw cause; }); setChatId(''); setSection('personal'); await refresh();

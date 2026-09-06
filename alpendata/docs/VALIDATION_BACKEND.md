@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Notifications personnelles — 6 septembre 2026
+
+La suite complète passe **62 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l'image runtime inchangée `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Les contrôles supplémentaires sur les notifications d'échec et d'interruption ont ensuite passé les deux scénarios concernés sur PostgreSQL. Le frontend passe **32 scénarios JSDOM**, TypeScript et le build Vite. Ruff et la cohérence des migrations passent.
+
+Les nouveaux parcours vérifient la création transactionnelle depuis le scheduler et le worker, l'absence de doublons, la séparation des propriétaires, la lecture concurrente et idempotente, le retrait de licence et la désactivation. La pagination couvre 27 notifications de même horaire avec insertion d'un nouveau blocage entre deux pages. Aucun contenu de réponse, de mail ou de fichier n'est copié dans l'événement.
+
+Les tests frontend contrôlent le compteur obsolète reçu après une lecture, la pagination sans doublons, la navigation vers le résultat sans nouvelle exécution, le changement de langue, la réponse de lecture perdue et la disparition des contenus après révocation. Le panneau a été contrôlé visuellement en français, anglais et dans un viewport mobile de 360 × 780 ; l'en-tête a été adapté aux petits écrans. Les aperçus fictifs ont ensuite été fermés et arrêtés.
+
+La base locale normale a été sauvegardée dans `preview.before-0016.db`, migrée en `0016`, puis l'API redémarrée. Santé, configuration et nouvelles routes sont vérifiées. Cette étape ajoute des notifications dans l'application ; elle n'envoie aucun mail et ne modifie pas les autorisations des actions. Les transports externes restent synthétiques ; pilote et exploitation Infomaniak restent à valider. Voir [Notifications](NOTIFICATIONS.md).
+
 ## Récupération opérateur — 6 septembre 2026
 
 La suite complète passe **60 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l'image runtime inchangée `sha256:9379c3016cafa5d1fdb8152a6135200d108e42f0c4b31a782559c274e5fc46a6`. Le changement porte sur le contrôleur hôte et son outil opérateur ; aucune migration ni modification frontend n'est ajoutée. Ruff et le contrôle de format passent.

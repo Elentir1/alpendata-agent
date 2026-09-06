@@ -10,6 +10,7 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     LargeBinary,
     String,
@@ -512,5 +513,36 @@ class RoutineOccurrence(OwnedMixin, Base):
         CheckConstraint(
             "(outcome = 'queued' AND turn_id IS NOT NULL) OR (outcome = 'missed' AND turn_id IS NULL)",
             name="ck_routine_occurrence_turn",
+        ),
+    )
+
+
+class PersonalNotification(OwnedMixin, Base):
+    __tablename__ = "alpendata_personal_notifications"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    source_key: Mapped[str] = mapped_column(String(100))
+    schedule_id: Mapped[str] = mapped_column(String(36))
+    turn_id: Mapped[str | None] = mapped_column(String(36))
+    title: Mapped[str] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(24))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    read_at: Mapped[int | None] = mapped_column(Integer)
+    __table_args__ = (
+        ownership_constraint(),
+        turn_ownership_constraint(),
+        ForeignKeyConstraint(
+            ["schedule_id", "organization_id", "owner_id"],
+            [
+                "alpendata_routine_schedules.id",
+                "alpendata_routine_schedules.organization_id",
+                "alpendata_routine_schedules.owner_id",
+            ],
+        ),
+        UniqueConstraint("organization_id", "owner_id", "source_key"),
+        Index("ix_personal_notifications_owner_created", "organization_id", "owner_id", "created_at", "id"),
+        CheckConstraint(
+            "status IN ('completed', 'failed', 'interrupted', 'missed', 'blocked')",
+            name="ck_personal_notification_status",
         ),
     )

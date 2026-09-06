@@ -4,6 +4,8 @@ Première interface web du produit, construite avec React, TypeScript et Vite, d
 
 ## Parcours implémentés
 
+- Cloche et panneau de notifications personnelles : résultats et problèmes des automatisations, compteur non lu, historique paginé et ouverture du résultat. Voir [Notifications](../docs/NOTIFICATIONS.md).
+
 - Consultation, correction et retrait de la mémoire personnelle réelle d'Hermes, avec versions et récupération après réponse perdue. Voir [Mémoire personnelle](../docs/MEMOIRE_PERSONNELLE.md).
 
 - Écran de connexion Microsoft et retour compréhensible après interruption de connexion.
