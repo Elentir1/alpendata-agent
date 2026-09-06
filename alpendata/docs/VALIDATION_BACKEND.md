@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Administration des membres et licences — 6 septembre 2026
+
+La suite complète passe **67 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image runtime inchangée `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **36 scénarios JSDOM** ; ses deux nouveaux scénarios passent également après le traitement des erreurs de relecture. TypeScript, Vite, Ruff et la cohérence des migrations passent.
+
+Les tests vérifient le compteur des places, les invitations réservées, les attributions, la gestion sans licence et le maintien du dernier administrateur. Des mutations PostgreSQL simultanées ne peuvent ni utiliser deux fois la dernière place, ni écraser les changements d’un autre administrateur avec une version dépassée. Les parcours de chat, mémoire, notifications et automatisations continuent à refuser les opérations après retrait de licence ou désactivation. Le PATCH exige désormais la version de l’adhésion, y compris dans ces tests existants.
+
+L’interface exige de confirmer les choix actuels et de relire après une réponse perdue. Elle actualise le compte connecté après une mutation et efface les données administratives lors d’un refus d’accès à la relecture. La liste, les compteurs et la modification d’accès ont été contrôlés visuellement en français, en anglais et dans un viewport mobile de 360 × 780 avec des données fictives.
+
+La base normale a été sauvegardée dans `preview.before-0018.db`, migrée en `0018` avec conservation des adhésions, puis l’API redémarrée. La capacité reste configurée côté serveur pour le pilote. Aucun achat, paiement, appel de compte Stripe ou changement tarifaire n’a été exécuté ; la documentation Stripe a seulement été consultée pour préparer la suite. Voir [Membres et licences](MEMBRES_LICENCES.md).
+
 ## Ressources partagées d’entreprise — 6 septembre 2026
 
 La suite complète passe **65 scénarios Linux/PostgreSQL**, sans échec, scénario ignoré ou relance automatique, avec l’image `sha256:d8a703885b3e38285234eed459af064f74c895fcb157c1def9c3f9c234e44e4b`. Le frontend passe **34 scénarios JSDOM** ; les deux scénarios du partage passent à nouveau après ajout du dépôt de fichier et de la protection contre les réponses après changement d’utilisateur. TypeScript, Vite, Ruff et la cohérence des migrations passent.

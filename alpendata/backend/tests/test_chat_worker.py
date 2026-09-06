@@ -164,7 +164,7 @@ def test_chat_runs_with_own_microsoft_access_resumes_and_cancels(connected_servi
             client.patch(
                 base + "/members/" + bob[0],
                 headers=alice[2],
-                json={"active": False, "licensed": True, "role": "member"},
+                json={"version": 1, "active": False, "licensed": True, "role": "member"},
             )
             before = len(received)
             assert worker.run_once()

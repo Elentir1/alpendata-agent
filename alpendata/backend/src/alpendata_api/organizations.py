@@ -172,6 +172,8 @@ def update_membership(db: Session, actor: User, organization_id: str, user_id: s
     target = db.get(Membership, (organization_id, user_id))
     if target is None:
         raise HTTPException(404, "member_not_found")
+    if target.version != body.version:
+        raise HTTPException(409, "member_state_changed")
     if target.active and target.role == "admin" and (not body.active or body.role != "admin"):
         admins = db.scalar(
             select(func.count())
@@ -188,6 +190,7 @@ def update_membership(db: Session, actor: User, organization_id: str, user_id: s
         if occupied_seats(db, organization_id) >= organization.seat_capacity:
             raise HTTPException(409, "no_available_license")
     target.role, target.active, target.licensed = body.role, body.active, body.licensed
+    target.version += 1
     db.flush()
     if not body.active or not body.licensed:
         from .schedule_state import block_owner_schedules

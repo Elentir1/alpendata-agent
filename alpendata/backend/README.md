@@ -5,6 +5,7 @@ Premier socle de gestion des entreprises et des espaces personnels, indépendant
 ## Fonctions présentes
 
 - Entreprises, membres administrateurs/collaborateurs et licences du pilote.
+- Attribution des licences et modifications d’adhésion versionnées ; compteur des places attribuées, réservées et libres. Le PATCH d’un membre exige la version lue depuis la migration `0018`. Voir [Membres et licences](../docs/MEMBRES_LICENCES.md).
 - Invitations nominatives, révocables, expirantes et utilisables une fois ; les invitations en attente réservent une place.
 - Sessions opaques stockées sous forme d’empreinte, révocation et vérification de l’état du compte.
 - Connexion Microsoft organisationnelle par MSAL, avec retour `form_post`, PKCE, nonce, tentative liée au navigateur et consommation unique.

@@ -143,16 +143,24 @@ def create_app(
 
     @app.get("/api/organizations/{organization_id}/members")
     def list_members(organization_id: str, actor: Actor, db: DB):
+        organization = lock_organization(db, organization_id)
         member(db, actor, organization_id, admin=True, licensed=False)
+        rows = db.execute(
+            select(Membership, User.display_name)
+            .join(User)
+            .where(Membership.organization_id == organization_id)
+            .order_by(User.display_name, Membership.user_id)
+        ).all()
+        assigned = sum(item.active and item.licensed for item, _ in rows)
+        occupied = organizations.occupied_seats(db, organization_id)
         return {
-            "members": [
-                {**membership_view(item), "display_name": name}
-                for item, name in db.execute(
-                    select(Membership, User.display_name)
-                    .join(User)
-                    .where(Membership.organization_id == organization_id)
-                )
-            ]
+            "members": [{**membership_view(item), "display_name": name} for item, name in rows],
+            "seats": {
+                "capacity": organization.seat_capacity,
+                "assigned": assigned,
+                "reserved": occupied - assigned,
+                "available": max(0, organization.seat_capacity - occupied),
+            },
         }
 
     @app.get("/api/organizations/{organization_id}/invitations")
@@ -283,6 +291,7 @@ def membership_view(item: Membership):
         "role": item.role,
         "active": item.active,
         "licensed": item.licensed,
+        "version": item.version,
     }
 
 

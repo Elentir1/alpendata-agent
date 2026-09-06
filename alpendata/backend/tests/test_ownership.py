@@ -76,7 +76,7 @@ def test_admin_cannot_access_colleague_resources_and_membership_is_checked_on_ev
     )
     assert response.headers["Cache-Control"] == "no-store"
 
-    changes = {"role": "member", "active": False, "licensed": True}
+    changes = {"version": 1, "role": "member", "active": False, "licensed": True}
     assert client.patch(f"{base}/members/{colleague_id}", headers=admin, json=changes).status_code == 200
     assert client.get(path, headers=colleague).status_code == 404
     assert client.put(f"{base}/onboarding", headers=colleague, json=answers).status_code == 404

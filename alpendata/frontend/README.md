@@ -12,11 +12,11 @@ Première interface web du produit, construite avec React, TypeScript et Vite, d
 - Création d’une entreprise après authentification.
 - Invitation : demande de preuve de boîte mail, confirmation avec le compte demandeur, puis accès à un onboarding neuf.
 - Onboarding individuel en français/anglais ; les réponses non enregistrées sont conservées lors d’un changement de langue.
-- Espace administrateur : membres, invitations en attente, création et annulation d’invitations ; aucune lecture des contenus privés des collaborateurs.
+- Espace administrateur : membres, rôles, activation/désactivation, attribution/retrait de licence, compteur des places et invitations. Les changements exigent une confirmation et la version lue ; aucune lecture des contenus privés des collaborateurs. Voir [Membres et licences](../docs/MEMBRES_LICENCES.md).
 - Déconnexion, y compris si la session a déjà expiré.
 - Chat personnel : conversations, envoi idempotent, suivi de l’exécution, historique et arrêt d’une demande.
 
-Après sauvegarde des réponses, chacun choisit ses accès Microsoft 365 et suit le consentement personnel. Une fois connecté, il peut afficher ses derniers mails, ses rendez-vous ou rechercher un document. L’entrée « Assistant » ouvre le chat relié au processus Hermes et à la passerelle de modèles du backend. Le chat annonce son indisponibilité tant que le serveur n’est pas configuré ; aucune réponse IA n’est simulée dans l’application. Les propositions d’automatisations, la gestion complète des licences et la facturation restent à implémenter.
+Après sauvegarde des réponses, chacun choisit ses accès Microsoft 365 et suit le consentement personnel. Une fois connecté, il peut afficher ses derniers mails, ses rendez-vous ou rechercher un document. L’entrée « Assistant » ouvre le chat relié au processus Hermes et à la passerelle de modèles du backend. Le chat annonce son indisponibilité tant que le serveur n’est pas configuré ; aucune réponse IA n’est simulée dans l’application. Les propositions personnalisées, leurs essais et leur planification sont implémentés. L’achat de places, la facturation et la validation des services réels restent à réaliser.
 
 ## Développement
 

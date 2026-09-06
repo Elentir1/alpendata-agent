@@ -287,3 +287,16 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
   .resource-list li { align-items: flex-start; flex-direction: column; }
   .resource-actions > button { max-width: 100%; white-space: normal; }
 }
+.seat-summary { margin: 1.5rem 0; padding: 1.25rem; background: var(--soft); border: 1px solid var(--line); border-radius: 14px; }
+.seat-summary dl { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.seat-summary dl > div { display: flex; flex-direction: column-reverse; gap: .5rem; min-width: 100px; }
+.seat-summary dt { color: var(--muted); }
+.seat-summary dd { margin: 0; font-size: 1.65rem; font-weight: 700; }
+.team-page .member-list li { flex-wrap: wrap; }
+.member-access { max-width: 680px; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; }
+.member-access h3 { overflow-wrap: anywhere; }
+.member-access fieldset { border: 0; padding: 0; min-width: 0; }
+.member-confirm { display: flex; align-items: flex-start; gap: .75rem; }
+.member-confirm input { width: 18px; height: 18px; min-height: 18px; padding: 0; flex: 0 0 18px; margin-top: .2rem; accent-color: var(--red); }
+.member-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.member-actions button, .team-page .member-list button { white-space: normal; }

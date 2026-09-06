@@ -66,6 +66,7 @@ def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_dat
             f"{base}/members/{second_id}",
             headers=second,
             json={
+                "version": 1,
                 "role": "admin",
                 "active": True,
                 "licensed": True,
@@ -78,6 +79,7 @@ def test_invitations_reserve_seats_expire_and_never_assign_roles_from_client_dat
             f"{base}/members/{second_id}",
             headers=admin,
             json={
+                "version": 1,
                 "role": "member",
                 "active": True,
                 "licensed": False,

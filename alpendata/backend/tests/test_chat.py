@@ -101,7 +101,7 @@ def test_private_chat_idempotency_cancel_and_frozen_profile(service, account, ve
         personal + "/turns", headers=colleague, json={"request_id": str(uuid4()), "message": "Continue"}
     ).json()
     assert second["sequence"] == 2
-    changes = {"role": "member", "active": True, "licensed": False}
+    changes = {"version": 1, "role": "member", "active": True, "licensed": False}
     assert client.patch(base + "/members/" + colleague_id, headers=admin, json=changes).status_code == 200
     assert client.get(personal, headers=colleague).status_code == 200
     assert (
@@ -115,6 +115,7 @@ def test_private_chat_idempotency_cancel_and_frozen_profile(service, account, ve
         == "cancelled"
     )
     changes["active"] = False
+    changes["version"] = 2
     client.patch(base + "/members/" + colleague_id, headers=admin, json=changes)
     assert client.get(personal, headers=colleague).status_code == 404
 

@@ -45,7 +45,7 @@ Sortie attendue : parcours complet depuis l’invitation jusqu’à un premier b
 
 ## Lot 4 — Documents et actions
 
-Les [copies partagées d’entreprise](RESSOURCES_ENTREPRISE.md) sont implémentées : publication administrative de notes et documents, destinataires explicites, versions, retrait et lecture par Hermes sous les droits actuels du propriétaire. Elles n’exposent pas les connexions personnelles. Le stockage objet, la synchronisation éventuelle des sources et la conservation des copies dérivées restent des travaux d’exploitation distincts.
+Les [copies partagées d’entreprise](RESSOURCES_ENTREPRISE.md) sont implémentées : publication administrative de notes et documents, destinataires explicites, versions, retrait et lecture par Hermes sous les droits actuels du propriétaire. Elles n’exposent pas les connexions personnelles. Le partage initié volontairement par un collaborateur reste à ajouter pour couvrir entièrement le cahier des charges ; la publication actuelle est réservée aux administrateurs. Le stockage objet, la synchronisation éventuelle des sources et la conservation des copies dérivées restent des travaux d’exploitation distincts.
 
 État : lecture du contenu SharePoint, génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. L’enregistrement personnel dans Microsoft 365 dispose d’un choix de dossier, d’une confirmation explicite et de reçus durables ; il est testé avec HTTP Microsoft synthétique. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. La validation Microsoft réelle, les modèles du client, l’autonomie des dépôts SharePoint, les brouillons/réponses Outlook et la validation avec un modèle commercial restent à réaliser. Les brouillons privés dans le chat et leur envoi confirmé sont implémentés, avec versions et reçus durables ; une recherche personnelle des copies envoyées est également implémentée ; la résolution opérateur des cas toujours incertains reste à compléter. Le choix personnel d’envoi direct est implémenté sous les règles communes, avec révocation et héritage des capacités par les tâches ; la recette dédiée de briefing envoyé, son essai explicitement confirmé et son occurrence planifiée sont implémentés et testés avec Hermes réel et transports externes synthétiques. Voir [Envois planifiés](ENVOIS_PLANIFIES.md). Détails dans [Autonomie personnelle](AUTONOMIE.md), [E-mails](EMAILS.md), [Documents](DOCUMENTS.md) et [Enregistrement SharePoint](ENREGISTREMENT_SHAREPOINT.md).
 
@@ -68,6 +68,8 @@ Sortie attendue : chaque livrable est ouvert et vérifié dans le format attendu
 Sortie attendue : les automatisations restent compréhensibles et contrôlables, avec erreurs visibles et droits revérifiés à l’exécution.
 
 ## Lot 6 — Commercialisation
+
+L’[administration des membres et licences](MEMBRES_LICENCES.md) est reliée à l’API : modifications versionnées, capacité disponible et réservations par invitation. La quantité de places reste celle du pilote ; elle n’est pas encore synchronisée avec Stripe.
 
 - Définir licence en CHF, consommation incluse, surusage, plafonds et règles de cycle de vie.
 - Implémenter Stripe et le provisionnement correspondant ; tester les paiements sans facturation réelle.

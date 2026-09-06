@@ -195,7 +195,7 @@ def test_missed_occurrences_are_not_replayed_and_repeated_failures_block(routine
     removed_license = client.patch(
         f"/api/organizations/{org}/members/" + bob[0],
         headers=alice[2],
-        json={"role": "member", "active": True, "licensed": False},
+        json={"version": 1, "role": "member", "active": True, "licensed": False},
     )
     assert removed_license.status_code == 200
     revoked = client.get(path, headers=bob[2]).json()["schedules"][0]

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowRight, CalendarClock, Check, CheckCircle2, ChevronRight, Copy, Globe2, LockKeyhole, LogOut, Mail, MessageSquare, ShieldCheck, UserRound, UsersRound, X } from 'lucide-react';
+import { ArrowRight, CalendarClock, Check, CheckCircle2, ChevronRight, Globe2, LockKeyhole, LogOut, Mail, MessageSquare, ShieldCheck, UserRound, UsersRound, X } from 'lucide-react';
 import { api, ApiError, readInvitation, rememberInvitation } from './api';
 import type { Company, Membership, Onboarding, Options, PendingInvitation, Person } from './api';
 import { copy, errorText } from './locale';
@@ -10,7 +10,7 @@ import { Tools } from './Tools';
 import { Chat } from './Chat';
 import { FirstTasks } from './FirstTasks';
 import { Schedules } from './Schedules';
-import { CompanyRules } from './CompanyRules';
+import { Team } from './Team';
 import { PersonalAutonomy } from './PersonalAutonomy';
 import { PersonalMemory } from './PersonalMemory';
 import { Notifications } from './Notifications';
@@ -118,43 +118,6 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
   </section></>;
 }
 
-type Member = Membership & { display_name: string };
-type InvitationRow = { id: string; email: string; expires_at: number };
-function Team({ company, user, t, language }: { company: Company; user: Person; t: Text; language: Language }) {
-  const [members, setMembers] = useState<Member[]>([]), [invitations, setInvitations] = useState<InvitationRow[]>([]);
-  const [email, setEmail] = useState(''), [link, setLink] = useState(''), [copied, setCopied] = useState(false), [loadError, setLoadError] = useState('');
-  const action = useAction(t); const base = `/api/organizations/${company.id}`;
-  async function refresh() {
-    const [people, pending] = await Promise.all([api<{ members: Member[] }>(base + '/members'), api<{ invitations: InvitationRow[] }>(base + '/invitations')]);
-    setMembers(people.members); setInvitations(pending.invitations);
-  }
-  useEffect(() => { void refresh().catch(error => setLoadError(errorText(error, t))); }, [company.id]);
-  return <section className="team-page"><h1>{t.manageTitle}</h1><p className="lead">{t.manageText}</p><Notice>{loadError || action.error}</Notice>
-    <div className="team-grid"><div>
-      <h2>{t.members}</h2><ul className="member-list">{members.map(member => <li key={member.user_id}>
-        <div className="avatar"><UserRound size={20} /></div><div className="member-info"><strong>{member.display_name}{member.user_id === user.id && ` · ${t.you}`}</strong><span>{member.role === 'admin' ? t.admin : t.member}</span></div>
-        <span className={`status-badge ${member.active && member.licensed ? 'enabled' : ''}`}>{!member.active ? t.inactive : member.licensed ? t.licenseActive : t.licenseInactive}</span>
-      </li>)}</ul>
-      {invitations.length > 0 && <ul className="member-list pending-list">{invitations.map(invitation => <li key={invitation.id}>
-        <Mail size={19} /><span className="member-info">{invitation.email}</span><button className="icon-button" aria-label={`${t.cancelInvitation} ${invitation.email}`} disabled={action.busy} onClick={() => action.run(async () => {
-          await api(base + '/invitations/' + invitation.id, undefined, 'DELETE'); setLink(''); await refresh();
-        })}><X size={18} /></button>
-      </li>)}</ul>}
-      <p className="privacy-inline"><LockKeyhole size={18} />{t.noPrivateAccess}</p>
-    </div><div className="invite-panel">
-      <div className="icon-tile"><Mail /></div>
-      {link ? <><h2>{t.inviteReady}</h2><p>{t.inviteManual}</p><label htmlFor="invitation-link">{t.inviteLink}</label><input id="invitation-link" readOnly value={link} onFocus={event => event.target.select()} />
-        <button className="secondary" onClick={() => action.run(async () => { await navigator.clipboard.writeText(link); setCopied(true); })}><Copy size={17} />{copied ? t.copied : t.copy}</button>
-        <button className="text-button" onClick={() => { setLink(''); setEmail(''); }}>{t.inviteNew}</button></> :
-        <form onSubmit={event => { event.preventDefault(); void action.run(async () => {
-          const result = await api<{ token: string }>(base + '/invitations', { email });
-          setLink(location.origin + '/join#invitation=' + encodeURIComponent(result.token)); setCopied(false); await refresh();
-        }); }}><label htmlFor="invite-email">{t.inviteEmail}</label><input id="invite-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={320} autoComplete="email" /><button className="primary" disabled={action.busy}>{action.busy ? t.inviting : t.invite}<ArrowRight size={17} /></button></form>}
-    </div></div>
-    <CompanyRules organizationId={company.id} language={language} />
-    <CompanyResources organizationId={company.id} userId={user.id} admin language={language} />
-  </section>;
-}
 
 export default function App() {
   const [connectionInterrupted] = useState(() => {
@@ -213,7 +176,7 @@ export default function App() {
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
-          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={company.id} company={company} user={user} t={t} language={language} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
+          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={`${company.id}:${user.id}`} company={company} user={user} t={t} language={language} refreshAccount={() => refresh(company.id)} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
         : null}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>

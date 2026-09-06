@@ -64,7 +64,7 @@ def test_finished_results_are_private_and_read_state_survives_retries_and_licens
     updates = client.get(path, headers=owner[2]).json()["notifications"]
     assert sorted(n["status"] for n in updates) == ["completed", "failed", "interrupted"]
     assert all(n["conversation_id"] for n in updates)
-    changes = {"role": "member", "active": True, "licensed": False}
+    changes = {"version": 1, "role": "member", "active": True, "licensed": False}
     assert client.patch(base + "/members/" + owner[0], headers=admin[2], json=changes).status_code == 200
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(client.put, read_path, headers=owner[2], json={}) for _ in range(2)]
@@ -80,7 +80,7 @@ def test_finished_results_are_private_and_read_state_survives_retries_and_licens
     )
     assert (
         client.patch(
-            base + "/members/" + owner[0], headers=admin[2], json={**changes, "active": False}
+            base + "/members/" + owner[0], headers=admin[2], json={**changes, "version": 2, "active": False}
         ).status_code
         == 200
     )

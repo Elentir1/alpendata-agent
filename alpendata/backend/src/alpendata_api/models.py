@@ -75,6 +75,7 @@ class Membership(Base):
     role: Mapped[str] = mapped_column(String(16))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     licensed: Mapped[bool] = mapped_column(Boolean, default=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     __table_args__ = (CheckConstraint("role IN ('admin', 'member')", name="ck_membership_role"),)
 
 

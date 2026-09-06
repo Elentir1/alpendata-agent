@@ -37,6 +37,7 @@ class VerifyInvitation(Input):
 
 
 class MembershipInput(Input):
+    version: int = Field(ge=1)
     active: bool
     licensed: bool
     role: Literal["admin", "member"]

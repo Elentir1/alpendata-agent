@@ -119,7 +119,7 @@ def test_browser_edits_real_hermes_memory_preserving_owner_boundaries_and_conver
         client.patch(
             base + "/members/" + owner_id,
             headers=admin,
-            json={"active": True, "licensed": False, "role": "member"},
+            json={"version": 1, "active": True, "licensed": False, "role": "member"},
         ).status_code
         == 200
     )
@@ -136,7 +136,7 @@ def test_browser_edits_real_hermes_memory_preserving_owner_boundaries_and_conver
         client.patch(
             base + "/members/" + owner_id,
             headers=admin,
-            json={"active": False, "licensed": False, "role": "member"},
+            json={"version": 2, "active": False, "licensed": False, "role": "member"},
         ).status_code
         == 200
     )
