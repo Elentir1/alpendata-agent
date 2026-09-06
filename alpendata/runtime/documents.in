@@ -1,0 +1,6 @@
+# Additional libraries for the hosted agent. Resolve against the upstream lock.
+python-docx>=1.2,<2
+openpyxl>=3.1.5,<4
+python-pptx>=1.0.2,<2
+reportlab>=4.4,<5
+pypdf>=6,<7

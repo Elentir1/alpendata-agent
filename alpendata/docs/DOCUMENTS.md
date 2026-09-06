@@ -1,6 +1,6 @@
 # Documents privés dans le chat
 
-6 septembre 2026 — première étape du lot documents : publication et téléchargement.
+6 septembre 2026 — génération locale, publication et téléchargement.
 
 ## Parcours implémenté
 
@@ -28,10 +28,22 @@ Suppression, conservation configurable, volumes supérieurs et éventuel stockag
 
 `Conversation.documents_enabled` fige la disponibilité de l’outil. La migration conserve `false` pour les conversations existantes ; les nouvelles l’activent. Un ancien contexte ne reçoit donc pas cet outil lors d’une mise à jour. Les occurrences planifiées recopient le réglage de l’essai revu. Le broker applique aussi ce réglage, indépendamment des déclarations du runtime.
 
+## Génération et édition locales
+
+Le runtime contient désormais python-docx, openpyxl, python-pptx, ReportLab et pypdf, ainsi que LibreOffice Writer/Calc/Impress, Poppler et les polices DejaVu. Les versions Python sont verrouillées avec empreintes, en conservant les dépendances communes au verrou Hermes. Les nouvelles conversations reçoivent le chemin d’un [guide interne](../runtime/DOCUMENT_GUIDE.md). Le terminal doit utiliser `/opt/venv/bin/python`, car son shell peut sélectionner le Python système.
+
+Le programme facultatif `document_builder.py` crée des mises en page de départ à partir d’une spécification JSON : sections et tableaux pour Word/PDF, feuilles et cellules typées pour Excel, diapositives avec texte modifiable pour PowerPoint. Il refuse d’écraser un fichier existant, les contenus destinés à un autre format et les textes qui débordent de sa disposition PowerPoint. Les chaînes Excel restent du texte, même lorsqu’elles commencent par `=` ; les formules sont déclarées explicitement et doivent être recalculées et vérifiées avant livraison.
+
+Le guide conserve l’accès direct aux bibliothèques pour les modèles, graphiques, tableaux PowerPoint et mises en page qui dépassent ce programme de départ. Les originaux Office restent modifiables ; les rendus PDF sont des sorties distinctes. Les modèles de documents propres au client restent à recueillir et à valider. Aucune application bureautique ni compétence technique n’est nécessaire sur son poste pour demander la création depuis le chat.
+
 ## Vérification et travail restant
 
 `test_documents_worker.py` utilise l’API réelle, PostgreSQL, un modèle HTTP synthétique et un vrai conteneur Hermes. Le scénario crée un PDF complet dans le terminal de l’agent, refuse un chemin sortant et un lien symbolique, publie deux fois sans doublon, compare les octets téléchargés et refuse l’accès administrateur. Il n’utilise aucune connexion Microsoft.
 
 `test_documents.py` vérifie les reçus après interruption, les permissions, les types Office, les noms et tailles invalides. Ses paquets Office sont volontairement minimaux : ils ne prouvent pas l’ouverture ou la qualité dans Word, Excel ou PowerPoint. Le test d’interface vérifie l’accès expiré, la nouvelle tentative et le téléchargement du reçu. Un aperçu séparé, explicitement fictif, a été contrôlé dans le navigateur en anglais et français.
 
-La génération métier fiable, les bibliothèques et instructions documentaires du runtime, les exemples représentatifs ouverts et rendus dans les quatre formats, la lecture du contenu SharePoint, l’édition et l’enregistrement SharePoint restent à terminer. Le lot documents reste en cours.
+`test_document_generation.py` ajoute un parcours complet avec Hermes réel : lecture du guide, création des quatre formats, édition du Word et du PowerPoint, modification d’une valeur Excel et recalcul du total par LibreOffice. Il vérifie les contenus après réouverture, les pages rendues, l’absence d’écrasement, le refus d’un texte PowerPoint trop long et les téléchargements personnels. Les quatre documents publiés sont récupérés par l’API. Les cinq pages/diapositives rendues ont été examinées visuellement ; le thème Word hérité a été corrigé puis le parcours et les rendus revérifiés.
+
+L’image finale de cette étape est `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`. Les exemples sont synthétiques, et les décisions du modèle de test sont scriptées. Cette vérification prouve le parcours technique et les exemples contrôlés ; elle ne mesure pas encore la qualité d’un modèle commercial sur les documents du client.
+
+La lecture du contenu SharePoint, la reprise de ses modèles, l’enregistrement avec gestion des collisions, la conservation configurable et la validation métier avec le pilote restent à terminer. Le lot documents reste en cours.

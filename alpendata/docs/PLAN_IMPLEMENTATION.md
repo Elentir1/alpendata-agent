@@ -44,7 +44,7 @@ Sortie attendue : parcours complet depuis l’invitation jusqu’à un premier b
 
 ## Lot 4 — Documents et actions
 
-État : publication et téléchargement privés implémentés, avec reçus durables et parcours vérifié dans Hermes réel. Les nouvelles conversations exposent l’outil de publication ; les anciennes gardent leurs outils. Génération métier et vérification visuelle des quatre formats, édition, écritures SharePoint et e-mails restent à réaliser. Détails dans [Documents](DOCUMENTS.md).
+État : génération des quatre formats, édition locale, recalcul Excel, publication et téléchargement privés implémentés. Un parcours Hermes réel crée et publie les fichiers, avec réouverture et rendu LibreOffice ; les exemples ont été contrôlés visuellement. Les réponses du modèle sont scriptées dans ce test. Les modèles et contenus SharePoint du client, les écritures externes et la validation avec un modèle commercial restent à réaliser. Détails dans [Documents](DOCUMENTS.md).
 
 - Produire des fichiers Word, Excel, PowerPoint et PDF avec un premier exemple représentatif de chaque format.
 - Ajouter téléchargement, destination SharePoint et gestion des collisions de noms.

@@ -110,6 +110,9 @@ def create_conversation(
         "The available Microsoft tools currently read data only.\n"
         "For documents, create the file in your workspace and publish it with alpendata_publish_document. "
         "The chat displays confirmed downloads. Never invent download links or claim a SharePoint save.\n"
+        "For document creation or editing, first read /opt/hermes/alpendata/runtime/DOCUMENT_GUIDE.md. "
+        "Office libraries, LibreOffice and PDF utilities are installed locally. "
+        "Create editable Office originals; check contents and render before publishing.\n"
         + extra_prompt
         + "\nUser profile data: "
         + json.dumps(profile.answers, ensure_ascii=False)

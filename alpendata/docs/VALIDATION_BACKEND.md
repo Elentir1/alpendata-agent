@@ -1,5 +1,15 @@
 # Vérification du premier backend
 
+## Génération documentaire — 6 septembre 2026
+
+La suite complète passe **38 scénarios Linux/PostgreSQL**, sans échec ni scénario ignoré, avec l’image `sha256:32b95a02d526073ae49c8ca414c99dd454d51f3fd2fb716a9d7d275c6ff7aa85`. Après correction visuelle des styles Word, le parcours documentaire complet est retesté avec succès sur l’image finale `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`.
+
+Le vrai Hermes lit le guide interne puis utilise son terminal pour créer DOCX, PDF, XLSX et PPTX. Les contrôles rouvrent les fichiers avec leurs bibliothèques, modifient du contenu Word et PowerPoint, recalculent une modification Excel avec LibreOffice et vérifient les valeurs/formules conservées. Les rendus comportent une page Word, une page PDF, une page Excel et deux diapositives PowerPoint ; les textes attendus sont extraits. Les quatre fichiers sont ensuite publiés par l’outil et récupérés via l’API avec contrôle de propriété. Aucun fournisseur commercial ou compte Microsoft réel n’intervient dans ce scénario.
+
+Les cinq PNG du dernier rendu ont été inspectés : titres, accents, tableaux et corps de texte lisibles, sans chevauchement constaté. Ces fichiers de contrôle restent hors de Git dans l’espace local de prévisualisation. Le calcul Excel contient aussi une cellule de test commençant par `=` pour vérifier qu’un libellé reste du texte. Les sorties de contrôle ne sont pas des documents du client pilote.
+
+Le premier essai a détecté le choix du Python système par le terminal ; le guide utilise désormais explicitement `/opt/venv/bin/python`. Le guide et les bibliothèques sont embarqués, sans dépendance au poste utilisateur. Ruff et la vérification des espaces passent. Voir [Documents](DOCUMENTS.md) pour la portée et les limites.
+
 ## Documents privés — 6 septembre 2026
 
 Après la migration `0008`, la suite complète passe **36 scénarios sous Linux/PostgreSQL avec l’image `sha256:acbd8d15b9c59a97425671e677fcae5714ac05ddc0b93f48e853eb2cf22158e8`**, sans échec ni scénario ignoré. Un contrôle supplémentaire des conteneurs Office et des tailles a ensuite été ajouté ; les deux tests du fichier documents passent sous Windows/SQLite. Le frontend passe **15 scénarios JSDOM** et son build TypeScript/Vite.

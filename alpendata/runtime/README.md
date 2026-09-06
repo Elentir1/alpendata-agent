@@ -25,6 +25,10 @@ podman --cgroup-manager=cgroupfs build --network=slirp4netns \
 
 L’image Python de base est épinglée par digest. Les dépendances Hermes sont installées depuis le `uv.lock` du fork, sans les extras facultatifs. La licence et les notices amont sont conservées. Aucun service Docker Desktop n’est utilisé.
 
+Les bibliothèques documentaires supplémentaires sont installées depuis `documents.lock`, avec vérification des empreintes. Ce verrou conserve les versions communes au verrou Hermes (notamment Pillow et les dépendances partagées). Pour le régénérer depuis la racine, avec `uv` et Python 3.13 : `sh alpendata/runtime/lock-documents.sh`. Le mode `uv --no-config` sert uniquement à installer ce verrou autonome ; l’installation Hermes conserve ses contraintes amont.
+
+L’image inclut aussi LibreOffice Writer/Calc/Impress, Poppler et DejaVu Sans depuis les dépôts Debian signés. Le digest final de l’image identifie l’environnement d’exécution testé. Les profils de rendu sont temporaires et personnels ; aucun LibreOffice installé sur le poste de l’utilisateur n’est utilisé. Le [guide interne](DOCUMENT_GUIDE.md) et le programme `document_builder.py` complètent les outils terminal/fichier existants sans ajouter d’outil au noyau Hermes. Les nouvelles conversations reçoivent le chemin du guide dans leur contexte initial ; le contexte des conversations déjà créées reste inchangé.
+
 `RuntimeSettings.image` attend l’identifiant local complet `sha256:…`, jamais une étiquette mutable. La résolution de `:dev` est réservée au script de test ; une exécution ne télécharge jamais une image manquante.
 
 ## Contrat du superviseur
@@ -38,6 +42,8 @@ Le superviseur reçoit des requêtes structurées `model` ou `tool`. La fonction
 Les frames sont plafonnées à 8 Mio et les demandes par tour à 80. L’écriture sur les pipes ne bloque pas le contrôle du délai. Le runtime ne conserve ni stderr ni corps d’échange dans les journaux d’exploitation. Le résultat contient la réponse et les messages Hermes ; le processus de chat vérifie l’état et les droits avant d’enregistrer la réponse finale. Les règles de conservation restent à configurer avant exploitation.
 
 ## Vérification
+
+Le parcours `test_document_generation.py` crée, édite, recalcule et rend les quatre formats dans le vrai Hermes, puis vérifie leurs téléchargements privés. L’option de test `--document-qa-output DIRECTORY` conserve les originaux et rendus dans un nouveau sous-dossier pour inspection visuelle. Image finale de génération documentaire vérifiée : `sha256:349e453517fcbbe3fb69cf4fe3804024a1fb74e062dc723a07e534de74f55ad5`.
 
 L’extension [documents](../docs/DOCUMENTS.md) publie des fichiers privés depuis les nouvelles conversations, même sans connexion Microsoft. Les octets traversent le broker ; aucun fichier n’est lu par un chemin hôte choisi par le modèle. Image vérifiée pour cette étape : `sha256:acbd8d15b9c59a97425671e677fcae5714ac05ddc0b93f48e853eb2cf22158e8`.
 
