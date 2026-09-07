@@ -1,44 +1,53 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
-import { Office } from './Office';
+import { Office, type EditorConfig } from './Office';
 
-afterEach(() => { cleanup(); delete window.DocsAPI; });
+const configuration: EditorConfig = { id: 'session', base_version: 3, provider: 'collabora', action_url: 'https://office.example.test/browser/build/cool.html?WOPISrc=https%3A%2F%2Fapp.example.test%2Fwopi%2Fsession', access_token: 'synthetic-document-token', access_token_ttl: 1800000000000 };
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+function message(frame: HTMLIFrameElement, MessageId: string, Values = {}, origin = 'https://office.example.test', source = frame.contentWindow) {
+  act(() => { window.dispatchEvent(new MessageEvent('message', { origin, source, data: JSON.stringify({ MessageId, Values }) })); });
+}
 
-test('Office selection requires an explicit preview-to-draft action and disconnects on close', async () => {
-  const choose = vi.fn(), failed = vi.fn(), disconnect = vi.fn(), destroyEditor = vi.fn();
-  let ready: () => void = () => {};
-  const executeMethod = vi.fn((_method, _args, callback) => callback('Confidential selected passage'));
-  window.DocsAPI = { DocEditor: class {
-    constructor(_id: string, config: Record<string, unknown>) { ready = (config.events as { onDocumentReady: () => void }).onDocumentReady; }
-    createConnector() { return { executeMethod, disconnect }; }
-    destroyEditor = destroyEditor;
-  } };
-  const view = render(<Office configuration={{ id: 'session', base_version: 3, automation_enabled: true, script_url: '', config: {} }} file={{ id: 'private-file', filename: 'Client.docx' }} language="en" choose={choose} failed={failed} />);
-  expect(screen.getByRole('button')).toHaveProperty('disabled', true);
-  act(ready);
-  await userEvent.click(screen.getByRole('button', { name: 'Work on the selection with the assistant' }));
-  expect(screen.getByText('Confidential selected passage')).toBeTruthy();
+test('Collabora credentials are posted to its frame, and only its requested selection can enter the draft', async () => {
+  const submit = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
+  const choose = vi.fn(), failed = vi.fn();
+  const view = render(<Office configuration={configuration} file={{ id: 'private-file', filename: 'Client.docx' }} language="en" choose={choose} failed={failed} />);
+  const frame = screen.getByTitle('Client.docx') as HTMLIFrameElement;
+  const post = vi.spyOn(frame.contentWindow!, 'postMessage');
+  expect(submit).toHaveBeenCalledOnce();
+  expect(frame.src).not.toContain(configuration.access_token);
+  const form = view.container.querySelector('form')!;
+  expect(form.method).toBe('post'); expect(form.target).toBe(frame.name);
+  expect(new FormData(form).get('access_token')).toBe(configuration.access_token);
+  const capture = screen.getByRole('button', { name: 'Work on the selection with the assistant' });
+  message(frame, 'App_LoadingStatus', { Status: 'Document_Loaded' }, 'https://evil.example');
+  expect(capture).toHaveProperty('disabled', true);
+  message(frame, 'App_LoadingStatus', { Status: 'Document_Loaded' });
+  message(frame, 'Action_Copy_Resp', { content: 'Unrequested secret' });
+  expect(screen.queryByText('Unrequested secret')).toBeNull();
+  await userEvent.click(capture);
+  expect(post).toHaveBeenCalledWith(expect.stringContaining('Action_Copy'), 'https://office.example.test');
+  message(frame, 'Action_Copy_Resp', { content: 'Wrong frame' }, 'https://office.example.test', window);
+  expect(screen.queryByText('Wrong frame')).toBeNull();
+  message(frame, 'Action_Copy_Resp', { content: 'Confidential selected passage' });
   expect(choose).not.toHaveBeenCalled();
   await userEvent.click(screen.getByRole('button', { name: 'Add to draft' }));
   expect(choose).toHaveBeenCalledWith(expect.stringContaining('session opened from v3'));
   expect(choose).toHaveBeenCalledWith(expect.stringContaining('Confidential selected passage'));
-  expect(executeMethod).toHaveBeenCalledOnce();
-  expect(executeMethod.mock.calls[0][0]).toBe('GetSelectedText');
   view.unmount();
-  expect(disconnect).toHaveBeenCalledOnce(); expect(destroyEditor).toHaveBeenCalledOnce();
+  message(frame, 'App_LoadingStatus', { Status: 'Failed' });
   expect(failed).not.toHaveBeenCalled();
 });
 
-test('no Automation API calls are made when its license option is disabled', () => {
-  const createConnector = vi.fn(); let ready: () => void = () => {};
-  window.DocsAPI = { DocEditor: class {
-    constructor(_id: string, config: Record<string, unknown>) { ready = (config.events as { onDocumentReady: () => void }).onDocumentReady; }
-    createConnector = createConnector;
-    destroyEditor() {}
-  } };
-  render(<Office configuration={{ id: 'session', base_version: 1, automation_enabled: false, script_url: '', config: {} }} file={{ id: 'file', filename: 'Client.docx' }} language="en" choose={vi.fn()} failed={vi.fn()} />);
-  act(ready);
-  expect(screen.queryByRole('button')).toBeNull();
-  expect(createConnector).not.toHaveBeenCalled();
+test('Collabora save failures remain visible and never announce a successful save', async () => {
+  vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
+  render(<Office configuration={configuration} file={{ id: 'file', filename: 'Budget.xlsx' }} language="fr" choose={vi.fn()} failed={vi.fn()} />);
+  const frame = screen.getByTitle('Budget.xlsx') as HTMLIFrameElement;
+  const post = vi.spyOn(frame.contentWindow!, 'postMessage');
+  message(frame, 'App_LoadingStatus', { Status: 'Document_Loaded' });
+  await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le document' }));
+  expect(post).toHaveBeenCalledWith(expect.stringContaining('Action_Save'), 'https://office.example.test');
+  message(frame, 'Action_Save_Resp', { success: false });
+  expect(screen.getByRole('alert').textContent).toContain('Gardez l’éditeur ouvert');
 });

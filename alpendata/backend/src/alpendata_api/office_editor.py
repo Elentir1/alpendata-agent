@@ -1,23 +1,23 @@
-"""Signed ONLYOFFICE sessions with immutable saves and conflict preservation."""
+"""Collabora WOPI sessions: private snapshots, persistent locks and immutable saves."""
 
-import hashlib
 from typing import Literal
-from urllib.parse import urlsplit
 
 import jwt
-import requests
 from fastapi import APIRouter, HTTPException, Request, Response
 from sqlalchemy import select
+from starlette.concurrency import run_in_threadpool
 
 from .access import member
 from .artifacts import validate_document
 from .auth import authenticate, request_authorization
 from .connections import lock_member
-from .file_access import file_access, publication
+from .file_access import file_access
 from .file_store import LIMIT
-from .models import EditorSession, ProjectFile, User, WorkspaceFile, now
+from .models import EditorSession, User, now
+from .office_discovery import editor_action
+from .office_versions import save_snapshot, snapshot
 from .schemas import Input
-from .workspace_files import add_version, file_store, version_record
+from .workspace_files import file_store, version_record
 
 
 class EditorInput(Input):
@@ -28,6 +28,7 @@ class EditorInput(Input):
 def office_router(settings, factory):
     router = APIRouter()
     root = "/api/organizations/{organization_id}/files/{file_id}/editor"
+    wopi = "/api/editor/wopi/files/{session_id}"
 
     def enabled():
         if not settings.office_origin or not settings.office_secret:
@@ -48,10 +49,29 @@ def office_router(settings, factory):
                 .with_for_update()
                 .execution_options(populate_existing=True)
             )
+            if session.expires_at <= now():
+                raise HTTPException(403, "document_editor_session_expired")
         else:
             member(db, user, session.organization_id, licensed=False)
-        item = file_access(db, session.organization_id, user.id, session.file_id, write=write)
-        return session, item
+        # Revalidate write access on reads too: an editor downgraded to reader must close.
+        item = file_access(db, session.organization_id, user.id, session.file_id, write=True)
+        return session, item, user
+
+    def authorize(request, session_id):
+        enabled()
+        token = request.query_params.get("access_token", "")
+        try:
+            claims = jwt.decode(
+                token,
+                settings.office_secret,
+                algorithms=["HS256"],
+                audience="collabora-wopi",
+                options={"require": ["sid", "exp", "aud"]},
+            )
+            if claims["sid"] != session_id:
+                raise ValueError("Session mismatch")
+        except (jwt.PyJWTError, ValueError):
+            raise HTTPException(401, "document_editor_token_invalid") from None
 
     @router.post(root, status_code=201)
     def create(organization_id: str, file_id: str, request: Request, body: EditorInput):
@@ -61,8 +81,7 @@ def office_router(settings, factory):
             lock_member(db, user, organization_id)
             item = file_access(db, organization_id, user.id, file_id, write=True)
             extension = item.filename.rsplit(".", 1)[-1].lower()
-            types = {"docx": "word", "xlsx": "cell", "pptx": "slide"}
-            if extension not in types:
+            if extension not in {"docx", "xlsx", "pptx"}:
                 raise HTTPException(422, "document_editable_copy_required")
             session = EditorSession(
                 organization_id=organization_id,
@@ -74,38 +93,20 @@ def office_router(settings, factory):
             )
             db.add(session)
             db.flush()
+            source = settings.public_origin + wopi.replace("{session_id}", session.id)
+            action = editor_action(settings.office_origin, extension, body.language, source)
             token = jwt.encode(
-                {"sid": session.id, "aud": "file-download", "exp": session.expires_at},
+                {"sid": session.id, "aud": "collabora-wopi", "exp": session.expires_at},
                 settings.office_secret,
                 algorithm="HS256",
             )
-            config = {
-                "type": "mobile" if body.mobile else "desktop",
-                "documentType": types[extension],
-                "width": "100%",
-                "height": "100%",
-                "document": {
-                    "fileType": extension,
-                    "key": session.id,
-                    "title": item.filename,
-                    "url": settings.public_origin + "/api/editor/content?token=" + token,
-                    "permissions": {"edit": True, "download": True, "print": True},
-                },
-                "editorConfig": {
-                    "mode": "edit",
-                    "lang": body.language,
-                    "callbackUrl": settings.public_origin + "/api/editor/callback/" + session.id,
-                    "user": {"id": user.id, "name": user.display_name},
-                    "customization": {"forcesave": True, "autosave": True},
-                },
-            }
-            config["token"] = jwt.encode(config, settings.office_secret, algorithm="HS256")
             return {
                 "id": session.id,
                 "base_version": session.base_version,
-                "automation_enabled": settings.office_automation_enabled,
-                "script_url": settings.office_origin + "/web-apps/apps/api/documents/api.js",
-                "config": config,
+                "provider": "collabora",
+                "action_url": action,
+                "access_token": token,
+                "access_token_ttl": session.expires_at * 1000,
             }
 
     @router.get(root + "/{session_id}")
@@ -124,114 +125,92 @@ def office_router(settings, factory):
             file_access(db, organization_id, user.id, file_id)
             return {"saved_version": session.saved_version, "conflict_file_id": session.conflict_file_id}
 
-    @router.get("/api/editor/content")
-    def content(token: str):
-        enabled()
-        try:
-            claims = jwt.decode(
-                token,
-                settings.office_secret,
-                algorithms=["HS256"],
-                audience="file-download",
-                options={"require": ["exp", "aud", "sid"]},
-            )
-        except jwt.PyJWTError:
-            raise HTTPException(403, "document_editor_token_invalid") from None
-        with factory() as db:
-            session, item = session_access(db, claims["sid"])
-            data = file_store(settings).get(version_record(db, item, session.base_version).object_key)
-            return Response(data, media_type=item.media_type)
-
-    @router.post("/api/editor/callback/{session_id}")
-    def callback(session_id: str, request: Request, body: dict):
-        enabled()
-        token = request.headers.get("authorization", "").removeprefix("Bearer ") or body.get("token", "")
-        try:
-            signed = jwt.decode(
-                token, settings.office_secret, algorithms=["HS256"], options={"verify_aud": False}
-            )
-            payload = signed.get("payload", signed)
-            if payload.get("key") != session_id or type(payload.get("status")) is not int:
-                raise ValueError
-        except (jwt.PyJWTError, ValueError, AttributeError):
-            raise HTTPException(403, "document_editor_token_invalid") from None
+    @router.get(wopi)
+    def info(session_id: str, request: Request):
+        authorize(request, session_id)
         with factory.begin() as db:
-            session, item = session_access(db, session_id, write=True)
-            if payload["status"] not in (2, 6):
-                return {"error": 0 if payload["status"] in (1, 4) else 1}
-            url = payload.get("url", "")
-            parsed = urlsplit(url)
-            if (
-                parsed.scheme + "://" + parsed.netloc != settings.office_origin
-                or parsed.username
-                or parsed.password
-                or parsed.fragment
-            ):
-                raise HTTPException(400, "document_editor_url_invalid")
-            try:
-                with requests.Session() as transport:
-                    transport.trust_env = False
-                    with transport.get(url, timeout=(5, 20), allow_redirects=False, stream=True) as response:
-                        if response.status_code != 200:
-                            return {"error": 1}
-                        data = bytearray()
-                        for chunk in response.iter_content(65536):
-                            data.extend(chunk)
-                            if len(data) > LIMIT:
-                                raise HTTPException(413, "document_too_large")
-            except requests.RequestException:
-                return {"error": 1}
-            data = bytes(data)
-            validate_document(item.filename, data)
-            current = version_record(db, item, item.version)
-            if current.sha256 == hashlib.sha256(data).hexdigest():
-                session.saved_version = item.version
-                return {"error": 0}
-            expected = session.saved_version or session.base_version
-            if item.version != expected or session.conflict_file_id:
-                conflict = (
-                    file_access(
-                        db,
-                        item.organization_id,
-                        session.editor_id or session.owner_id,
-                        session.conflict_file_id,
-                        write=True,
-                    )
-                    if session.conflict_file_id
-                    else None
-                )
-                if not conflict:
-                    stem, extension = item.filename.rsplit(".", 1)
-                    conflict = WorkspaceFile(
-                        organization_id=item.organization_id,
-                        owner_id=item.owner_id,
-                        conversation_id=item.conversation_id,
-                        filename=stem[:145] + " (copie)." + extension,
-                        media_type=item.media_type,
-                    )
-                    db.add(conflict)
-                    db.flush()
-                    add_version(db, file_store(settings), conflict, data)
-                    shared = publication(db, item.id)
-                    if shared:
-                        db.add(
-                            ProjectFile(
-                                organization_id=item.organization_id,
-                                owner_id=item.owner_id,
-                                project_id=shared.project_id,
-                                file_id=conflict.id,
-                                source_file_id=item.id,
-                                source_version=expected,
-                            )
-                        )
-                    session.conflict_file_id = conflict.id
-                elif (
-                    version_record(db, conflict, conflict.version).sha256 != hashlib.sha256(data).hexdigest()
-                ):
-                    add_version(db, file_store(settings), conflict, data, conflict.version)
-            else:
-                add_version(db, file_store(settings), item, data, expected)
-                session.saved_version = item.version
-            return {"error": 0}
+            session, original, user = session_access(db, session_id)
+            item, number = snapshot(db, session, original)
+            version = version_record(db, item, number)
+            return {
+                "BaseFileName": item.filename,
+                "OwnerId": item.owner_id,
+                "Size": version.size,
+                "Version": f"{item.id}:{number}",
+                "UserId": user.id,
+                "UserFriendlyName": user.display_name,
+                "UserCanWrite": True,
+                "UserCanNotWriteRelative": True,
+                "SupportsUpdate": True,
+                "SupportsLocks": True,
+                "SupportsGetLock": True,
+                "SupportsRename": False,
+                "PostMessageOrigin": settings.public_origin,
+                "EnableOwnerTermination": False,
+            }
+
+    @router.get(wopi + "/contents")
+    def content(session_id: str, request: Request):
+        authorize(request, session_id)
+        with factory.begin() as db:
+            session, original, _ = session_access(db, session_id)
+            item, number = snapshot(db, session, original)
+            data = file_store(settings).get(version_record(db, item, number).object_key)
+            return Response(
+                data, media_type=item.media_type, headers={"X-WOPI-ItemVersion": f"{item.id}:{number}"}
+            )
+
+    def current_lock(session):
+        return session.lock_value if (session.lock_expires_at or 0) > now() else ""
+
+    def mismatch(value):
+        return Response(status_code=409, headers={"X-WOPI-Lock": value or ""})
+
+    @router.post(wopi)
+    def lock(session_id: str, request: Request):
+        authorize(request, session_id)
+        operation = request.headers.get("X-WOPI-Override")
+        if operation not in {"LOCK", "REFRESH_LOCK", "UNLOCK", "GET_LOCK"}:
+            raise HTTPException(501, "document_editor_operation_unsupported")
+        value, previous = request.headers.get("X-WOPI-Lock", ""), request.headers.get("X-WOPI-OldLock")
+        if operation != "GET_LOCK" and (
+            not value or len(value.encode()) > 1024 or any(ord(c) < 32 or ord(c) > 126 for c in value)
+        ):
+            raise HTTPException(400, "document_editor_lock_invalid")
+        with factory.begin() as db:
+            session, _, _ = session_access(db, session_id, write=True)
+            current = current_lock(session)
+            if operation == "GET_LOCK":
+                return Response(headers={"X-WOPI-Lock": current or ""})
+            if previous is not None:
+                if operation != "LOCK" or not current or previous != current:
+                    return mismatch(current)
+            elif (current and current != value) or (not current and operation != "LOCK"):
+                return mismatch(current)
+            session.lock_value = None if operation == "UNLOCK" else value
+            session.lock_expires_at = None if operation == "UNLOCK" else now() + 1800
+            return Response()
+
+    def put(session_id, lock_value, data):
+        with factory.begin() as db:
+            session, original, _ = session_access(db, session_id, write=True)
+            current = current_lock(session)
+            if not current or current != lock_value:
+                return mismatch(current)
+            validate_document(original.filename, data)
+            item, number = save_snapshot(db, settings, session, original, data)
+            return Response(headers={"X-WOPI-ItemVersion": f"{item.id}:{number}"})
+
+    @router.post(wopi + "/contents")
+    async def put_file(session_id: str, request: Request):
+        authorize(request, session_id)
+        if request.headers.get("X-WOPI-Override") != "PUT":
+            raise HTTPException(501, "document_editor_operation_unsupported")
+        data = bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data) > LIMIT:
+                raise HTTPException(413, "document_too_large")
+        return await run_in_threadpool(put, session_id, request.headers.get("X-WOPI-Lock", ""), bytes(data))
 
     return router

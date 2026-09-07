@@ -1,4 +1,6 @@
-# Acquisition ONLYOFFICE pour AlpenData
+# Acquisition ONLYOFFICE pour AlpenData — suspendue
+
+Le 7 septembre 2026, le propriétaire a choisi [Collabora CODE](COLLABORA_CODE.md). Le brouillon ci-dessous est conservé comme historique ; ne pas engager cette acquisition. Aucun message fournisseur ni achat n’a été effectué.
 
 Préparée le 7 septembre 2026, à la demande du propriétaire. Aucun achat et aucun message au fournisseur n’ont été effectués.
 

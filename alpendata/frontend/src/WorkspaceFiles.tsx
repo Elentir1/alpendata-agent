@@ -84,9 +84,10 @@ export function WorkspaceFiles({ organizationId, conversationId, projectId, lang
     });
   }
   return <aside className="agent-workbench file-workbench" aria-label={fr ? 'Fichiers de la discussion' : 'Conversation files'}>
-    <header><div><span className="eyebrow">{fr ? 'DOCUMENTS ET VERSIONS' : 'DOCUMENTS AND VERSIONS'}</span><h2>{fr ? 'Votre travail prend forme' : 'Your work takes shape'}</h2></div><button className="icon-button" onClick={close} aria-label={fr ? 'Fermer les fichiers' : 'Close files'}><X size={19} /></button></header>
-    <div className="workbench-content" onDragOver={event => { if (canEdit && !projectId) event.preventDefault(); }} onDrop={event => { event.preventDefault(); if (canEdit && !projectId) void upload([...event.dataTransfer.files]); }}>
-      <Notice>{error}</Notice><p role="status" className="subtle">{status}</p>
+    <header><div><span className="eyebrow">{fr ? 'DOCUMENTS ET VERSIONS' : 'DOCUMENTS AND VERSIONS'}</span><h2>{editor && selected ? selected.filename : fr ? 'Votre travail prend forme' : 'Your work takes shape'}</h2></div><button className="icon-button" onClick={close} aria-label={fr ? 'Fermer les fichiers' : 'Close files'}><X size={19} /></button></header>
+    <div className="workbench-content" onDragOver={event => { if (canEdit && !projectId && !editor) event.preventDefault(); }} onDrop={event => { event.preventDefault(); if (canEdit && !projectId && !editor) void upload([...event.dataTransfer.files]); }}>
+      <Notice>{error}</Notice>{status && <p role="status" className="subtle">{status}</p>}
+      {!editor && <>
       {!projectId && <button className="file-dropzone" disabled={busy || !canEdit} onClick={() => input.current?.click()}><Upload size={22} /><strong>{fr ? 'Ajouter ou déposer des fichiers' : 'Add or drop files'}</strong><small>PDF, Word, Excel, PowerPoint, PNG, JPEG, CSV, TXT · 5 Mo</small></button>}
       {projectId && <p className="subtle">{fr ? 'Documents publiés explicitement dans ce projet. Ajoutez un fichier à une discussion personnelle, puis publiez la version choisie ici.' : 'Documents explicitly published to this project. Add a file to a personal conversation, then publish the selected version here.'}</p>}
       <input ref={input} className="sr-only" type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.csv,.txt,.md" onChange={event => { void upload([...event.target.files || []]); event.target.value = ''; }} />
@@ -102,6 +103,8 @@ export function WorkspaceFiles({ organizationId, conversationId, projectId, lang
       </section>}
       {comparison && selected && <VersionComparison root={root} fileId={selected.id} before={comparison.before} after={comparison.after} language={language} close={() => setComparison(null)} />}
       {publishing && selected && <PublishFile organizationId={organizationId} file={selected} language={language} close={() => setPublishing(false)} />}
+      </>}
+      {editor && selected && <button className="text-button office-back" onClick={() => void open(selected)}>{fr ? '← Retour aux fichiers et versions' : '← Back to files and versions'}</button>}
       {editor && selected && <Office configuration={editor} language={language} file={selected} choose={choose} failed={() => setError(fr ? 'L’éditeur est indisponible.' : 'The editor is unavailable.')} />}
     </div>
   </aside>;

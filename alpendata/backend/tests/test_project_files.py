@@ -1,10 +1,8 @@
 import base64
-from urllib.parse import urlsplit
 from uuid import uuid4
 
-import jwt
 from test_chat import join
-from test_office_editor import SECRET, document
+from test_office_editor import document, editor_urls
 from test_office_editor import service as service
 
 
@@ -76,19 +74,19 @@ def test_project_document_copy_keeps_original_private_and_revokes_editor_access(
     session = client.post(file + "/editor", headers=peer, json={})
     assert session.status_code == 201, session.text
     session = session.json()
-    parsed = urlsplit(session["config"]["document"]["url"])
-    content = parsed.path + "?" + parsed.query
-    assert client.get(content).content == document("contributor edit")
+    wopi, params = editor_urls(session)
+    content = wopi + "/contents"
+    assert client.get(content, params=params).content == document("contributor edit")
     assert client.get(file + "/editor/" + session["id"], headers=peer).status_code == 200
     assert client.get(file + "/editor/" + session["id"], headers=owner).status_code == 404
     client.delete(path + "/members/" + peer_id, headers=owner)
     assert client.get(search, headers=peer).json()["results"] == []
-    assert client.get(content).status_code == 404
+    assert client.get(content, params=params).status_code == 404
     assert client.get(file + "/versions/1/content", headers=peer).status_code == 404
     assert client.get(file + "/editor/" + session["id"], headers=peer).status_code == 404
-    signed = jwt.encode(
-        {"key": session["id"], "status": 2, "url": "https://office.example.test/saved.docx"},
-        SECRET,
-        algorithm="HS256",
+    assert (
+        client.post(
+            wopi, params=params, headers={"X-WOPI-Override": "LOCK", "X-WOPI-Lock": "revoked"}
+        ).status_code
+        == 404
     )
-    assert client.post("/api/editor/callback/" + session["id"], json={"token": signed}).status_code == 404

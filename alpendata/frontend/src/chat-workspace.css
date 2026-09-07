@@ -228,8 +228,12 @@
 .workspace-file-list span { overflow-wrap: anywhere; }
 .workspace-file-list small { display: block; color: #8b8375; margin-top: 4px; }
 .file-version { display: grid; gap: 5px; padding: 10px 0; font-size: .75rem; }
-.office-frame { height: 70dvh; min-height: 500px; margin-top: 15px; }
-.office-frame > div { height: 100%; }
+.office-frame { height: calc(100dvh - 270px); min-height: 380px; margin-top: 12px; }
+.office-back { margin-bottom: 10px; }
+.office-selection { display: flex; flex-wrap: wrap; gap: 8px; }
+.office-selection > p, .office-selection > blockquote { flex-basis: 100%; }
+.office-selection blockquote { margin: 8px 0; max-height: 180px; overflow: auto; white-space: pre-wrap; }
+.office-frame > iframe { height: 100%; width: 100%; border: 0; }
 .chat-page:has(.office-frame) { grid-template-columns: 200px minmax(300px, 1fr) minmax(550px, 1.4fr); }
 .project-resources details { padding: 12px 0; border-bottom: 1px solid #e8e5de; }
 .project-member { display: flex; align-items: center; gap: 20px; }

@@ -28,7 +28,6 @@ class Settings:
     runtime: RuntimeSettings | None = None
     billing: BillingSettings | None = None
     files: FileStoreSettings | None = None
-    office_automation_enabled: bool = False
     office_origin: str = ""
     office_secret: str = field(default="", repr=False)
     brave_api_key: str = field(default="", repr=False)
@@ -49,7 +48,8 @@ class Settings:
         if self.office_origin:
             editor = urlsplit(self.office_origin)
             if (
-                editor.scheme != "https"
+                self.office_origin == self.public_origin
+                or editor.scheme != "https"
                 or not editor.hostname
                 or editor.path
                 or editor.query
@@ -58,7 +58,9 @@ class Settings:
                 or editor.password
                 or len(self.office_secret) < 32
             ):
-                raise ValueError("Document editor requires an HTTPS origin and a strong signing secret")
+                raise ValueError(
+                    "Document editor requires a separate HTTPS origin and a strong signing secret"
+                )
         if not self.database_url:
             raise ValueError("A database URL is required")
         if min(self.session_lifetime_seconds, self.invitation_lifetime_seconds, self.pilot_seats) < 1:
@@ -161,8 +163,6 @@ class Settings:
             runtime=runtime,
             billing=billing,
             files=files,
-            office_automation_enabled=os.environ.get("ALPENDATA_OFFICE_AUTOMATION_ENABLED", "").lower()
-            == "true",
             office_origin=os.environ.get("ALPENDATA_OFFICE_ORIGIN", ""),
             office_secret=os.environ.get("ALPENDATA_OFFICE_SECRET", ""),
             brave_api_key=os.environ.get("ALPENDATA_BRAVE_API_KEY", ""),

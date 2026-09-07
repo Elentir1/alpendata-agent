@@ -530,6 +530,9 @@ class EditorSession(OwnedMixin, Base):
     saved_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conflict_file_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     expires_at: Mapped[int] = mapped_column(Integer)
+    lock_value: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    lock_expires_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    conflict_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     __table_args__ = (
         ForeignKeyConstraint(
             ["file_id", "organization_id", "owner_id"],

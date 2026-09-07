@@ -11,7 +11,7 @@ Implémentation en cours du plan validé le 7 septembre 2026. Ce document décri
 - Projets privés, membres lecteurs ou contributeurs, notes et publications explicites. Une discussion classée dans un projet reste privée. Une publication textuelle ou documentaire produit une copie indépendante ; les identifiants personnels ne sont pas partagés.
 - Préférences et méthodes personnelles consultables, modifiables et supprimables. Une méthode peut être publiée volontairement dans un projet. Les anciennes notes personnelles ne deviennent pas des connaissances de projet.
 - Dépôt privé de PDF, DOCX, XLSX, PPTX, PNG, JPEG, CSV, Markdown et texte UTF-8 ; analyse dans un conteneur sans réseau ; références de pages, feuilles, diapositives ou lignes. Limites actuelles : 5 Mo par fichier et 500 Mo de versions par propriétaire. Les analyses incomplètes sont identifiées.
-- Versions documentaires immuables, restauration dans une nouvelle version, édition de texte, comparaison bornée des passages extraits et sessions ONLYOFFICE signées. La comparaison textuelle ne garantit pas une mise en page identique. L’importation d’un livrable dans une discussion est idempotente. Une édition concurrente ne remplace pas silencieusement une autre version. Les documents publiés sont accessibles selon les droits du projet ; une révocation bloque les prochains téléchargements et sauvegardes d’une session ouverte.
+- Versions documentaires immuables, restauration dans une nouvelle version, édition de texte, comparaison bornée des passages extraits et sessions Collabora WOPI signées. La comparaison textuelle ne garantit pas une mise en page identique. L’importation d’un livrable dans une discussion est idempotente. Une édition concurrente ne remplace pas silencieusement une autre version. Les documents publiés sont accessibles selon les droits du projet ; une révocation bloque les prochains téléchargements et sauvegardes d’une session ouverte.
 - Connexions Infomaniak personnelles : IMAP/SMTP, CalDAV, lecture et enregistrement kDrive WebDAV avec destination et remplacement explicitement validés. Les autorisations de calendrier et les propositions de rendez-vous utilisent un reçu persistant, un contrôle de version et un état incertain qui interdit la répétition automatique.
 - Le choix des premières tâches peut utiliser explicitement l’un des comptes personnels connectés. Les essais et occurrences conservent le fournisseur, le projet et les réglages de leur modèle.
 - Avis facultatifs sur les résultats (utile, à corriger, pas utile), agrégats administrateur sans contenu des échanges et mesure du délai jusqu’au premier résultat signalé utile. L’absence de résultat signalé après sept jours est un indicateur, pas une preuve d’abandon. Les anciens utilisateurs ne reçoivent pas de dates inventées.
@@ -26,8 +26,7 @@ Implémentation en cours du plan validé le 7 septembre 2026. Ce document décri
 | `ALPENDATA_WORKSPACE_ORGANIZATIONS` | Identifiants d’entreprises séparés par des virgules, ou `*`. Sélectionne la nouvelle interface ; vide conserve l’interface précédente. Ce réglage de livraison ne remplace pas les contrôles d’accès des API. |
 | `ALPENDATA_FILE_STORE_ROOT` | Répertoire privé local pour les objets, si Swift n’est pas configuré. Par défaut : sous-répertoire `objects` de l’état du moteur. |
 | `ALPENDATA_SWIFT_CONTAINER_URL`, `ALPENDATA_SWIFT_TOKEN` | Conteneur Swift HTTPS privé et jeton opérateur. La rotation du jeton doit être organisée avant exploitation. |
-| `ALPENDATA_OFFICE_ORIGIN`, `ALPENDATA_OFFICE_SECRET` | Origine HTTPS du serveur ONLYOFFICE Docs Developer et secret de signature d’au moins 32 caractères. La licence et le service doivent être disponibles avant activation. L’origine doit aussi être autorisée dans la configuration d’entrée HTTP. |
-| `ALPENDATA_OFFICE_AUTOMATION_ENABLED=true` | Affiche la capture de sélection de l’éditeur après acquisition de l’option Automation API et recette réelle. Aperçu puis insertion explicite dans le brouillon ; aucun remplacement automatique dans l’éditeur. |
+| `ALPENDATA_OFFICE_ORIGIN`, `ALPENDATA_OFFICE_SECRET` | Origine HTTPS du serveur Collabora CODE et secret de signature WOPI d’au moins 32 caractères, conservé uniquement dans l’API. Le service doit être disponible et son origine autorisée dans la configuration d’entrée HTTP avant activation. Voir [COLLABORA_CODE.md](COLLABORA_CODE.md). |
 | `ALPENDATA_BRAVE_API_KEY` | Active le service de recherche. Le choix est figé pour chaque nouvelle discussion et reste soumis aux sources autorisées. |
 | `ALPENDATA_VISION_MODEL` | Identifiant du modèle Mistral de lecture d’images. Une modification du modèle demande une nouvelle discussion ou variante compatible. |
 | `ALPENDATA_TRANSCRIPTION_MODEL` | Identifiant du modèle de transcription Mistral. Laisser vide masque la dictée. |
@@ -37,7 +36,7 @@ Ne jamais transmettre ces secrets au navigateur ou au conteneur Hermes. Les para
 
 ## Migration et exploitation
 
-Les migrations `0024` à `0039` ajoutent branches, événements, partages, versions, connexions Infomaniak et résultats des modèles spécialisés. Les préfixes système des conversations existantes restent inchangés. Une migration d’une base déjà remplie est testée ; les notes personnelles ne sont pas publiées par la migration.
+Les migrations `0024` à `0040` ajoutent branches, événements, partages, versions, connexions Infomaniak et résultats des modèles spécialisés. Les préfixes système des conversations existantes restent inchangés. Une migration d’une base déjà remplie est testée ; les notes personnelles ne sont pas publiées par la migration.
 
 Une sauvegarde cohérente inclut la base, les états des anciennes discussions, les états isolés des nouvelles et les objets référencés par les versions documentaires. La restauration désactive les sessions, connexions, routines et écritures incertaines. Les objets Swift restaurés sont matérialisés dans le stockage local isolé : configurer explicitement la destination de stockage avant une remise en service.
 
@@ -61,15 +60,17 @@ Validation du socle : 132 tests Linux réussis, aucun échec, six tests ignorés
 
 Restent notamment à terminer et valider avant de déclarer les quatre lots complets :
 
-- service ONLYOFFICE licencié, fichiers Office complexes, application des révisions à une sélection dans l’éditeur et recette de ses conflits réels ; la capture de sélection vers le brouillon est développée et testée avec son adaptateur, pas encore sur le serveur licencié ;
+- déploiement durable de Collabora CODE pour le pilote, fichiers Office métier complexes et application des révisions à une sélection dans l’éditeur ; ouverture/sauvegarde des trois formats, capture vers le brouillon et conflits Word sont validés sur le vrai CODE en QA ;
 - stockage objet Infomaniak configuré avec renouvellement d’accès opérationnel et vérification des ACL privées ; le stockage privé local du serveur sert actuellement de repli ;
 - écritures et invitations réelles d’agenda, messagerie et fichiers sur les deux comptes de test ; une création CalDAV avec participants exige l’organisateur découvert sur le compte, sans supposer que l’identifiant de synchronisation est une adresse e-mail ;
 - activation de Brave et recette Web réelle ; validation de la vision et dictée sur des cas métier FR/EN après leurs essais techniques réussis ;
 - règles de rétention et cycle de purge physique, en conservant les copies explicitement publiées et les preuves d’actions nécessaires ;
 - activation pilote puis recette des trois parcours du plan avec les coachs et AlpenData.
 
-La demande de devis est préparée dans [ONLYOFFICE_ACQUISITION.md](ONLYOFFICE_ACQUISITION.md). Les comptes de test sont disponibles côté propriétaire ; leur connexion et la recette suivent [RECETTE_PILOTE.md](RECETTE_PILOTE.md).
+L’acquisition ONLYOFFICE est suspendue au profit de [Collabora CODE](COLLABORA_CODE.md), choisi par le propriétaire et testé sur QA. Les comptes de test sont disponibles côté propriétaire ; leur connexion et la recette suivent [RECETTE_PILOTE.md](RECETTE_PILOTE.md).
 
 Le dernier contrôle de concurrence a également passé trois tests Linux : un document déposé est analysé par son vrai conteneur alors que les trois places de discussion sont occupées ; le cycle de démarrage et d’arrêt du service reste valide.
+
+Complément Collabora CODE : huit contrôles de découverte/configuration, les scénarios WOPI et de révocation projet, cinq contrôles de fichiers privés/migrations/restauration et deux recettes réelles de navigateur passent. Les recettes ouvrent et sauvegardent DOCX, XLSX et PPTX en anglais sur ordinateur et en français sur mobile, puis relisent les contenus. La sélection Word et la copie après modification concurrente sont vérifiées avec le vrai serveur Collabora. Le build et les 54 tests d’interface restent valides.
 
 Le code et les tests seuls ne justifient pas encore une activation générale.

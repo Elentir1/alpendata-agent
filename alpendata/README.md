@@ -4,7 +4,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 
 ## Refonte de l’espace de travail — 7 septembre 2026
 
-Le [suivi de la refonte](docs/ESPACE_TRAVAIL_2026_09.md) décrit les discussions, projets, documents, connecteurs et capacités d’agent développés dans cette branche, leur validation et les fonctions encore en attente d’activation. Il distingue le code livré de la production. La [recette pilote](docs/RECETTE_PILOTE.md) et la [préparation de l’acquisition ONLYOFFICE](docs/ONLYOFFICE_ACQUISITION.md) accompagnent cette livraison.
+Le [suivi de la refonte](docs/ESPACE_TRAVAIL_2026_09.md) décrit les discussions, projets, documents, connecteurs et capacités d’agent développés dans cette branche, leur validation et les fonctions encore en attente d’activation. Il distingue le code livré de la production. La [recette pilote](docs/RECETTE_PILOTE.md) et l’[intégration gratuite Collabora CODE](docs/COLLABORA_CODE.md) accompagnent cette livraison.
 
 ## Historique de la mise en place — 6 septembre 2026
 

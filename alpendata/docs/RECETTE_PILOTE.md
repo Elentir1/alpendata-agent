@@ -30,7 +30,7 @@ Attendu : messages et rendez-vous du bon compte, heure correcte, références co
 
 Demande : « Retrouve la demande d’Atelier Azur, prépare une réponse et un programme d’atelier en Word. Utilise seulement le projet et les sources d’Atelier Azur. »
 
-Attendu : contexte correspondant au bon client ; livrable téléchargeable ; création d’une version après correction ; original conservé. Après activation de l’éditeur licencié, corriger le document manuellement et vérifier la sauvegarde, puis tester une modification concurrente : aucune version ne doit être écrasée silencieusement.
+Attendu : contexte correspondant au bon client ; livrable téléchargeable ; création d’une version après correction ; original conservé. Après activation pilote de Collabora CODE, corriger le document manuellement et vérifier la sauvegarde, puis tester une modification concurrente : aucune version ne doit être écrasée silencieusement.
 
 Enregistrer la pièce jointe dans un dossier de test SharePoint ou kDrive choisi explicitement. Confirmer l’envoi vers une adresse de test. Vérifier côté fournisseur le contenu, la pièce jointe et l’absence de doublon. Une réponse réseau perdue doit laisser un reçu à vérifier, sans nouvel envoi automatique. Le suivi d’un état incertain se vérifie d’abord chez le fournisseur.
 
