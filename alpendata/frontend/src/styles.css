@@ -317,3 +317,28 @@ footer { border-top: 1px solid var(--line); min-height: 60px; padding: 18px clam
 .password-change { margin-top: 32px; max-width: 520px; }
 .password-change summary { cursor: pointer; }
 .password-change form { display: grid; gap: 12px; margin-top: 16px; }
+
+/* Personal projects and guided business discovery. */
+.project-panel { padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--line); }
+.project-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.project-heading .icon-button { border: 1px solid var(--line); border-radius: 8px; background: white; padding: .5rem; }
+.project-editor, .conversation-organizer form { display: grid; gap: .6rem; margin: 1rem 0; }
+.project-editor input, .project-editor textarea, .conversation-list input { width: 100%; min-width: 0; }
+.project-panel .subtle { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
+.archive-filter { display: flex; align-items: center; gap: .5rem; margin: .8rem 0 1.2rem; font-size: .85rem; }
+.archive-filter input[type=checkbox] { width: 17px; height: 17px; min-height: 17px; margin: 0; padding: 0; }
+.conversation-organizer { border-bottom: 1px solid var(--line); padding: 1rem 1.5rem; }
+.conversation-organizer h2 { font-size: 1.1rem; overflow-wrap: anywhere; margin: 0 0 .4rem; }
+.conversation-organizer + .configuration-note { margin: 1rem; }
+.discovery-fields { min-width: 0; padding: 1.2rem; margin: 1.5rem 0; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
+.discovery-fields legend { font-weight: 650; padding: 0 .4rem; }
+.discovery-fields select, .project-editor select, .conversation-organizer select { width: 100%; padding: .8rem; border: 1px solid var(--line); border-radius: 8px; background: white; color: inherit; }
+.business-ideas { margin: 1.5rem 0; }
+.idea-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.idea-card { display: flex; flex-direction: column; gap: .6rem; border: 1px solid var(--line); border-radius: 12px; padding: 1rem; text-align: left; background: white; white-space: normal; min-width: 0; }
+.idea-card:hover { border-color: var(--red); background: var(--soft); }
+.idea-card > span:last-child { font-size: .84rem; font-weight: 400; line-height: 1.55; color: var(--muted); }
+.idea-card strong { font-size: .95rem; }
+.idea-card .eyebrow { font-size: .66rem; }
+.business-ideas > .text-button { margin-top: .6rem; }
+@media (max-width: 850px) { .idea-grid { grid-template-columns: 1fr; } .conversation-organizer { padding: 1rem; } }

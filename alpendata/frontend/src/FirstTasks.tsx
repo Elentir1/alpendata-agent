@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { api, ApiError } from './api';
 import { Notice } from './feedback';
+import { BusinessIdeas } from './BusinessIdeas';
 import type { Language } from './locale';
 import { RoutineTrialAction } from './RoutineTrialAction';
 import type { EmailDelivery } from './RoutineTrialAction';
@@ -45,11 +46,12 @@ function failure(error: unknown, language: Language) {
   return messages[error.code] || c.error;
 }
 
-export function FirstTasks({ organizationId, language, initialFocus = '', onOpen }: { organizationId: string; language: Language; initialFocus?: string; onOpen: (id: string) => void }) {
+export function FirstTasks({ organizationId, language, sector, initialFocus = '', onOpen }: { organizationId: string; language: Language; sector?: string; initialFocus?: string; onOpen: (id: string) => void }) {
   const c = words[language];
   const [refinement, setRefinement] = useState(initialFocus), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
   const pending = useRef<{ request_id: string; language: Language; refinement: string } | null>(null), sending = useRef(false);
   return <section className="first-tasks"><h2>{c.title}</h2><p>{c.intro}</p>
+    <BusinessIdeas language={language} sector={sector} disabled={busy || !!pending.current} onChoose={setRefinement} />
     <form onSubmit={async event => {
       event.preventDefault(); if (sending.current) return; sending.current = true; setBusy(true); setError(null);
       const body = pending.current || { request_id: crypto.randomUUID(), language, refinement: refinement.trim() };

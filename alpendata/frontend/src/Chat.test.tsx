@@ -15,6 +15,7 @@ test('chat creates a conversation, sends a durable request and renders its retur
   let saved: { request_id: string; message: string } | null = null;
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
     expect(init?.credentials).toBe('same-origin');
+    if (path === base + '/projects') return json({ projects: [] });
     if (path === base) return json({ available: true, conversations: exists ? [conversation] : [], next_offset: null });
     if (path === base + '/conversations' && init?.method === 'POST') {
       expect(JSON.parse(String(init.body))).toEqual({ language: 'fr' }); exists = true; return json(conversation, 201);
@@ -45,6 +46,7 @@ test('an uncertain network send retries the same idempotency key', async () => {
   const sent: unknown[] = [];
   let completed: unknown = null;
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
+    if (path === base + '/projects') return json({ projects: [] });
     if (path === base) return json({ available: true, conversations: [conversation], next_offset: null });
     if (path.endsWith('/turns')) {
       sent.push(JSON.parse(String(init?.body)));
@@ -69,6 +71,7 @@ test('running work can be stopped and suspended users retain private history', a
   const turn = { id: 'turn-a', request_id: 'request-a', sequence: 1, message: 'My private task', response: null, status: 'running', cancel_requested: false };
   let cancelled = false;
   vi.stubGlobal('fetch', vi.fn(async (path: string) => {
+    if (path === base + '/projects') return json({ projects: [] });
     if (path === base) return json({ available: true, conversations: [conversation], next_offset: null });
     if (path.endsWith('/turn-a/cancel')) { cancelled = true; turn.status = 'cancelled'; turn.cancel_requested = true; return json(turn); }
     return json({ ...conversation, turns: [turn], next_after: null });

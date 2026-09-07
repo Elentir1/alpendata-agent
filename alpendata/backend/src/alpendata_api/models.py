@@ -255,10 +255,24 @@ class MicrosoftConnectionFlow(OwnedMixin, Base):
     __table_args__ = (ownership_constraint(),)
 
 
+class Project(OwnedMixin, Base):
+    __tablename__ = "alpendata_projects"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    name: Mapped[str] = mapped_column(String(160))
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ownership_constraint(),
+        UniqueConstraint("id", "organization_id", "owner_id"),
+    )
+
+
 class Conversation(OwnedMixin, Base):
     __tablename__ = "alpendata_conversations"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(160))
+    project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
     documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     tool_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
@@ -274,6 +288,11 @@ class Conversation(OwnedMixin, Base):
         ownership_constraint(),
         UniqueConstraint("id", "organization_id", "owner_id"),
         CheckConstraint("language IN ('fr', 'en')", name="ck_conversation_language"),
+        ForeignKeyConstraint(
+            ["project_id", "organization_id", "owner_id"],
+            ["alpendata_projects.id", "alpendata_projects.organization_id", "alpendata_projects.owner_id"],
+            name="fk_conversation_project_owner",
+        ),
     )
 
 

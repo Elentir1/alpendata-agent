@@ -16,6 +16,7 @@ Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous iden
 
 ## Documents
 
+- [Projets personnels, discussions et découverte des usages PME](docs/PROJETS_ET_DECOUVERTE.md)
 - [Publication et téléchargement de documents privés](docs/DOCUMENTS.md)
 
 - [Audit technique Hermes](docs/AUDIT_HERMES.md)

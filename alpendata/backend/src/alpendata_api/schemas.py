@@ -48,6 +48,9 @@ class OnboardingInput(Input):
     role: str = Field(default="", max_length=160)
     activity: str = Field(default="", max_length=500)
     needs: str = Field(default="", max_length=4000)
+    sector: str = Field(default="", max_length=160)
+    success: str = Field(default="", max_length=1000)
+    preferred_output: Literal["", "document", "spreadsheet", "presentation", "checklist"] = ""
 
 
 class ResourceInput(Input):

@@ -11,12 +11,14 @@ import { Documents } from './Documents';
 import { EmailDraft } from './EmailDraft';
 import type { EmailReceipt } from './EmailDraft';
 import type { DocumentReceipt } from './Documents';
+import { ProjectPanel, ConversationOrganizer } from './ProjectPanel';
+import type { Project } from './ProjectPanel';
 
-type Conversation = { id: string; title: string; language: Language; created_at: number };
+type Conversation = { id: string; title: string; language: Language; created_at: number; project_id?: string | null; archived?: boolean; model?: string };
 type Source = { kind: string; label: string; url: string | null };
 type Turn = { emails?: EmailReceipt[]; artifacts?: DocumentReceipt[]; sources?: Source[]; id: string; request_id: string; sequence: number; message: string; response: string | null; status: string; error_code: string | null; cancel_requested: boolean };
 type Detail = Conversation & { proposals?: Proposal[]; trials?: Trial[]; turns: Turn[]; next_after: number | null };
-type Listing = { available: boolean; conversations: Conversation[]; next_offset: number | null };
+type Listing = { available: boolean; model?: string; conversations: Conversation[]; next_offset: number | null };
 
 const words = {
   fr: {
@@ -55,16 +57,24 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
   const [detail, setDetail] = useState<Detail | null>(null), [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [revision, setRevision] = useState(0);
   const [uncertain, setUncertain] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]), [project, setProject] = useState('');
+  const [search, setSearch] = useState(''), [archived, setArchived] = useState(false), [listRevision, setListRevision] = useState(0);
+  const filters = new URLSearchParams();
+  if (project) filters.set('project', project);
+  if (search.trim()) filters.set('q', search.trim());
+  if (archived) filters.set('archived', 'true');
+  const listUrl = base + (filters.size ? '?' + filters : '');
   const sending = useRef(false), pending = useRef<{ request_id: string; message: string } | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => { setDraft(''); }, [selected]);
   useEffect(() => {
     let active = true;
-    api<Listing>(base).then(value => { if (active) { setListing(value); setSelected(initialConversationId || value.conversations[0]?.id || ''); } }).catch(cause => { if (active) setError(cause); });
-    return () => { active = false; };
-  }, [base, initialConversationId]);
+    const timer = setTimeout(() => api<Listing>(listUrl).then(value => { if (active) { setListing(value); setSelected(current => value.conversations.some(item => item.id === current) ? current : !project && !search && !archived && initialConversationId ? initialConversationId : value.conversations[0]?.id || ''); } }).catch(cause => { if (active) setError(cause); }), search ? 250 : 0);
+    return () => { active = false; clearTimeout(timer); };
+  }, [listUrl, initialConversationId, listRevision]);
   useEffect(() => {
-    if (!selected) return;
+    if (!selected) { setDetail(null); return; }
     let active = true, timer: ReturnType<typeof setTimeout>;
     let previous: Detail | null = null;
     setDetail(null);
@@ -119,34 +129,45 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
       else { pending.current = null; setUncertain(false); }
       throw cause;
     }
-    const list = await api<Listing>(base);
+    const list = await api<Listing>(listUrl);
     if (alive.current) setListing(list);
   }
   const running = detail?.turns.find(turn => ['queued', 'running'].includes(turn.status));
+  const modelChanged = !!detail?.model && !!listing?.model && detail.model !== listing.model;
   const messages: Record<string, string> = { routine_email_not_accepted: language === 'fr' ? 'L’envoi prévu n’a pas été confirmé comme accepté. Consultez son reçu avant toute autre action.' : 'The expected send was not confirmed as accepted. Review its receipt before taking further action.', routine_sources_missing: language === 'fr' ? 'Les sources nécessaires n’ont pas été consultées. Vérifiez vos connexions.' : 'The required sources were not consulted. Check your connections.', routine_occurrence_expired: language === 'fr' ? 'Le créneau de cette occurrence est dépassé.' : 'This occurrence is past its execution window.', chat_not_configured: c.unavailable, agent_already_running: c.busy, chat_model_changed: c.changed, agent_recovery_required: c.recovery, onboarding_required: language === 'fr' ? 'Complétez votre profil dans « Mon espace » pour commencer.' : 'Complete your profile in “My workspace” to get started.' };
   const failureText = error instanceof ApiError ? messages[error.code] || errorText(error, t) : error ? errorText(error, t) : '';
   const labels: Record<string, string> = { queued: c.queued, running: c.running, cancelled: c.cancelled, interrupted: c.interrupted, failed: c.failed };
   return <section className="chat-page">
     <div className="page-heading"><span className="eyebrow">AlpenData</span><h1>{c.title}</h1><p>{c.intro}</p></div>
+    {listing?.model && <p className="subtle">{language === 'fr' ? 'Modèle des nouvelles discussions' : 'Model for new conversations'} : <strong>{listing.model === 'zai-glm-5-2' ? 'GLM 5.2' : listing.model}</strong></p>}
     <Notice>{failureText}</Notice>
     {listing && !listing.available && <p className="configuration-note">{c.unavailable}</p>}
     {!licensed && <Notice>{t.license}</Notice>}
     <div className="chat-layout">
       <aside className="conversation-list" aria-label={c.conversations}>
+        <ProjectPanel base={base} language={language} projects={projects} onProjects={setProjects} selected={project} onSelect={value => { setProject(value); setDraft(''); }} disabled={busy || uncertain || !licensed} onError={setError} />
+        <label htmlFor="conversation-search">{language === 'fr' ? 'Rechercher une discussion' : 'Search conversations'}</label><input id="conversation-search" value={search} onChange={event => setSearch(event.target.value)} maxLength={160} disabled={busy || uncertain} type="search" />
+        <label className="archive-filter"><input type="checkbox" checked={archived} onChange={event => setArchived(event.target.checked)} disabled={busy || uncertain} />{language === 'fr' ? 'Discussions archivées' : 'Archived conversations'}</label>
         <button className="secondary" disabled={!listing?.available || !licensed || busy || uncertain} onClick={() => action(async () => {
-          const created = await api<Conversation>(base + '/conversations', { language });
+          const created = await api<Conversation>(base + '/conversations', { language, ...(project && project !== 'unfiled' ? { project_id: project } : {}) });
           if (!alive.current) return;
           setListing(value => value && { ...value, conversations: [created, ...value.conversations] });
-          setSelected(created.id); setDraft('');
+          setSelected(created.id); setDraft(''); setSearch(''); setArchived(false);
         })}><Plus size={17} />{c.new}</button>
         {listing?.conversations.map(item => <button key={item.id} className={`conversation-link ${selected === item.id ? 'selected' : ''}`} aria-current={selected === item.id ? 'page' : undefined} disabled={busy || uncertain} onClick={() => { setSelected(item.id); setDraft(''); setError(null); }}><MessageSquare size={16} /><span>{item.title}</span></button>)}
         {listing?.next_offset !== null && listing?.next_offset !== undefined && <button className="text-button" disabled={busy} onClick={() => action(async () => {
-          const next = await api<Listing>(`${base}?before=${listing.next_offset}`);
+          const next = await api<Listing>(`${listUrl}${filters.size ? '&' : '?'}before=${listing.next_offset}`);
           if (alive.current) setListing(value => value && { ...next, conversations: [...value.conversations, ...next.conversations] });
         })}>{c.more}</button>}
         <p className="chat-privacy">{c.private}</p>
       </aside>
       <div className="chat-conversation">
+        {detail && <ConversationOrganizer key={detail.id} title={detail.title} projectId={detail.project_id} archived={detail.archived} projects={projects} language={language} disabled={busy || uncertain || !!running || !licensed} onSave={async value => action(async () => {
+          const updated = await api<Conversation>(`${base}/conversations/${detail.id}`, value, 'PUT');
+          if (!alive.current) return;
+          setDetail(current => current && { ...current, ...updated }); setListRevision(value => value + 1);
+        })} />}
+        {detail?.model && listing?.model && detail.model !== listing.model && <p className="configuration-note">{c.changed}</p>}
         {selected && !detail ? <p role="status">{t.loading}</p> : !detail?.turns.length ? <div className="chat-empty"><MessageSquare size={32} /><h2>{c.empty}</h2><p>{c.emptyText}</p></div> : <div className="chat-messages" aria-label={c.conversations}>
           {detail.turns.map(turn => <div className="chat-turn" key={turn.id}>
             <article className="chat-message from-user"><strong>{c.you}</strong><p>{turn.message}</p></article>
@@ -165,12 +186,12 @@ export function Chat({ organizationId, licensed, language, t, initialConversatio
         {selected && <form className="chat-composer" onSubmit={event => { event.preventDefault(); void action(send); }}>
           {uncertain && <Notice>{c.uncertain}</Notice>}
           <label htmlFor="chat-message">{c.message}</label>
-          <textarea id="chat-message" value={draft} onChange={event => setDraft(event.target.value)} rows={3} maxLength={32000} placeholder={c.placeholder} disabled={busy || uncertain || !licensed || !listing?.available} />
+          <textarea id="chat-message" value={draft} onChange={event => setDraft(event.target.value)} rows={3} maxLength={32000} placeholder={c.placeholder} disabled={busy || uncertain || !licensed || !listing?.available || modelChanged} />
           <div className="chat-send-actions">
             {running && <button type="button" className="secondary" disabled={busy || running.cancel_requested} onClick={() => action(async () => {
               await api(`${base}/conversations/${selected}/turns/${running.id}/cancel`, {}); if (alive.current) setRevision(value => value + 1);
             })}><Square size={15} />{running.cancel_requested ? c.stopping : c.stop}</button>}
-            <button className="primary" disabled={busy || !!running || !draft.trim() || !licensed || !listing?.available || !detail}><Send size={17} />{busy ? c.sending : uncertain ? c.retrySend : c.send}</button>
+            <button className="primary" disabled={busy || !!running || !draft.trim() || !licensed || !listing?.available || !detail || modelChanged}><Send size={17} />{busy ? c.sending : uncertain ? c.retrySend : c.send}</button>
           </div>
         </form>}
       </div>

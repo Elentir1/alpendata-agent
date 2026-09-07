@@ -3,7 +3,7 @@ export interface Member extends Membership { display_name: string; version: numb
 export type Person = { id: string; display_name: string; memberships: Membership[]; password_account?: boolean };
 export type Company = { id: string; name: string };
 export type Options = { microsoft: boolean; invitation_email: boolean; password?: boolean };
-export type Onboarding = { language: 'fr' | 'en'; step: string; answers: { role?: string; activity?: string; needs?: string } };
+export type Onboarding = { language: 'fr' | 'en'; step: string; answers: { role?: string; activity?: string; needs?: string; sector?: string; success?: string; preferred_output?: '' | 'document' | 'spreadsheet' | 'presentation' | 'checklist' } };
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public retryAfter = 0) { super(code); }

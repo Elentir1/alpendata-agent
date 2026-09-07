@@ -15,6 +15,7 @@ import { PersonalAutonomy } from './PersonalAutonomy';
 import { PersonalMemory } from './PersonalMemory';
 import { Notifications } from './Notifications';
 import { CompanyResources } from './CompanyResources';
+import { BusinessIdeas, DiscoveryFields } from './BusinessIdeas';
 import { PasswordAccess, PasswordChange, readActivation, clearActivation } from './PasswordAccess';
 
 function Brand() {
@@ -86,11 +87,13 @@ function Steps({ t, current }: { t: Text; current: number }) {
 function PersonalWorkspace({ company, membership, language, t, onOpen }: { company: Company; membership: Membership; language: Language; t: Text; onOpen: (id: string) => void }) {
   const [profile, setProfile] = useState<Onboarding | null>(null), [loadError, setLoadError] = useState('');
   const [role, setRole] = useState(''), [activity, setActivity] = useState(''), [needs, setNeeds] = useState('');
+  const [sector, setSector] = useState(''), [success, setSuccess] = useState(''), [output, setOutput] = useState('');
   const [editing, setEditing] = useState(false); const action = useAction(t);
   useEffect(() => {
     let active = true;
     api<Onboarding>(`/api/organizations/${company.id}/onboarding`).then(data => {
       if (!active) return; setProfile(data); setRole(data.answers.role || ''); setActivity(data.answers.activity || ''); setNeeds(data.answers.needs || '');
+      setSector(data.answers.sector || ''); setSuccess(data.answers.success || ''); setOutput(data.answers.preferred_output || '');
     }).catch(error => { if (active) setLoadError(errorText(error, t)); });
     return () => { active = false; };
   }, [company.id]);
@@ -100,7 +103,7 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
   const saved = profile.step !== 'introduction' && !editing;
   async function save(event: FormEvent) {
     event.preventDefault(); await action.run(async () => {
-      const next = await api<Onboarding>(`/api/organizations/${company.id}/onboarding`, { language, role, activity, needs }, 'PUT');
+      const next = await api<Onboarding>(`/api/organizations/${company.id}/onboarding`, { language, role, activity, needs, sector, success, preferred_output: output }, 'PUT');
       setProfile(next); setEditing(false);
     });
   }
@@ -109,7 +112,7 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
       <div className="eyebrow">{company.name}</div>
       <h1>{saved ? t.nextTitle : t.profileTitle}</h1><p className="lead">{saved ? t.nextText : t.profileText}</p>
       {saved ? <><Notice success><CheckCircle2 size={18} />{t.saved}</Notice><button className="secondary" onClick={() => setEditing(true)}>{t.edit}</button>
-        <FirstTasks organizationId={company.id} language={language} initialFocus={profile.answers.needs || ''} onOpen={onOpen} />
+        <FirstTasks organizationId={company.id} language={language} sector={profile.answers.sector} initialFocus={profile.answers.needs || ''} onOpen={onOpen} />
         <Tools companyId={company.id} language={language} />
         <PersonalAutonomy organizationId={company.id} language={language} licensed={membership.licensed} />
         <PersonalMemory organizationId={company.id} language={language} />
@@ -118,6 +121,8 @@ function PersonalWorkspace({ company, membership, language, t, onOpen }: { compa
         <form onSubmit={save}>
           <label htmlFor="role">{t.role}</label><input id="role" value={role} onChange={e => setRole(e.target.value)} required maxLength={160} placeholder={t.roleExample} autoComplete="organization-title" />
           <label htmlFor="activity">{t.activity}</label><textarea id="activity" value={activity} onChange={e => setActivity(e.target.value)} maxLength={500} rows={2} placeholder={t.activityExample} />
+          <DiscoveryFields language={language} sector={sector} success={success} output={output} onSector={setSector} onSuccess={setSuccess} onOutput={setOutput} />
+          <BusinessIdeas language={language} sector={sector} disabled={action.busy} onChoose={setNeeds} />
           <label htmlFor="needs">{t.needs}</label><textarea id="needs" value={needs} onChange={e => setNeeds(e.target.value)} required maxLength={4000} rows={3} placeholder={t.needsExample} />
           <Notice>{action.error}</Notice><button className="primary" disabled={action.busy}>{action.busy ? t.saving : t.continue}<ArrowRight size={18} /></button>
         </form>}

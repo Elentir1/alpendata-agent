@@ -51,12 +51,15 @@ test('personal onboarding keeps unsaved answers when language changes and persis
   vi.stubGlobal('fetch', fetcher);
   const view = render(<App />);
   await userEvent.type(await screen.findByLabelText('Quel est votre rôle ?'), 'Coach indépendant');
+  await userEvent.selectOptions(screen.getByLabelText('Votre priorité du moment'), 'coaching');
+  await userEvent.type(screen.getByLabelText('Pour quel public et quel objectif préparez-vous vos séances ?'), 'Atelier de 60 minutes pour une PME');
+  await userEvent.selectOptions(screen.getByLabelText('Le format qui vous serait le plus utile'), 'presentation');
   await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Langue' }), 'en');
   expect((screen.getByLabelText('What is your role?') as HTMLInputElement).value).toBe('Coach indépendant');
   await userEvent.type(screen.getByLabelText('What would you like to simplify first?'), 'Prepare my client meetings');
   await userEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
   await screen.findByRole('heading', { name: 'Let’s get your first result.' });
-  expect(saved).toEqual({ language: 'en', role: 'Coach indépendant', activity: '', needs: 'Prepare my client meetings' });
+  expect(saved).toEqual({ language: 'en', role: 'Coach indépendant', activity: '', needs: 'Prepare my client meetings', sector: 'coaching', success: 'Atelier de 60 minutes pour une PME', preferred_output: 'presentation' });
   expect((screen.getByLabelText('What would you like to start with?') as HTMLTextAreaElement).value).toBe('Prepare my client meetings');
   await userEvent.type(screen.getByLabelText('What would you like to start with?'), ' tomorrow');
   await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'fr');
