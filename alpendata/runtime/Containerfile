@@ -11,6 +11,7 @@ RUN uv sync --frozen --no-dev --no-default-groups --no-install-project
 COPY . .
 RUN uv --no-config pip install --python /opt/venv/bin/python --require-hashes -r alpendata/runtime/documents.lock
 RUN uv pip install --python /opt/venv/bin/python --no-deps -e . \
+    && chmod -R go+rX /opt/hermes \
     && useradd --uid 1000 --no-create-home --home-dir /state alpendata
 
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin HOME=/state HERMES_HOME=/state/.hermes

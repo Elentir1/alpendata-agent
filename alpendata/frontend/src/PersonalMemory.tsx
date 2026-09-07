@@ -84,7 +84,7 @@ function MemoryGroup({ target, value, path, language, accept }: { target: Target
   </section>;
 }
 
-export function PersonalMemory({ organizationId, language }: { organizationId: string; language: Language }) {
+export function PersonalMemory({ organizationId, language, expanded = false }: { organizationId: string; language: Language; expanded?: boolean }) {
   const t = words[language], path = `/api/organizations/${organizationId}/memory`;
   const [data, setData] = useState<Memories | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
   const loading = useRef(false);
@@ -94,7 +94,7 @@ export function PersonalMemory({ organizationId, language }: { organizationId: s
     try { setData(await api<Memories>(path)); } catch (cause) { setError(cause); }
     finally { loading.current = false; setBusy(false); }
   }
-  return <details className="personal-memory" onToggle={event => { if (event.currentTarget.open && !data && !error) void load(); }}>
+  return <details open={expanded || undefined} className="personal-memory" onToggle={event => { if (event.currentTarget.open && !data && !error) void load(); }}>
     <summary>{t.title}</summary><p>{t.intro}</p><p>{t.effect}</p>
     {busy && <p role="status">{t.loading}</p>}
     {!!error && <><Notice>{errorText(error, language)}</Notice><button className="secondary" disabled={busy} onClick={() => void load()}>{t.reload}</button></>}

@@ -157,6 +157,7 @@ export default function App() {
     query.delete('billing'); history.replaceState(null, '', location.pathname + (query.size ? '?' + query : '') + location.hash);
     return 'team';
   }), [loading, setLoading] = useState(true), [error, setError] = useState('');
+  useEffect(() => { if (section === 'chat') { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } }, [section]);
   const generation = useRef(0); const signOutAction = useAction(t);
   async function refresh(preferred?: string) {
     const request = ++generation.current; setError('');
@@ -177,7 +178,12 @@ export default function App() {
   useEffect(() => { document.documentElement.lang = language === 'fr' ? 'fr-CH' : 'en'; localStorage.setItem('alpendata.language', language); document.title = `AlpenData · ${t.workspace}`; }, [language, t.workspace]);
   const company = companies.find(item => item.id === companyId);
   const membership = user?.memberships.find(item => item.organization_id === companyId);
-  return <div className={`app ${user && company && !pendingInvitation ? 'with-sidebar' : ''}`}>
+  const navigation = user && company && membership && !pendingInvitation ? <>
+      <label className="company-selector"><span>{t.company}</span><select aria-label={t.company} value={companyId} onChange={e => { setCompanyId(e.target.value); setChatId(''); setSection('personal'); }}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <nav aria-label={t.workspace}><button className={section === 'personal' ? 'selected' : ''} onClick={() => setSection('personal')}><UserRound size={19} />{t.workspace}</button><button className={section === 'chat' ? 'selected' : ''} onClick={() => setSection('chat')}><MessageSquare size={19} />Assistant</button><button className={section === 'schedules' ? 'selected' : ''} onClick={() => setSection('schedules')}><CalendarClock size={19} />{language === 'fr' ? 'Automatisations' : 'Automations'}</button>{membership.role === 'admin' && <button className={section === 'team' ? 'selected' : ''} onClick={() => setSection('team')}><UsersRound size={19} />{t.company}</button>}</nav>
+      <div className="sidebar-person"><div className="avatar"><UserRound size={19} /></div><div><strong>{user.display_name}</strong><span>{t.personal}</span></div></div>
+    </> : null;
+  return <div className={`app ${user && company && !pendingInvitation ? `with-sidebar ${section === 'chat' ? 'chat-mode' : ''}` : ''}`}>
     <header className="topbar"><Brand /><div className="top-actions">
       {user && company && membership && !pendingInvitation && <Notifications key={`${company.id}:${user.id}`} organizationId={company.id} language={language} onOpen={id => { setChatId(id); setSection('chat'); }} onManage={() => setSection('schedules')} />}
       <label className="language-select"><Globe2 size={17} /><span className="sr-only">{t.language}</span><select aria-label={t.language} value={language} onChange={e => setLanguage(e.target.value as Language)}><option value="fr">FR</option><option value="en">EN</option></select></label>
@@ -185,19 +191,15 @@ export default function App() {
         await api('/api/logout', {}).catch(cause => { if (!(cause instanceof ApiError && cause.status === 401)) throw cause; }); setChatId(''); setSection('personal'); await refresh();
       })}><LogOut size={19} /><span>{pendingInvitation ? t.anotherAccount : t.signOut}</span></button>}
     </div></header>
-    {user && company && membership && !pendingInvitation && <aside className="sidebar">
-      <label className="company-selector"><span>{t.company}</span><select aria-label={t.company} value={companyId} onChange={e => { setCompanyId(e.target.value); setChatId(''); setSection('personal'); }}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <nav aria-label={t.workspace}><button className={section === 'personal' ? 'selected' : ''} onClick={() => setSection('personal')}><UserRound size={19} />{t.workspace}</button><button className={section === 'chat' ? 'selected' : ''} onClick={() => setSection('chat')}><MessageSquare size={19} />Assistant</button><button className={section === 'schedules' ? 'selected' : ''} onClick={() => setSection('schedules')}><CalendarClock size={19} />{language === 'fr' ? 'Automatisations' : 'Automations'}</button>{membership.role === 'admin' && <button className={section === 'team' ? 'selected' : ''} onClick={() => setSection('team')}><UsersRound size={19} />{t.company}</button>}</nav>
-      <div className="sidebar-person"><div className="avatar"><UserRound size={19} /></div><div><strong>{user.display_name}</strong><span>{t.personal}</span></div></div>
-    </aside>}
+    {navigation && section !== 'chat' && <aside className="sidebar">{navigation}</aside>}
     <main id="main"><Notice>{signOutAction.error}</Notice>
       {signinInterrupted && <Notice>{t.signInFailed}</Notice>}
       {connectionInterrupted && <Notice>{t.connectionFailed}</Notice>}
       {activation ? <section className="form-page"><PasswordAccess language={language} activation={activation} done={async () => { clearActivation(); setActivation(null); await refresh(); }} /><button className="text-button" onClick={() => { clearActivation(); setActivation(null); }}>{language === 'fr' ? 'Revenir à la connexion' : 'Back to sign in'}</button></section> : loading ? <p className="loading" role="status">{t.loading}</p> : error ? <section className="form-page"><Notice>{error}</Notice><button className="primary" onClick={() => refresh()}>{t.retry}</button></section> : !user && options ? <SignIn t={t} options={options} language={language} done={refresh} /> : user && options ?
         pendingInvitation ? <Join invitation={pendingInvitation} t={t} language={language} options={options} user={user} done={refresh} /> : location.pathname === '/join' ? <section className="form-page"><Notice>{t.expired}</Notice></section> : !company || !membership ? <CreateCompany t={t} done={refresh} /> :
-          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={`${company.id}:${user.id}`} company={company} user={user} t={t} language={language} refreshAccount={() => refresh(company.id)} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
+          section === 'schedules' ? <Schedules key={`${company.id}:${user.id}`} organizationId={company.id} licensed={membership.licensed} language={language} t={t} onOpen={id => { setChatId(id); setSection('chat'); }} /> : section === 'chat' ? <Chat navigation={navigation} companyName={company.name} onManage={() => setSection('schedules')} key={`${company.id}:${user.id}`} initialConversationId={chatId} organizationId={company.id} licensed={membership.licensed} language={language} t={t} /> : section === 'team' && membership.role === 'admin' ? <Team key={`${company.id}:${user.id}`} company={company} user={user} t={t} language={language} refreshAccount={() => refresh(company.id)} /> : <PersonalWorkspace key={company.id} onOpen={id => { setChatId(id); setSection('chat'); }} company={company} membership={membership} language={language} t={t} />
         : null}
-      {user?.password_account && !activation && <PasswordChange key={user.id} language={language} />}
+      {user?.password_account && !activation && section === 'personal' && <PasswordChange key={user.id} language={language} />}
     </main>
     <footer><span>AlpenData</span><a href="https://www.alpendata.ch/contact">{t.support}</a></footer>
   </div>;

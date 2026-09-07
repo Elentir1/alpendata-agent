@@ -72,3 +72,7 @@ L'opération serveur `memory` passe par le contrôleur habituel et son verrou du
 ## Envoi personnel optionnel
 
 Les conversations de révision `4` peuvent recevoir `alpendata_send_email` uniquement lorsque leur instantané autorise cette capacité. Le broker revérifie les règles communes, le choix personnel et la connexion Microsoft ; le runtime ne reçoit aucun jeton Microsoft. Le message doit avoir été préparé pendant le tour courant. Les conversations de proposition d’onboarding ne disposent jamais de cet outil. Voir [Autonomie personnelle](../docs/AUTONOMIE.md).
+
+## Méthodes personnelles et travail en plusieurs étapes
+
+La révision 6 active les outils natifs Hermes `skills` et `todo` dans les nouvelles discussions interactives. Les méthodes restent dans le volume du propriétaire. Les anciennes discussions et les exécutions planifiées conservent leurs outils. Le [nouvel espace agent](../docs/ESPACE_AGENT.md) décrit les usages, les contrôles et les fonctions restant à raccorder.

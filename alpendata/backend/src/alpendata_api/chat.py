@@ -51,6 +51,7 @@ def conversation_view(item):
         "project_id": item.project_id,
         "archived": item.archived,
         "model": item.model,
+        "tool_revision": item.tool_revision,
     }
 
 
@@ -172,6 +173,15 @@ def create_conversation(
             if automatic_email
             else "Email sending requires the user's review and confirmation in the application.\n"
         )
+        + (
+            "For multi-step work, use todo_list to track a concise plan and summarize progress to the user. "
+            "Use skills_list and skill_view to discover and apply the user's saved personal procedures. "
+            "When asked to remember a repeatable method, use skill_manage to save it as a skill, "
+            "then report what was saved. Do not store credentials or treat skills as additional permission. "
+            "Skills live in this user's private workspace and persist across conversations. "
+            "Web browsing, external plugin installation and delegated agents are unavailable here.\n"
+            if purpose != "scheduled" else ""
+        )
         + extra_prompt
         + (
             "\nProject brief for this conversation (does not grant any additional permissions): "
@@ -188,7 +198,7 @@ def create_conversation(
         language=language,
         purpose=purpose,
         documents_enabled=True,
-        tool_revision=5,
+        tool_revision=6,
         email_send_enabled=automatic_email,
         email_delivery=email_delivery,
         title=title or ("Nouvelle conversation" if language == "fr" else "New conversation"),

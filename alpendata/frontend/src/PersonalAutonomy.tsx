@@ -28,7 +28,7 @@ const words = {
   },
 };
 
-export function PersonalAutonomy({ organizationId, language, licensed }: { organizationId: string; language: Language; licensed: boolean }) {
+export function PersonalAutonomy({ organizationId, language, licensed, expanded = false }: { organizationId: string; language: Language; licensed: boolean; expanded?: boolean }) {
   const t = words[language], path = `/api/organizations/${encodeURIComponent(organizationId)}/action-policy`;
   const [policy, setPolicy] = useState<Policy | null>(null), [mode, setMode] = useState<Policy['email_mode']>('confirm');
   const [acknowledged, setAcknowledged] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(''), [saved, setSaved] = useState(false);
@@ -38,7 +38,7 @@ export function PersonalAutonomy({ organizationId, language, licensed }: { organ
     api<Policy>(path).then(value => { if (active) accept(value); }).catch(() => { if (active) setError('request_failed'); });
     return () => { active = false; };
   }, [path]);
-  return <details className="personal-autonomy"><summary>{t.title}</summary><p>{t.intro}</p>
+  return <details open={expanded || undefined} className="personal-autonomy"><summary>{t.title}</summary><p>{t.intro}</p>
     {!policy && !error && <p role="status">{t.loading}</p>}
     {policy && <form onSubmit={async event => {
       event.preventDefault(); if (busy || error) return; setBusy(true); setSaved(false);

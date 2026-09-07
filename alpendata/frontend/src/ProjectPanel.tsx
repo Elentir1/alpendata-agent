@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Folder, Plus } from 'lucide-react';
 import { api } from './api';
+import { ProjectDialog } from './ProjectDialog';
 import type { Language } from './locale';
 
 export interface Project { id: string; name: string; instructions: string }
@@ -19,7 +20,7 @@ export function ProjectPanel({ base, language, projects, onProjects, selected, o
     <div className="project-heading"><strong>{fr ? 'Mes projets' : 'My projects'}</strong><button className="icon-button" aria-label={fr ? 'Créer un projet' : 'Create a project'} disabled={disabled || saving} onClick={() => edit()}><Plus size={17} /></button></div>
     {[{ id: '', name: fr ? 'Toutes les discussions' : 'All conversations' }, { id: 'unfiled', name: fr ? 'Sans projet' : 'Unfiled' }, ...projects].map(item => <button className={`conversation-link ${selected === item.id ? 'selected' : ''}`} key={item.id} aria-pressed={selected === item.id} disabled={disabled || saving} onClick={() => onSelect(item.id)}><Folder size={15} /><span>{item.name}</span></button>)}
     {current && <><p className="subtle">{current.instructions || (fr ? 'Ajoutez le contexte et les consignes de ce projet.' : 'Add context and instructions for this project.')}</p><button className="text-button" disabled={disabled || saving} onClick={() => edit(current)}>{fr ? 'Modifier le projet' : 'Edit project'}</button></>}
-    {editing !== null && <form className="project-editor" onSubmit={async event => {
+    {editing !== null && <ProjectDialog language={language} disabled={saving} close={() => setEditing(null)}><form className="project-editor" onSubmit={async event => {
       event.preventDefault(); if (saving) return; setSaving(true);
       try {
         const item = await api<Project>(base + '/projects' + (editing ? '/' + editing : ''), { name, instructions }, editing ? 'PUT' : 'POST');
@@ -31,7 +32,7 @@ export function ProjectPanel({ base, language, projects, onProjects, selected, o
       <label htmlFor="project-instructions">{fr ? 'Contexte et consignes' : 'Context and instructions'}</label><textarea id="project-instructions" value={instructions} onChange={event => setInstructions(event.target.value)} maxLength={8000} rows={4} placeholder={fr ? 'Objectif, public, ton souhaité, points à respecter…' : 'Goal, audience, tone, requirements…'} />
       <p className="subtle">{fr ? 'Ces consignes accompagnent les nouvelles discussions du projet. Les discussions existantes conservent leur contexte initial. Le projet reste personnel.' : 'These instructions apply to new project conversations. Existing conversations keep their original context. This project stays personal.'}</p>
       <button className="primary" disabled={saving || !name.trim()}>{fr ? 'Enregistrer le projet' : 'Save project'}</button><button type="button" className="text-button" disabled={saving} onClick={() => setEditing(null)}>{fr ? 'Annuler' : 'Cancel'}</button>
-    </form>}
+    </form></ProjectDialog>}
   </div>;
 }
 
@@ -45,6 +46,7 @@ export function ConversationOrganizer({ title, projectId, archived, projects, la
       <label htmlFor="conversation-title">{fr ? 'Titre de la discussion' : 'Conversation title'}</label><input id="conversation-title" value={name} onChange={event => setName(event.target.value)} required maxLength={160} />
       <label htmlFor="conversation-project">{fr ? 'Classer dans un projet' : 'Move to project'}</label><select id="conversation-project" value={project} onChange={event => setProject(event.target.value)}><option value="">{fr ? 'Sans projet' : 'Unfiled'}</option>{projects.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select>
       <p className="subtle">{fr ? 'Le classement ne modifie pas le contexte des messages déjà échangés.' : 'Moving a conversation does not change its existing message context.'}</p>
+      <button type="button" className="text-button" onClick={() => setEditing(false)}>{fr ? 'Fermer' : 'Close'}</button>
       <button className="secondary" disabled={disabled || !name.trim()}>{fr ? 'Enregistrer' : 'Save'}</button>
       <button type="button" className="text-button" disabled={disabled} onClick={() => onSave({ title, project_id: projectId || null, archived: !archived })}>{fr ? archived ? 'Restaurer la discussion' : 'Archiver la discussion' : archived ? 'Restore conversation' : 'Archive conversation'}</button>
     </form>}

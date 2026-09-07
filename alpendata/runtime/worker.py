@@ -294,6 +294,7 @@ def run(channel, request):
         enabled_toolsets=(
             ["file", "terminal"] if scheduled else ["memory", "file", "terminal"]
         )
+        + (["skills", "todo"] if not scheduled and request.get("tool_revision", 1) >= 6 else [])
         + (["alpendata"] if capabilities or request.get("documents_enabled") else []),
         max_iterations=20,
         run_budget_seconds=180 if scheduled else 240,

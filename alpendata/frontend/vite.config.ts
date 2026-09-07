@@ -8,5 +8,5 @@ if (Boolean(cert) !== Boolean(key)) throw new Error('Set both development TLS ce
 export default defineConfig({
   plugins: [react()],
   server: { proxy: { '/api': 'http://127.0.0.1:8180' }, ...(cert && key ? { https: { cert: readFileSync(cert), key: readFileSync(key) } } : {}) },
-  test: { environment: 'jsdom', environmentOptions: { jsdom: { url: 'https://alpendata.example.test/' } }, globals: true, restoreMocks: true },
+  test: { include: ['src/**/*.test.{ts,tsx}'], environment: 'jsdom', environmentOptions: { jsdom: { url: 'https://alpendata.example.test/' } }, globals: true, restoreMocks: true },
 });
