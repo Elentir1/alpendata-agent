@@ -5,7 +5,13 @@ from fastapi import HTTPException
 from .models import OrganizationPolicy
 
 DEFAULT_CAPABILITIES = ("mail", "calendar", "files", "files_write")
-CAPABILITIES = (*DEFAULT_CAPABILITIES, "mail_send", "mail_autonomous")
+CAPABILITIES = (
+    *DEFAULT_CAPABILITIES,
+    "mail_send",
+    "mail_autonomous",
+    "calendar_write",
+    "calendar_autonomous",
+)
 
 
 def allowed_capabilities(db, organization_id):

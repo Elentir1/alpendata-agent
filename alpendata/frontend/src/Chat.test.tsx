@@ -18,7 +18,7 @@ test('chat creates a conversation, sends a durable request and renders its retur
     if (path === base + '/projects') return json({ projects: [] });
     if (path === base) return json({ available: true, conversations: exists ? [conversation] : [], next_offset: null });
     if (path === base + '/conversations' && init?.method === 'POST') {
-      expect(JSON.parse(String(init.body))).toEqual({ language: 'fr' }); exists = true; return json(conversation, 201);
+      expect(JSON.parse(String(init.body))).toMatchObject({ language: 'fr', work_settings: { autonomy: 'confirm' } }); exists = true; return json(conversation, 201);
     }
     if (path === base + '/conversations/personal-chat/turns') {
       saved = JSON.parse(String(init?.body));

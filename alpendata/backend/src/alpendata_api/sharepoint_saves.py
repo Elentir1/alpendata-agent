@@ -56,6 +56,13 @@ def save_view(item):
     return result
 
 
+def personal_save(db, organization_id, owner_id, save_id, provider="microsoft"):
+    item = owned(db, SharePointSave, organization_id, owner_id, save_id)
+    if item.provider != provider:
+        raise HTTPException(404, "resource_not_found")
+    return item
+
+
 def sharepoint_router(settings, factory, provider=None, graph=None):
     router = APIRouter()
     microsoft = MicrosoftReader(settings, factory, provider, graph)
@@ -95,6 +102,7 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
                         select(SharePointSave)
                         .where(
                             SharePointSave.organization_id == organization_id,
+                            SharePointSave.provider == "microsoft",
                             SharePointSave.owner_id == user.id,
                             SharePointSave.artifact_id == artifact_id,
                         )
@@ -126,6 +134,7 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
             unresolved = db.scalar(
                 select(SharePointSave).where(
                     SharePointSave.organization_id == organization_id,
+                    SharePointSave.provider == "microsoft",
                     SharePointSave.owner_id == user.id,
                     SharePointSave.drive_id == body.drive_id,
                     SharePointSave.folder_id == body.item_id,
@@ -156,13 +165,13 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
     def status(organization_id: str, save_id: str, request: Request):
         with factory.begin() as db:
             user = actor(db, request, organization_id, licensed=False)
-            return save_view(owned(db, SharePointSave, organization_id, user.id, save_id))
+            return save_view(personal_save(db, organization_id, user.id, save_id))
 
     @router.post(PREFIX + "/saves/{save_id}/confirm")
     def confirm(organization_id: str, save_id: str, request: Request, body: ConfirmInput):
         with factory.begin() as db:
             user = actor(db, request, organization_id)
-            item = owned(db, SharePointSave, organization_id, user.id, save_id)
+            item = personal_save(db, organization_id, user.id, save_id)
             if item.status != "review":
                 return save_view(item)
             if item.expires_at <= now():
@@ -173,6 +182,7 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
             unresolved = db.scalar(
                 select(SharePointSave.id).where(
                     SharePointSave.organization_id == organization_id,
+                    SharePointSave.provider == "microsoft",
                     SharePointSave.owner_id == user.id,
                     SharePointSave.drive_id == item.drive_id,
                     SharePointSave.folder_id == item.folder_id,
@@ -208,13 +218,13 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
             receipt.finished_at = now()
         with factory.begin() as db:
             user = actor(db, request, organization_id, licensed=False)
-            return save_view(owned(db, SharePointSave, organization_id, user.id, save_id))
+            return save_view(personal_save(db, organization_id, user.id, save_id))
 
     @router.post(PREFIX + "/saves/{save_id}/verify")
     def verify(organization_id: str, save_id: str, request: Request):
         with factory.begin() as db:
             user = actor(db, request, organization_id)
-            item = owned(db, SharePointSave, organization_id, user.id, save_id)
+            item = personal_save(db, organization_id, user.id, save_id)
             if save_view(item)["status"] != "unknown":
                 return save_view(item)
             artifact = owned(db, Artifact, organization_id, user.id, item.artifact_id)
@@ -244,7 +254,7 @@ def sharepoint_router(settings, factory, provider=None, graph=None):
         )
         with factory.begin() as db:
             user = actor(db, request, organization_id)
-            receipt = owned(db, SharePointSave, organization_id, user.id, save_id)
+            receipt = personal_save(db, organization_id, user.id, save_id)
             if save_view(receipt)["status"] == "unknown":
                 receipt.status, receipt.result, receipt.error_code = "completed", result, None
                 receipt.finished_at = now()

@@ -86,14 +86,14 @@ class GraphReader:
         except (requests.RequestException, ValueError):
             raise GraphError(502, "microsoft_read_failed") from None
 
-    def mail(self, token):
+    def mail(self, token, query=""):
         data = self.request(
             token,
             "GET",
             "/me/messages",
             params={
                 "$top": 10,
-                "$orderby": "receivedDateTime desc",
+                **({"$search": json.dumps(query)} if query else {"$orderby": "receivedDateTime desc"}),
                 "$select": "id,subject,from,receivedDateTime,bodyPreview,webLink,isRead",
             },
         )

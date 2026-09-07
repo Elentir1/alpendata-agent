@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import stat
@@ -15,7 +16,8 @@ from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from .database import database_factory
-from .models import Base, ChatTurn, EmailAttempt, Membership, SharePointSave, now
+from .file_store import FileStore, FileStoreSettings
+from .models import Base, ChatTurn, Conversation, EmailAttempt, FileVersion, Membership, SharePointSave, now
 from .runtime import ContainerRuntime, RuntimeFailure, RuntimeSettings, container_name
 from .runtime_recovery import RuntimeRecovery
 
@@ -83,7 +85,19 @@ def safe_member(info):
     if name.is_absolute() or ".." in name.parts or len(name.parts) < 2:
         raise BackupFailure("backup_state_path_invalid")
     try:
-        if str(UUID(name.parts[0])) != name.parts[0] or str(UUID(name.parts[1])) != name.parts[1]:
+        offset = 1 if name.parts[0] in ("scoped", "objects") else 0
+        boundary = 4 if name.parts[0] == "scoped" else 3 if name.parts[0] == "objects" else 2
+        if len(name.parts) < boundary:
+            raise ValueError
+        for part in name.parts[offset:boundary]:
+            if str(UUID(part)) != part:
+                raise ValueError
+        if name.parts[0] == "objects" and (
+            len(name.parts) != 4
+            or not info.isfile()
+            or len(name.parts[3]) != 64
+            or any(c not in "0123456789abcdef" for c in name.parts[3])
+        ):
             raise ValueError
     except ValueError:
         raise BackupFailure("backup_state_path_invalid") from None
@@ -91,7 +105,7 @@ def safe_member(info):
         raise BackupFailure("backup_state_type_unsupported")
     if info.issym():
         target = PurePosixPath(info.linkname)
-        depth = len(name.parts) - 3
+        depth = len(name.parts) - boundary - 1
         if target.is_absolute():
             raise BackupFailure("backup_state_link_unsafe")
         for part in target.parts:
@@ -105,7 +119,7 @@ def safe_member(info):
     return info
 
 
-def write_states(archive, states):
+def write_states(archive, states, objects=(), store=None):
     with tarfile.open(archive, "w", dereference=False) as bundle:
         for organization, owner, state in states:
             for directory, folders, files in os.walk(state, followlinks=False):
@@ -123,9 +137,14 @@ def write_states(archive, states):
                             bundle.addfile(info, content)
                     else:
                         bundle.addfile(info)
+        for key in objects:
+            data = store.get(key)
+            info = tarfile.TarInfo("objects/" + key)
+            info.size, info.mode = len(data), 0o600
+            bundle.addfile(safe_member(info), io.BytesIO(data))
 
 
-def create_bundle(engine, runtime, destination, binaries, revision):
+def create_bundle(engine, runtime, destination, binaries, revision, *, store=None):
     if engine.dialect.name != "postgresql":
         raise BackupFailure("backup_requires_postgresql")
     if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
@@ -170,8 +189,34 @@ def create_bundle(engine, runtime, destination, binaries, revision):
                 raise BackupFailure("backup_container_present")
             states.append((organization, owner, state))
         known = {(organization, owner) for organization, owner in members}
+        scoped = connection.execute(
+            select(Conversation.organization_id, Conversation.owner_id, Conversation.id).where(
+                Conversation.tool_revision >= 7
+            )
+        ).all()
+        for organization, owner, identifier in scoped:
+            state = locks.enter_context(runtime.owner_state(organization, owner, identifier))
+            if recovery.snapshot(container_name(organization, owner, identifier), state) is not None:
+                raise BackupFailure("backup_container_present")
+            states.append(("scoped/" + organization, owner + "/" + identifier, state))
+        scoped_root = root / "scoped"
+        known_scopes = set(scoped)
+        if scoped_root.exists():
+            if scoped_root.is_symlink() or not scoped_root.is_dir():
+                raise BackupFailure("backup_state_layout_invalid")
+            for organization in scoped_root.iterdir():
+                if organization.name == "locks":
+                    continue
+                if organization.is_symlink() or not organization.is_dir():
+                    raise BackupFailure("backup_state_layout_invalid")
+                for owner in organization.iterdir():
+                    if owner.is_symlink() or not owner.is_dir():
+                        raise BackupFailure("backup_state_layout_invalid")
+                    for scope in owner.iterdir():
+                        if (organization.name, owner.name, scope.name) not in known_scopes:
+                            raise BackupFailure("backup_state_owner_unknown")
         for organization in root.iterdir():
-            if organization.name == "locks":
+            if organization.name in ("locks", "scoped", "objects"):
                 continue
             if not organization.is_dir() or organization.is_symlink():
                 raise BackupFailure("backup_state_layout_invalid")
@@ -192,8 +237,12 @@ def create_bundle(engine, runtime, destination, binaries, revision):
                 "--file=" + str(destination / "database.dump"),
             ],
         )
-        write_states(destination / "states.tar", states)
-        receipt["owners"] = len(states)
+        objects = connection.execute(select(FileVersion.object_key).distinct()).scalars().all()
+        if scoped or objects:
+            receipt["format"] = 2
+        store = store or FileStore(FileStoreSettings(root=root / "objects"))
+        write_states(destination / "states.tar", states, objects, store)
+        receipt["owners"] = len(members)
         receipt["files"] = {
             name: {"sha256": checksum(destination / name), "bytes": (destination / name).stat().st_size}
             for name in ("database.dump", "states.tar")
@@ -222,7 +271,27 @@ def main():
                     Path(os.environ["ALPENDATA_RUNTIME_STATE_ROOT"]), os.environ["ALPENDATA_RUNTIME_IMAGE"]
                 )
             )
-            result = create_bundle(engine, runtime, args.bundle, args.postgresql_bin, args.revision or "")
+            # Backups need storage credentials, never a model or OAuth configuration.
+            storage = (
+                FileStoreSettings(
+                    swift_container_url=os.environ["ALPENDATA_SWIFT_CONTAINER_URL"],
+                    swift_token=os.environ.get("ALPENDATA_SWIFT_TOKEN", ""),
+                )
+                if os.environ.get("ALPENDATA_SWIFT_CONTAINER_URL")
+                else FileStoreSettings(
+                    root=Path(
+                        os.environ.get("ALPENDATA_FILE_STORE_ROOT") or runtime.settings.state_root / "objects"
+                    )
+                )
+            )
+            result = create_bundle(
+                engine,
+                runtime,
+                args.bundle,
+                args.postgresql_bin,
+                args.revision or "",
+                store=FileStore(storage),
+            )
         else:
             from .backup_restore import restore_bundle
 

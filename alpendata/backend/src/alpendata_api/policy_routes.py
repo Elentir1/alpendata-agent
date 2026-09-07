@@ -17,11 +17,27 @@ from .schemas import Input
 class PolicyInput(Input):
     version: int = Field(ge=0)
     allowed_capabilities: list[
-        Literal["mail", "calendar", "files", "files_write", "mail_send", "mail_autonomous"]
-    ] = Field(max_length=6)
+        Literal[
+            "mail",
+            "calendar",
+            "files",
+            "files_write",
+            "mail_send",
+            "mail_autonomous",
+            "calendar_write",
+            "calendar_autonomous",
+        ]
+    ] = Field(max_length=8)
 
     @model_validator(mode="after")
     def document_access(self):
+        if "calendar_write" in self.allowed_capabilities and "calendar" not in self.allowed_capabilities:
+            raise ValueError("Calendar changes require calendar access")
+        if (
+            "calendar_autonomous" in self.allowed_capabilities
+            and "calendar_write" not in self.allowed_capabilities
+        ):
+            raise ValueError("Calendar autonomy requires calendar write access")
         if "mail_autonomous" in self.allowed_capabilities and "mail_send" not in self.allowed_capabilities:
             raise ValueError("Autonomous email also requires permission to send")
         if "files_write" in self.allowed_capabilities and "files" not in self.allowed_capabilities:

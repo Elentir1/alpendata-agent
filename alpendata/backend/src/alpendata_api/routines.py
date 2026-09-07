@@ -17,6 +17,7 @@ from .chat import (
     create_conversation,
     queue_turn,
     request_turn,
+    source_provider,
     turn_view,
 )
 from .connections import lock_member
@@ -32,6 +33,7 @@ PREFIX = "/api/organizations/{organization_id}"
 class PlanningInput(Input):
     request_id: UUID
     language: Literal["fr", "en"] = "fr"
+    integration_provider: Literal["microsoft", "infomaniak"] | None = None
     refinement: str = Field(min_length=1, max_length=4000)
 
 
@@ -60,12 +62,17 @@ def routines_router(settings, factory):
                     conversation.purpose != "onboarding"
                     or previous.message != body.refinement
                     or conversation.language != body.language
+                    or (
+                        body.integration_provider
+                        and conversation.integration_provider != body.integration_provider
+                    )
                 ):
                     raise HTTPException(409, "chat_request_conflict")
                 return {"conversation": conversation_view(conversation), "turn": turn_view(previous)}
+            provider = body.integration_provider or source_provider(db, user, organization_id)
             recipes = available_recipes(
-                connected_capabilities(db, user, organization_id),
-                email_autonomy=email_autonomy_available(db, organization_id, user.id),
+                connected_capabilities(db, user, organization_id, provider),
+                email_autonomy=email_autonomy_available(db, organization_id, user.id, provider),
             )
             if len(recipes) < 2:
                 raise HTTPException(409, "microsoft_reconnect_required")
@@ -99,6 +106,7 @@ def routines_router(settings, factory):
                 body.language,
                 "Mes premières tâches" if body.language == "fr" else "My first tasks",
                 purpose="onboarding",
+                integration_provider=provider,
                 extra_prompt=prompt,
             )
             turn = queue_turn(db, settings, user, conversation, body.request_id, body.refinement)
@@ -133,18 +141,19 @@ def routines_router(settings, factory):
                 ):
                     raise HTTPException(409, "chat_request_conflict")
                 return trial_view(db, saved)
+            source = db.get(Conversation, proposal.conversation_id)
             recipe = RECIPES[proposal.template]
             delivery = body.email_delivery.model_dump(mode="json") if body.email_delivery else None
             if recipe.sends_email:
                 if delivery is None or not body.email_send_confirmed:
                     raise HTTPException(409, "routine_email_confirmation_required")
                 require_email_autonomy(db, organization_id, user.id)
-                if not email_autonomy_available(db, organization_id, user.id):
+                if not email_autonomy_available(db, organization_id, user.id, source.integration_provider):
                     raise HTTPException(409, "microsoft_reconnect_required")
             elif delivery is not None or body.email_send_confirmed:
                 raise HTTPException(409, "routine_email_not_available")
             prompt = (
-                "Perform this task once using the required Microsoft sources. "
+                "Perform this task once using the required sources from your selected personal connection. "
                 + recipe.instruction
                 + " State what was actually consulted and any missing information. No recurrence is active. "
                 + (
@@ -164,6 +173,8 @@ def routines_router(settings, factory):
                 proposal.language,
                 proposal.title,
                 purpose="routine_trial",
+                integration_provider=source.integration_provider,
+                project_id=source.context_project_id,
                 capabilities=recipe.capabilities,
                 extra_prompt=prompt,
                 email_delivery=delivery,

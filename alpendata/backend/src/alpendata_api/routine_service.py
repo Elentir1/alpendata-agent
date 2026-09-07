@@ -44,16 +44,23 @@ def record_proposals(db, turn, payload):
     conversation = db.get(Conversation, turn.conversation_id)
     if conversation.purpose != "onboarding":
         raise HTTPException(403, "routine_planning_not_available")
+    from .models import InfomaniakConnection
+
+    connection_model = (
+        InfomaniakConnection if conversation.integration_provider == "infomaniak" else MicrosoftConnection
+    )
     connection = db.scalar(
-        select(MicrosoftConnection).where(
-            MicrosoftConnection.organization_id == turn.organization_id,
-            MicrosoftConnection.owner_id == turn.owner_id,
+        select(connection_model).where(
+            connection_model.organization_id == turn.organization_id,
+            connection_model.owner_id == turn.owner_id,
         )
     )
     current = connection.capabilities if connection and connection.status == "connected" else []
     available = available_recipes(
         set(current) & set(conversation.capabilities) & set(allowed_capabilities(db, turn.organization_id)),
-        email_autonomy=email_autonomy_available(db, turn.organization_id, turn.owner_id),
+        email_autonomy=email_autonomy_available(
+            db, turn.organization_id, turn.owner_id, conversation.integration_provider
+        ),
     )
     names = [item.template for item in data.proposals]
     if len(set(names)) != len(names) or any(name not in available for name in names):

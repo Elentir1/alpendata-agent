@@ -93,6 +93,18 @@ def main(service):
         if not getattr(settings, prerequisite):
             raise ValueError("Worker configuration is incomplete")
         engine, factory = database_factory(settings.database_url)
+        if service == "chat":
+            from .concurrent_work import WorkspaceWork
+            from .document_worker import DocumentWorker
+
+            work = WorkspaceWork(
+                lambda: ChatWorker(settings, factory).run_once(),
+                lambda: DocumentWorker(settings, factory).run_once(),
+            )
+            try:
+                return run_loop(engine, work.tick, service=service, interval=1)
+            finally:
+                work.close()
         worker = constructor(settings, factory)
         return run_loop(
             engine, getattr(worker, method), service=service, interval=interval, delay_when_idle=idle

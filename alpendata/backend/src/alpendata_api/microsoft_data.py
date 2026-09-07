@@ -12,6 +12,7 @@ SCOPES = {
     "mail_send": "Mail.Send",
     "mail": "Mail.Read",
     "calendar": "Calendars.Read",
+    "calendar_write": "Calendars.ReadWrite",
     "files": "Files.Read.All",
     "files_write": "Files.ReadWrite.All",
 }

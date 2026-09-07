@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from .auth import authenticate, request_authorization
 from .connections import lock_member
-from .models import MicrosoftConnection, PersonalActionPolicy, now
+from .models import InfomaniakConnection, MicrosoftConnection, PersonalActionPolicy, now
 from .organization_policy import allowed_capabilities, require_allowed
 from .schemas import Input
 
@@ -34,7 +34,7 @@ def require_email_autonomy(db, organization_id, owner_id, version=None):
     return policy.version
 
 
-def email_autonomy_available(db, organization_id, owner_id):
+def email_autonomy_available(db, organization_id, owner_id, provider=None):
     try:
         require_email_autonomy(db, organization_id, owner_id)
     except HTTPException:
@@ -45,7 +45,24 @@ def email_autonomy_available(db, organization_id, owner_id):
             MicrosoftConnection.owner_id == owner_id,
         )
     )
-    return bool(connection and connection.status == "connected" and "mail_send" in connection.capabilities)
+    if (
+        provider != "infomaniak"
+        and connection
+        and connection.status == "connected"
+        and "mail_send" in connection.capabilities
+    ):
+        return True
+    alternative = db.scalar(
+        select(InfomaniakConnection).where(
+            InfomaniakConnection.organization_id == organization_id, InfomaniakConnection.owner_id == owner_id
+        )
+    )
+    return bool(
+        provider != "microsoft"
+        and alternative
+        and alternative.status == "connected"
+        and "mail_send" in alternative.capabilities
+    )
 
 
 def policy_view(db, organization_id, owner_id):

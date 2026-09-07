@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .billing_gateway import BillingSettings
+from .file_store import FileStoreSettings
 from .model_gateway import ModelSettings
 from .runtime import RuntimeSettings
 
@@ -26,8 +27,38 @@ class Settings:
     model: ModelSettings | None = None
     runtime: RuntimeSettings | None = None
     billing: BillingSettings | None = None
+    files: FileStoreSettings | None = None
+    office_automation_enabled: bool = False
+    office_origin: str = ""
+    office_secret: str = field(default="", repr=False)
+    brave_api_key: str = field(default="", repr=False)
+    mistral_specialist_key: str = field(default="", repr=False)
+    vision_model: str = ""
+    transcription_model: str = ""
+    workspace_organizations: tuple[str, ...] = ()
 
     def __post_init__(self):
+        from .media_provider import specialist_key
+
+        for specialist in (self.vision_model, self.transcription_model):
+            if specialist:
+                ModelSettings("mistral", specialist, specialist_key(self))
+
+        if bool(self.office_origin) != bool(self.office_secret):
+            raise ValueError("Document editor requires an origin and a signing secret")
+        if self.office_origin:
+            editor = urlsplit(self.office_origin)
+            if (
+                editor.scheme != "https"
+                or not editor.hostname
+                or editor.path
+                or editor.query
+                or editor.fragment
+                or editor.username
+                or editor.password
+                or len(self.office_secret) < 32
+            ):
+                raise ValueError("Document editor requires an HTTPS origin and a strong signing secret")
         if not self.database_url:
             raise ValueError("A database URL is required")
         if min(self.session_lifetime_seconds, self.invitation_lifetime_seconds, self.pilot_seats) < 1:
@@ -49,7 +80,7 @@ class Settings:
             bool(self.microsoft_client_secret),
             bool(self.credential_keys),
         )
-        if any(configured) and not all(configured):
+        if any(configured[:2]) and not all(configured):
             raise ValueError("Microsoft sign-in requires client ID, client credential and encryption keys")
         mail = (
             bool(self.smtp_host),
@@ -107,6 +138,14 @@ class Settings:
                 ),
             )
             runtime = RuntimeSettings(Path(values["RUNTIME_STATE_ROOT"]), values["RUNTIME_IMAGE"])
+        files = None
+        if os.environ.get("ALPENDATA_SWIFT_CONTAINER_URL"):
+            files = FileStoreSettings(
+                swift_container_url=os.environ["ALPENDATA_SWIFT_CONTAINER_URL"],
+                swift_token=os.environ.get("ALPENDATA_SWIFT_TOKEN", ""),
+            )
+        elif os.environ.get("ALPENDATA_FILE_STORE_ROOT"):
+            files = FileStoreSettings(root=Path(os.environ["ALPENDATA_FILE_STORE_ROOT"]))
         return cls(
             database_url=os.environ.get("ALPENDATA_DATABASE_URL", ""),
             public_origin=os.environ.get("ALPENDATA_PUBLIC_ORIGIN", "https://localhost"),
@@ -121,4 +160,22 @@ class Settings:
             model=model,
             runtime=runtime,
             billing=billing,
+            files=files,
+            office_automation_enabled=os.environ.get("ALPENDATA_OFFICE_AUTOMATION_ENABLED", "").lower()
+            == "true",
+            office_origin=os.environ.get("ALPENDATA_OFFICE_ORIGIN", ""),
+            office_secret=os.environ.get("ALPENDATA_OFFICE_SECRET", ""),
+            brave_api_key=os.environ.get("ALPENDATA_BRAVE_API_KEY", ""),
+            mistral_specialist_key=os.environ.get("ALPENDATA_MISTRAL_SPECIALIST_KEY", ""),
+            vision_model=os.environ.get("ALPENDATA_VISION_MODEL", ""),
+            transcription_model=os.environ.get("ALPENDATA_TRANSCRIPTION_MODEL", ""),
+            workspace_organizations=tuple(
+                filter(
+                    None,
+                    (
+                        item.strip()
+                        for item in os.environ.get("ALPENDATA_WORKSPACE_ORGANIZATIONS", "").split(",")
+                    ),
+                )
+            ),
         )

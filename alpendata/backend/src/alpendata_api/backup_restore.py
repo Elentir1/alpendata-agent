@@ -15,10 +15,15 @@ from .models import (
     AuthSession,
     Base,
     BillingAccount,
+    CalendarAction,
     ChatTurn,
+    EditorSession,
     EmailAttempt,
+    FileVersion,
+    InfomaniakConnection,
     Invitation,
     InvitationProof,
+    MediaCall,
     MicrosoftConnection,
     MicrosoftConnectionFlow,
     ModelCall,
@@ -40,7 +45,7 @@ def verify_bundle(bundle):
     if (bundle / "manifest.json").stat().st_size > 1024 * 1024:
         raise BackupFailure("backup_manifest_invalid")
     manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
-    if manifest["format"] != 1 or set(manifest["files"]) != {"database.dump", "states.tar"}:
+    if manifest["format"] not in (1, 2) or set(manifest["files"]) != {"database.dump", "states.tar"}:
         raise BackupFailure("backup_manifest_invalid")
     for name, record in manifest["files"].items():
         if (bundle / name).stat().st_size != record["bytes"] or checksum(bundle / name) != record["sha256"]:
@@ -82,6 +87,21 @@ def suspend_restored_work(factory):
             .values(status="review", access_until=0, synced_at=None, next_sync_at=0, sync_error=None)
         )
         db.execute(update(AuthSession).values(revoked=True))
+        db.execute(delete(EditorSession))
+        db.execute(update(MediaCall).where(MediaCall.status == "running").values(status="interrupted"))
+        db.execute(
+            update(CalendarAction).where(CalendarAction.status == "dispatching").values(status="unknown")
+        )
+        db.execute(
+            update(InfomaniakConnection).values(
+                status="disconnected", capabilities=[], encrypted_credentials=None
+            )
+        )
+        db.execute(
+            update(FileVersion)
+            .where(FileVersion.analysis_status == "running")
+            .values(analysis_status="queued", analysis_lease=None, analysis_expires_at=None)
+        )
         # A restored old password or activation must not recover revoked access.
         db.execute(
             update(PasswordAccount).values(

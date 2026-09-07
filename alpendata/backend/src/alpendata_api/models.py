@@ -192,6 +192,9 @@ class Onboarding(OwnedMixin, Base):
     language: Mapped[str] = mapped_column(String(2), default="fr")
     step: Mapped[str] = mapped_column(String(24), default="introduction")
     answers: Mapped[dict] = mapped_column(JSON, default=dict)
+    started_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    profile_completed_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    first_useful_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
     __table_args__ = (
         ownership_constraint(),
         UniqueConstraint("organization_id", "owner_id"),
@@ -224,6 +227,16 @@ class PersonalResource(OwnedMixin, Base):
         ownership_constraint(),
         CheckConstraint("kind IN ('memory', 'conversation')", name="ck_personal_resource_kind"),
     )
+
+
+class InfomaniakConnection(OwnedMixin, Base):
+    __tablename__ = "alpendata_infomaniak_connections"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    email: Mapped[str] = mapped_column(String(320))
+    status: Mapped[str] = mapped_column(String(24), default="disconnected")
+    capabilities: Mapped[list] = mapped_column(JSON, default=list)
+    encrypted_credentials: Mapped[str | None] = mapped_column(Text, nullable=True)
+    __table_args__ = (ownership_constraint(), UniqueConstraint("organization_id", "owner_id"))
 
 
 class MicrosoftConnection(OwnedMixin, Base):
@@ -264,6 +277,56 @@ class Project(OwnedMixin, Base):
     __table_args__ = (
         ownership_constraint(),
         UniqueConstraint("id", "organization_id", "owner_id"),
+        UniqueConstraint("id", "organization_id", name="uq_project_organization"),
+    )
+
+
+class ProjectMember(Base):
+    __tablename__ = "alpendata_project_members"
+    project_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    role: Mapped[str] = mapped_column(String(20))
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "organization_id"], ["alpendata_projects.id", "alpendata_projects.organization_id"]
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "user_id"],
+            ["alpendata_memberships.organization_id", "alpendata_memberships.user_id"],
+        ),
+        CheckConstraint("role IN ('reader', 'contributor')", name="ck_project_member_role"),
+    )
+
+
+class ProjectEntry(OwnedMixin, Base):
+    __tablename__ = "alpendata_project_entries"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    project_id: Mapped[str] = mapped_column(String(36), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    content: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(String(20), default="note")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ownership_constraint(),
+        ForeignKeyConstraint(
+            ["project_id", "organization_id"], ["alpendata_projects.id", "alpendata_projects.organization_id"]
+        ),
+    )
+
+
+class PersonalKnowledge(OwnedMixin, Base):
+    __tablename__ = "alpendata_personal_knowledge"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    kind: Mapped[str] = mapped_column(String(24))
+    title: Mapped[str] = mapped_column(String(160))
+    content: Mapped[str] = mapped_column(Text)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ownership_constraint(),
+        CheckConstraint("kind IN ('preference', 'method')", name="ck_knowledge_kind"),
     )
 
 
@@ -271,11 +334,21 @@ class Conversation(OwnedMixin, Base):
     __tablename__ = "alpendata_conversations"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(160))
+    deleted_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
     project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    context_project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    work_settings: Mapped[dict | None] = mapped_column(JSON)
+    service_features: Mapped[dict | None] = mapped_column(JSON)
     archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    parent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    branch_sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
     purpose: Mapped[str] = mapped_column(String(24), default="chat", server_default="chat")
     documents_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     tool_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    integration_provider: Mapped[str] = mapped_column(
+        String(24), default="microsoft", server_default="microsoft"
+    )
     email_send_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     email_delivery: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     language: Mapped[str] = mapped_column(String(2))
@@ -289,9 +362,9 @@ class Conversation(OwnedMixin, Base):
         UniqueConstraint("id", "organization_id", "owner_id"),
         CheckConstraint("language IN ('fr', 'en')", name="ck_conversation_language"),
         ForeignKeyConstraint(
-            ["project_id", "organization_id", "owner_id"],
-            ["alpendata_projects.id", "alpendata_projects.organization_id", "alpendata_projects.owner_id"],
-            name="fk_conversation_project_owner",
+            ["project_id", "organization_id"],
+            ["alpendata_projects.id", "alpendata_projects.organization_id"],
+            name="fk_conversation_project_organization",
         ),
     )
 
@@ -304,6 +377,8 @@ class ChatTurn(OwnedMixin, Base):
     sequence: Mapped[int] = mapped_column(Integer)
     message: Mapped[str] = mapped_column(Text)
     response: Mapped[str | None] = mapped_column(Text)
+    partial_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    seen_at: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(24), default="queued", index=True)
     error_code: Mapped[str | None] = mapped_column(String(80))
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -328,6 +403,164 @@ class ChatTurn(OwnedMixin, Base):
         CheckConstraint(
             "status IN ('queued', 'running', 'completed', 'failed', 'cancelled', 'interrupted')",
             name="ck_chat_turn_status",
+        ),
+    )
+
+
+class WorkFeedback(OwnedMixin, Base):
+    __tablename__ = "alpendata_work_feedback"
+    turn_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    outcome: Mapped[str] = mapped_column(String(24))
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    updated_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["turn_id", "organization_id", "owner_id"],
+            [
+                "alpendata_chat_turns.id",
+                "alpendata_chat_turns.organization_id",
+                "alpendata_chat_turns.owner_id",
+            ],
+        ),
+        CheckConstraint(
+            "outcome IN ('useful', 'needs_changes', 'not_useful')", name="ck_work_feedback_outcome"
+        ),
+    )
+
+
+class AgentEvent(OwnedMixin, Base):
+    __tablename__ = "alpendata_agent_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[str] = mapped_column(String(36), index=True)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    label: Mapped[str] = mapped_column(String(120), default="")
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["turn_id", "organization_id", "owner_id"],
+            [
+                "alpendata_chat_turns.id",
+                "alpendata_chat_turns.organization_id",
+                "alpendata_chat_turns.owner_id",
+            ],
+        ),
+    )
+
+
+class WorkspaceFile(OwnedMixin, Base):
+    __tablename__ = "alpendata_workspace_files"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    conversation_id: Mapped[str] = mapped_column(String(36), index=True)
+    filename: Mapped[str] = mapped_column(String(180))
+    media_type: Mapped[str] = mapped_column(String(120))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        UniqueConstraint("id", "organization_id", "owner_id"),
+        ForeignKeyConstraint(
+            ["conversation_id", "organization_id", "owner_id"],
+            [
+                "alpendata_conversations.id",
+                "alpendata_conversations.organization_id",
+                "alpendata_conversations.owner_id",
+            ],
+        ),
+    )
+
+
+class ProjectFile(OwnedMixin, Base):
+    """Explicitly published copy; permission comes from the project, not its source chat."""
+
+    __tablename__ = "alpendata_project_files"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    project_id: Mapped[str] = mapped_column(String(36), index=True)
+    file_id: Mapped[str] = mapped_column(String(36), unique=True)
+    source_file_id: Mapped[str] = mapped_column(String(36))
+    source_version: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "organization_id"], ["alpendata_projects.id", "alpendata_projects.organization_id"]
+        ),
+        ForeignKeyConstraint(
+            ["file_id", "organization_id", "owner_id"],
+            [
+                "alpendata_workspace_files.id",
+                "alpendata_workspace_files.organization_id",
+                "alpendata_workspace_files.owner_id",
+            ],
+        ),
+    )
+
+
+class FileVersion(OwnedMixin, Base):
+    __tablename__ = "alpendata_file_versions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    file_id: Mapped[str] = mapped_column(String(36), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    object_key: Mapped[str] = mapped_column(String(240))
+    analysis_status: Mapped[str] = mapped_column(String(24), default="queued", server_default="queued")
+    analysis_text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    analysis_pages: Mapped[list | None] = mapped_column(JSON)
+    analysis_lease: Mapped[str | None] = mapped_column(String(36))
+    analysis_expires_at: Mapped[int | None] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        UniqueConstraint("file_id", "version"),
+        ForeignKeyConstraint(
+            ["file_id", "organization_id", "owner_id"],
+            [
+                "alpendata_workspace_files.id",
+                "alpendata_workspace_files.organization_id",
+                "alpendata_workspace_files.owner_id",
+            ],
+        ),
+    )
+
+
+class EditorSession(OwnedMixin, Base):
+    __tablename__ = "alpendata_editor_sessions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    file_id: Mapped[str] = mapped_column(String(36))
+    editor_id: Mapped[str | None] = mapped_column(String(36))
+    base_version: Mapped[int] = mapped_column(Integer)
+    saved_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    conflict_file_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    expires_at: Mapped[int] = mapped_column(Integer)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["file_id", "organization_id", "owner_id"],
+            [
+                "alpendata_workspace_files.id",
+                "alpendata_workspace_files.organization_id",
+                "alpendata_workspace_files.owner_id",
+            ],
+        ),
+    )
+
+
+class MediaCall(OwnedMixin, Base):
+    __tablename__ = "alpendata_media_calls"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(String(36), index=True)
+    turn_id: Mapped[str | None] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(24))
+    input_hash: Mapped[str] = mapped_column(String(64))
+    model: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(24), default="running")
+    text: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["conversation_id", "organization_id", "owner_id"],
+            [
+                "alpendata_conversations.id",
+                "alpendata_conversations.organization_id",
+                "alpendata_conversations.owner_id",
+            ],
         ),
     )
 
@@ -390,6 +623,7 @@ class Artifact(OwnedMixin, Base):
 class SharePointSave(OwnedMixin, Base):
     __tablename__ = "alpendata_sharepoint_saves"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    provider: Mapped[str] = mapped_column(String(24), default="microsoft", server_default="microsoft")
     artifact_id: Mapped[str] = mapped_column(String(36), index=True)
     drive_id: Mapped[str] = mapped_column(String(512))
     folder_id: Mapped[str] = mapped_column(String(512))
@@ -462,6 +696,28 @@ class EmailAttempt(OwnedMixin, Base):
         UniqueConstraint("draft_id", "version"),
         CheckConstraint(
             "status IN ('sending', 'accepted', 'failed', 'unknown')", name="ck_email_attempt_status"
+        ),
+    )
+
+
+class CalendarAction(OwnedMixin, Base):
+    __tablename__ = "alpendata_calendar_actions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    turn_id: Mapped[str] = mapped_column(String(36), index=True)
+    initial_hash: Mapped[str] = mapped_column(String(64))
+    provider: Mapped[str] = mapped_column(String(24))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    status: Mapped[str] = mapped_column(String(24), default="draft")
+    message: Mapped[dict] = mapped_column(JSON)
+    baseline: Mapped[dict] = mapped_column(JSON, default=dict)
+    attempts: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[int] = mapped_column(Integer, default=now)
+    __table_args__ = (
+        turn_ownership_constraint(),
+        UniqueConstraint("turn_id", "initial_hash"),
+        CheckConstraint(
+            "status IN ('draft', 'dispatching', 'completed', 'failed', 'unknown')",
+            name="ck_calendar_action_status",
         ),
     )
 

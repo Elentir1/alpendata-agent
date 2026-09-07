@@ -6,7 +6,7 @@ from sqlalchemy import select
 from .access import owned
 from .email_drafts import attachments, draft_view
 from .graph_email import send_email
-from .models import EmailAttempt, EmailDraft, new_id, now
+from .models import ChatTurn, Conversation, EmailAttempt, EmailDraft, new_id, now
 from .runtime import RuntimeFailure
 
 
@@ -45,6 +45,8 @@ def dispatch_email(
             for item in attachments(db, organization_id, user.id, draft.message)
         ]
         message = draft.message
+        turn = db.get(ChatTurn, draft.turn_id)
+        provider = db.get(Conversation, turn.conversation_id).integration_provider
         attempt = EmailAttempt(
             organization_id=organization_id,
             owner_id=user.id,
@@ -60,12 +62,19 @@ def dispatch_email(
         attempt_id, correlation_id = attempt.id, attempt.correlation_id
     # Commit before dispatch: lost replies or crashes never reset this version.
     try:
-        microsoft.execute(
-            organization_id,
-            authorize,
-            "mail_send",
-            lambda graph, token: send_email(graph, token, message, files, correlation_id),
-        )
+        if provider == "infomaniak":
+            from .infomaniak import InfomaniakReader
+
+            InfomaniakReader(microsoft.settings, factory).send(
+                organization_id, authorize, message, files, correlation_id
+            )
+        else:
+            microsoft.execute(
+                organization_id,
+                authorize,
+                "mail_send",
+                lambda graph, token: send_email(graph, token, message, files, correlation_id),
+            )
         status, error = "accepted", None
     except HTTPException as failure:
         error = str(failure.detail)

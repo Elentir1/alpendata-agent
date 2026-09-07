@@ -11,6 +11,7 @@ import { InvitationForm, invitationWords } from './InvitationForm';
 import type { InvitationReceipt } from './InvitationForm';
 import { MemberAccess, seatWords } from './MemberAccess';
 import type { Seats } from './MemberAccess';
+import { WorkMetrics } from './WorkMetrics';
 import { Billing } from './Billing';
 
 interface InvitationRow extends InvitationReceipt { expires_at: number }
@@ -49,6 +50,7 @@ export function Team({ company, user, t, language, refreshAccount }: { company: 
       <p className="privacy-inline"><LockKeyhole size={18} />{t.noPrivateAccess}</p>
     </div><InvitationForm key={company.id} base={base} t={t} language={language} disabled={action.busy || !!editing} done={refresh} revokedId={revokedId} /></div>
     {editing && <MemberAccess key={`${editing.user_id}:${editing.version}`} item={editing} self={editing.user_id === user.id} seats={seats} lastAdmin={editing.active && editing.role === 'admin' && members.filter(m => m.active && m.role === 'admin').length === 1} language={language} close={() => setEditing(null)} reload={async () => { await action.run(async () => { await refreshAccount(); await refresh(); setEditing(null); }); }} done={async () => { await refreshAccount(); await refresh(); setEditing(null); }} />}
+    <WorkMetrics organizationId={company.id} language={language} />
     <CompanyRules organizationId={company.id} language={language} />
     <CompanyResources organizationId={company.id} userId={user.id} admin language={language} />
   </section>;

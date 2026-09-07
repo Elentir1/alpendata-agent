@@ -9,7 +9,7 @@ from .access import owned
 from .email_drafts import attempt_view, draft_view
 from .graph import items, web_link
 from .graph_email import CORRELATION_HEADER
-from .models import EmailAttempt, EmailDraft, now
+from .models import ChatTurn, Conversation, EmailAttempt, EmailDraft, now
 
 
 def recipients_match(candidate, message):
@@ -90,6 +90,9 @@ def verify_attempt(factory, microsoft, actor, request, organization_id, draft_id
     with factory.begin() as db:
         user = actor(db, request, organization_id)
         draft = owned(db, EmailDraft, organization_id, user.id, draft_id)
+        turn = db.get(ChatTurn, draft.turn_id)
+        if db.get(Conversation, turn.conversation_id).integration_provider == "infomaniak":
+            raise HTTPException(409, "email_verification_unavailable")
         attempt = owned(db, EmailAttempt, organization_id, user.id, attempt_id)
         if attempt.draft_id != draft_id:
             raise HTTPException(404, "resource_not_found")

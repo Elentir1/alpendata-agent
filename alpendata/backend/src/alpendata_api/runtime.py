@@ -25,8 +25,10 @@ class RuntimeFailure(Exception):
     pass
 
 
-def container_name(organization_id, owner_id):
+def container_name(organization_id, owner_id, scope=None):
     owner_key = f"{UUID(organization_id)}:{UUID(owner_id)}"
+    if scope:
+        owner_key += ":" + str(UUID(scope))
     return "alpendata-" + hashlib.sha256(owner_key.encode()).hexdigest()[:48]
 
 
@@ -66,15 +68,19 @@ class ContainerRuntime:
         self.settings = settings
 
     @contextmanager
-    def owner_state(self, organization_id, owner_id):
+    def owner_state(self, organization_id, owner_id, scope=None):
         import fcntl
 
         organization_id, owner_id = str(UUID(organization_id)), str(UUID(owner_id))
         root = self.settings.state_root.resolve()
+        if scope:
+            scope = str(UUID(scope))
+            root = root / "scoped"
         root.mkdir(mode=0o700, parents=True, exist_ok=True)
         locks = root / "locks"
         locks.mkdir(mode=0o700, exist_ok=True)
-        with (locks / f"{organization_id}-{owner_id}.lock").open("a") as lock:
+        lock_name = f"{organization_id}-{owner_id}" + (f"-{scope}" if scope else "")
+        with (locks / f"{lock_name}.lock").open("a") as lock:
             try:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
@@ -83,6 +89,11 @@ class ContainerRuntime:
                 parent = root / organization_id
                 parent.mkdir(mode=0o700, exist_ok=True)
                 state = parent / owner_id
+                if scope:
+                    state.mkdir(mode=0o700, exist_ok=True)
+                    if state.is_symlink():
+                        raise RuntimeFailure("agent_state_invalid")
+                    state = state / scope
                 state.mkdir(mode=0o700, exist_ok=True)
                 if state.is_symlink() or parent.is_symlink() or not state.resolve().is_relative_to(root):
                     raise RuntimeFailure("agent_state_invalid")
@@ -118,8 +129,9 @@ class ContainerRuntime:
 
     def run(self, organization_id, owner_id, payload, exchange, *, check=None):
         """Exchange is bound by the caller to one authorized execution, never its payload."""
-        with self.owner_state(organization_id, owner_id) as state:
-            name = container_name(organization_id, owner_id)
+        scope = payload.get("state_scope")
+        with self.owner_state(organization_id, owner_id, scope) as state:
+            name = container_name(organization_id, owner_id, scope)
             # An allowlist prevents service secrets and container-engine overrides
             # from propagating through the controller's process environment.
             environment = engine_environment()
@@ -247,12 +259,12 @@ class ContainerRuntime:
                                 ):
                                     raise ValueError()
                                 return message
-                            if kind != "request" or pending or in_flight is not None or len(used) >= 80:
+                            if kind != "request" or pending or in_flight is not None or len(used) >= 512:
                                 raise ValueError()
                             identifier = str(UUID(message["id"]))
                             if (
                                 identifier in used
-                                or message["operation"] not in {"model", "tool"}
+                                or message["operation"] not in {"model", "tool", "activity"}
                                 or not isinstance(message["payload"], dict)
                             ):
                                 raise ValueError()

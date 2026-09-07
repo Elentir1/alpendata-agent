@@ -13,7 +13,7 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from .chat_worker import interrupt_expired_turn, lock_owner
 from .database import database_factory
-from .models import ChatTurn, now
+from .models import ChatTurn, Conversation, now
 from .runtime import ContainerRuntime, RuntimeFailure, RuntimeSettings, container_name, engine_environment
 
 
@@ -71,7 +71,7 @@ class RuntimeRecovery:
             raise RuntimeFailure("recovery_container_mismatch") from None
         return {"id": item["id"], "status": item["status"]}
 
-    def inspect_or_recover(self, organization_id, owner_id, *, expected_container=None):
+    def inspect_or_recover(self, organization_id, owner_id, *, expected_container=None, conversation_id=None):
         organization_id, owner_id = str(UUID(organization_id)), str(UUID(owner_id))
         if (
             expected_container is not None
@@ -79,7 +79,8 @@ class RuntimeRecovery:
             and not re.fullmatch(r"[0-9a-f]{64}", expected_container)
         ):
             raise RuntimeFailure("recovery_confirmation_invalid")
-        name = container_name(organization_id, owner_id)
+        scope = str(UUID(conversation_id)) if conversation_id else None
+        name = container_name(organization_id, owner_id, scope)
         with self.factory.begin() as db:
             # A local operator is outside customer authorization. PostgreSQL row locks
             # coordinate this maintenance with workers, scheduler and API mutations.
@@ -94,6 +95,15 @@ class RuntimeRecovery:
                 raise
             if member is None:
                 raise RuntimeFailure("recovery_owner_not_found")
+            if scope:
+                conversation = db.get(Conversation, scope)
+                if (
+                    conversation is None
+                    or conversation.organization_id != organization_id
+                    or conversation.owner_id != owner_id
+                    or conversation.tool_revision < 7
+                ):
+                    raise RuntimeFailure("recovery_owner_not_found")
             turns = db.scalars(
                 select(ChatTurn)
                 .where(
@@ -104,7 +114,12 @@ class RuntimeRecovery:
                 .order_by(ChatTurn.created_at, ChatTurn.id)
                 .with_for_update()
             ).all()
-            with self.runtime.owner_state(organization_id, owner_id) as state:
+            turns = (
+                [turn for turn in turns if turn.conversation_id == scope]
+                if scope
+                else [turn for turn in turns if db.get(Conversation, turn.conversation_id).tool_revision < 7]
+            )
+            with self.runtime.owner_state(organization_id, owner_id, scope) as state:
                 container = self.snapshot(name, state)
                 result = {
                     "organization_id": organization_id,
@@ -150,6 +165,7 @@ def main():
     parser.add_argument("action", choices=("inspect", "recover"))
     parser.add_argument("--organization", required=True, type=UUID)
     parser.add_argument("--owner", required=True, type=UUID)
+    parser.add_argument("--conversation", type=UUID, help="Isolated conversation workspace (revision 7+)")
     parser.add_argument("--expected-container", help="Full inspected container ID, or 'absent'")
     args = parser.parse_args()
     if (args.action == "recover") != (args.expected_container is not None):
@@ -163,7 +179,10 @@ def main():
         engine, factory = database_factory(os.environ["ALPENDATA_DATABASE_URL"])
         recovery = RuntimeRecovery(ContainerRuntime(settings), factory)
         result = recovery.inspect_or_recover(
-            str(args.organization), str(args.owner), expected_container=args.expected_container
+            str(args.organization),
+            str(args.owner),
+            expected_container=args.expected_container,
+            conversation_id=str(args.conversation) if args.conversation else None,
         )
     except RuntimeFailure as error:
         uncertain = str(error) in {"recovery_engine_unavailable", "recovery_removal_uncertain"}

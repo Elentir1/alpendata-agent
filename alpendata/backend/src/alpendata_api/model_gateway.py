@@ -234,6 +234,11 @@ class ModelGateway:
         except (requests.RequestException, ValueError, RecursionError):
             raise ModelError(502, "model_unavailable") from None
 
+    def complete_stream(self, payload, on_text):
+        from .model_stream import complete_stream
+
+        return complete_stream(self, payload, on_text)
+
     @staticmethod
     def check_status(response):
         if response.status_code == 200:

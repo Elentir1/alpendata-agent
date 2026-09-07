@@ -15,14 +15,19 @@ from .action_policy import action_policy_router
 from .artifacts import artifacts_router
 from .auth import BROWSER_COOKIE, SESSION_COOKIE, authenticate, request_authorization, token_digest
 from .billing_routes import billing_router
+from .calendar_actions import calendar_router
 from .chat import chat_router
 from .company_resources import company_resources_router
 from .connections import CONNECT_COOKIE, microsoft_router
 from .database import database_factory
 from .email_routes import email_router
 from .health import database_ready, health_router, release_head
+from .infomaniak import infomaniak_router
 from .invitation_delivery import delivery_view, invitation_delivery_router
+from .kdrive_saves import kdrive_router
+from .knowledge import knowledge_router
 from .mail import SMTPMailer
+from .media import media_router
 from .memory_routes import memory_router
 from .models import (
     AuthSession,
@@ -35,6 +40,7 @@ from .models import (
     User,
 )
 from .notifications import notifications_router
+from .office_editor import office_router
 from .password_signin import password_router
 from .policy_routes import policy_router
 from .routines import routines_router
@@ -51,6 +57,9 @@ from .schemas import (
 from .settings import Settings
 from .sharepoint_saves import sharepoint_router
 from .signin import signin_router
+from .work_feedback import feedback_router
+from .work_inbox import inbox_router
+from .workspace_files import files_router
 
 
 def create_app(
@@ -85,6 +94,15 @@ def create_app(
     app.include_router(password_router(settings, factory))
     app.include_router(microsoft_router(settings, factory, microsoft_provider, graph))
     app.include_router(chat_router(settings, factory))
+    app.include_router(calendar_router(settings, factory, microsoft_provider, graph))
+    app.include_router(files_router(settings, factory))
+    app.include_router(media_router(settings, factory))
+    app.include_router(infomaniak_router(settings, factory))
+    app.include_router(inbox_router(settings, factory))
+    app.include_router(feedback_router(settings, factory))
+    app.include_router(knowledge_router(settings, factory))
+    app.include_router(kdrive_router(settings, factory))
+    app.include_router(office_router(settings, factory))
     app.include_router(artifacts_router(settings, factory))
     app.include_router(sharepoint_router(settings, factory, microsoft_provider, graph))
     app.include_router(email_router(settings, factory, microsoft_provider, graph))
@@ -98,7 +116,10 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):
-        if request.url.path.startswith("/api/auth/password/"):
+        if (
+            request.url.path.startswith("/api/auth/password/")
+            or "/integrations/infomaniak" in request.url.path
+        ):
             # FastAPI's default validation response includes rejected input values.
             return JSONResponse({"detail": "password_request_invalid"}, status_code=422)
         from fastapi.exception_handlers import request_validation_exception_handler
@@ -175,7 +196,12 @@ def create_app(
     def get_organization(organization_id: str, actor: Actor, db: DB):
         member(db, actor, organization_id, licensed=False)
         organization = db.get(Organization, organization_id)
-        return {"id": organization.id, "name": organization.name}
+        return {
+            "id": organization.id,
+            "name": organization.name,
+            "workspace_enabled": "*" in settings.workspace_organizations
+            or organization.id in settings.workspace_organizations,
+        }
 
     @app.get("/api/organizations/{organization_id}/members")
     def list_members(organization_id: str, actor: Actor, db: DB):
@@ -253,16 +279,27 @@ def create_app(
     @app.get("/api/organizations/{organization_id}/onboarding")
     def get_onboarding(organization_id: str, actor: Actor, db: DB):
         member(db, actor, organization_id)
-        return onboarding_view(personal_onboarding(db, organization_id, actor.id))
+        onboarding = personal_onboarding(db, organization_id, actor.id)
+        if onboarding.started_at is None and not onboarding.answers.get("role"):
+            from .models import now
+
+            onboarding.started_at = now()
+        return onboarding_view(onboarding)
 
     @app.put("/api/organizations/{organization_id}/onboarding")
     def save_onboarding(organization_id: str, body: OnboardingInput, actor: Actor, db: DB):
         member(db, actor, organization_id)
         onboarding = personal_onboarding(db, organization_id, actor.id)
+        from .models import now
+
+        if onboarding.started_at is None and not onboarding.answers.get("role"):
+            onboarding.started_at = now()
+        if onboarding.started_at is not None and onboarding.profile_completed_at is None:
+            onboarding.profile_completed_at = now()
         onboarding.language = body.language
         onboarding.answers = body.model_dump(exclude={"language"})
-        # Completion requires a connected tool and a first useful result in the next product slice.
-        onboarding.step = "connect_tools"
+        if onboarding.step != "first_result":
+            onboarding.step = "connect_tools"
         return onboarding_view(onboarding)
 
     @app.post("/api/organizations/{organization_id}/personal-resources", status_code=201)
