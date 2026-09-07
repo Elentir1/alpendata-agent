@@ -16,6 +16,10 @@ dependencies = [
   "email-validator>=2.2,<3",
   "tzdata>=2025.2,<2027",
   "stripe==15.6.1",
+  "PyJWT>=2.10,<3",
+  "defusedxml>=0.7,<1",
+  "icalendar>=6.3,<8",
+  "urllib3>=2.6,<3",
 ]
 
 [dependency-groups]

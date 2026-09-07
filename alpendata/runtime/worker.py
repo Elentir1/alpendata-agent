@@ -20,6 +20,7 @@ class Channel:
     def __init__(self):
         self.input, self.output = sys.stdin.buffer, sys.stdout
         self.lock = threading.Lock()
+        self.background_models = False
 
     def receive(self):
         line = self.input.readline(FRAME_LIMIT + 1)
@@ -71,6 +72,8 @@ def model_proxy(channel):
                 if not isinstance(value, dict) or value.get("stream"):
                     self.send_error(400)
                     return
+                if channel.background_models:
+                    value["_alpendata_background"] = True
                 response = channel.exchange("model", value)
                 payload = json.dumps(response["body"]).encode()
                 self.send_response(response["status"])
@@ -99,10 +102,12 @@ def register_tools(
     emails=False,
     email_send=False,
     company_resources=False,
+    searchable_mail=False,
 ):
-    from tools.registry import registry
     from documents import register_documents, register_download
     from emails import register_emails
+
+    from tools.registry import registry
 
     if company_resources:
         from company_resources import register_company_resources
@@ -184,6 +189,12 @@ def register_tools(
             {"query": {"type": "string", "minLength": 1, "maxLength": 256}},
         ),
     }
+    if searchable_mail:
+        definitions["mail"] = (
+            "alpendata_mail",
+            "Read recent emails or search the connected personal mailbox.",
+            {"query": {"type": "string", "maxLength": 256}},
+        )
     for capability in capabilities:
         name, description, properties = definitions[capability]
 
@@ -215,6 +226,28 @@ def register_tools(
 
 
 def run(channel, request):
+    if request.get("operation") == "analyze_web":
+        sys.stdout = sys.stderr
+        from web_analysis import analyze
+
+        channel.send({
+            "type": "result",
+            "response": "",
+            "messages": [],
+            **analyze(request),
+        })
+        return
+    if request.get("operation") == "analyze_document":
+        sys.stdout = sys.stderr
+        from document_analysis import analyze
+
+        channel.send({
+            "type": "result",
+            "response": "",
+            "messages": [],
+            **analyze(request),
+        })
+        return
     if request.get("operation") == "memory":
         # Maintenance never imports AIAgent or exposes a model/tool broker.
         sys.stdout = sys.stderr
@@ -245,6 +278,13 @@ def run(channel, request):
             "model": {"streaming": False, "context_length": 131072},
             "terminal": {"backend": "local", "cwd": str(workspace)},
             "background_review": {"enabled": False},
+            "delegation": {
+                "max_concurrent_children": 2,
+                "max_spawn_depth": 1,
+                "orchestrator_enabled": False,
+                "child_timeout_seconds": 120,
+                "subagent_auto_approve": False,
+            },
             # AlpenData names conversations from their first message. The
             # upstream daemon title task must not outlive this one-turn worker.
             "auxiliary": {"title_generation": {"enabled": False}},
@@ -272,10 +312,49 @@ def run(channel, request):
         file_download=request.get("tool_revision", 1) >= 2,
         emails=request.get("tool_revision", 1) >= 3,
         company_resources=request.get("tool_revision", 1) >= 5,
+        searchable_mail=request.get("tool_revision", 1) >= 7,
         email_send=request.get("tool_revision", 1) >= 4
         and request.get("email_send_enabled", False),
     )
     session_db = SessionDB()
+    delegation_parent = {}
+    if request.get("tool_revision", 1) >= 7:
+        from workspace_files import register_workspace_files
+
+        from tools.registry import registry
+
+        if request.get("documents_enabled"):
+            register_workspace_files(channel, registry)
+            if request.get("vision_enabled"):
+                from vision import register_vision
+
+                register_vision(channel, registry)
+        from knowledge import register_knowledge
+
+        register_knowledge(channel, registry)
+        if "calendar" in capabilities:
+            from calendar_actions import register_calendar
+
+            register_calendar(channel, registry)
+        if request.get("research_enabled"):
+            from research import register_research
+
+            register_research(channel, registry)
+        if not scheduled:
+            from delegation import register_delegation
+
+            register_delegation(
+                channel,
+                registry,
+                request["system_prompt"] + "\nUser request:\n" + request["message"],
+                delegation_parent,
+            )
+    if request.get("project_context_enabled"):
+        from project_context import register_project_context
+
+        from tools.registry import registry
+
+        register_project_context(channel, registry)
     agent = AIAgent(
         base_url=f"http://127.0.0.1:{server.server_port}/v1",
         api_key="local-broker-only",
@@ -290,15 +369,40 @@ def run(channel, request):
         load_soul_identity=True,
         skip_background_review=True,
         skip_memory=scheduled,
+        tool_start_callback=(
+            lambda _id, name, _args: channel.exchange(
+                "activity", {"kind": "tool_started", "label": name}
+            )
+        )
+        if request.get("activity_enabled")
+        else None,
+        tool_complete_callback=(
+            lambda _id, name, _args, _result: channel.exchange(
+                "activity", {"kind": "tool_finished", "label": name}
+            )
+        )
+        if request.get("activity_enabled")
+        else None,
         save_trajectories=False,
         enabled_toolsets=(
             ["file", "terminal"] if scheduled else ["memory", "file", "terminal"]
         )
-        + (["skills", "todo"] if not scheduled and request.get("tool_revision", 1) >= 6 else [])
-        + (["alpendata"] if capabilities or request.get("documents_enabled") else []),
-        max_iterations=20,
-        run_budget_seconds=180 if scheduled else 240,
+        + (
+            ["skills", "todo"]
+            if not scheduled and request.get("tool_revision", 1) >= 6
+            else []
+        )
+        + (
+            ["alpendata"]
+            if capabilities
+            or request.get("documents_enabled")
+            or request.get("tool_revision", 1) >= 7
+            else []
+        ),
+        max_iterations=request.get("max_iterations", 20),
+        run_budget_seconds=180 if scheduled else request.get("run_budget_seconds", 240),
     )
+    delegation_parent["agent"] = agent
     try:
         # Resume the canonical active history, including a partially persisted
         # earlier execution. Never regrow messages removed by context compression.
@@ -306,7 +410,7 @@ def run(channel, request):
         result = agent.run_conversation(
             request["message"],
             system_message=request["system_prompt"],
-            conversation_history=history or None,
+            conversation_history=history or request.get("initial_history") or None,
         )
         channel.send({
             "type": "result",

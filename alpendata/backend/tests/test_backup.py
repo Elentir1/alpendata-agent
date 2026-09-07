@@ -31,6 +31,7 @@ from alpendata_api.models import ChatTurn, MicrosoftConnection, RoutineSchedule,
 from alpendata_api.runtime import ContainerRuntime, RuntimeFailure, RuntimeSettings
 from alpendata_api.runtime_recovery import RuntimeRecovery
 from alpendata_api.schedule_worker import ScheduleWorker
+from alpendata_api.workspace_files import file_store
 
 pytestmark = pytest.mark.linux_only
 
@@ -99,8 +100,39 @@ def test_bundle_restores_both_stores_without_replaying_work_or_reusing_sessions(
     queued = client.post(
         path + "/turns", headers=owner[2], json={"request_id": str(uuid4()), "message": "A pending task"}
     ).json()
+    file = client.post(
+        path + "/files",
+        headers=owner[2],
+        json={
+            "request_id": str(uuid4()),
+            "filename": "backup.txt",
+            "content_base64": base64.b64encode(b"Immutable private attachment").decode(),
+        },
+    ).json()
+    conversation_id = path.rsplit("/", 1)[-1]
+    scoped = runtime.run(
+        org,
+        owner[0],
+        {"operation": "memory", "action": "read", "state_scope": conversation_id},
+        lambda *_: None,
+    )
+    scoped = runtime.run(
+        org,
+        owner[0],
+        {
+            "operation": "memory",
+            "action": "update",
+            "state_scope": conversation_id,
+            "target": "memory",
+            "version": scoped["memory"]["memory"]["version"],
+            "entries": ["Scoped private client fact"],
+        },
+        lambda *_: None,
+    )
+    assert "memory_error" not in scoped
     bundle = root / "bundle"
-    receipt = create_bundle(app.state.engine, runtime, bundle, binaries, "a" * 40)
+    receipt = create_bundle(app.state.engine, runtime, bundle, binaries, "a" * 40, store=file_store(settings))
+    assert receipt["format"] == 2
     assert receipt == verify_bundle(bundle)
     assert "Private coaching" not in json.dumps(receipt)
     assert bundle.stat().st_mode & 0o077 == 0
@@ -111,6 +143,10 @@ def test_bundle_restores_both_stores_without_replaying_work_or_reusing_sessions(
     try:
         restored = restore_bundle(target_engine, factory, bundle, target, binaries)
         assert restored["status"] == "restored_suspended"
+        scoped_memory = (
+            target / "scoped" / org / owner[0] / conversation_id / ".hermes" / "memories" / "MEMORY.md"
+        )
+        assert "Scoped private client fact" in scoped_memory.read_text()
         assert (target / org / owner[0] / "workspace" / "relative.pdf").read_bytes() == content
         with factory() as db:
             assert db.get(ChatTurn, queued["id"]).status == "interrupted"
@@ -131,6 +167,12 @@ def test_bundle_restores_both_stores_without_replaying_work_or_reusing_sessions(
             with restored_app.state.session_factory.begin() as db:
                 new_owner = {"Authorization": "Bearer " + issue_session(db, db.get(User, owner[0]), 3600)}
                 new_admin = {"Authorization": "Bearer " + issue_session(db, db.get(User, admin[0]), 3600)}
+            restored_file = base + "/files/" + file["id"] + "/versions/1/content"
+            assert (
+                restored_client.get(restored_file, headers=new_owner).content
+                == b"Immutable private attachment"
+            )
+            assert restored_client.get(restored_file, headers=new_admin).status_code == 404
             download = base + "/documents/" + artifact["id"] + "/download"
             assert restored_client.get(download, headers=new_owner).content == content
             assert restored_client.get(download, headers=new_admin).status_code == 404

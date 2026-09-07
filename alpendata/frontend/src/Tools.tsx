@@ -5,7 +5,7 @@ import { Notice, useAction } from './feedback';
 import { copy, errorText } from './locale';
 import type { Language } from './locale';
 
-type Capability = 'mail' | 'calendar' | 'files' | 'files_write' | 'mail_send';
+type Capability = 'mail' | 'calendar' | 'files' | 'files_write' | 'mail_send' | 'calendar_write';
 type Connection = { available: boolean; status: 'disconnected' | 'connected' | 'reconnect_required'; capabilities: Capability[]; allowed_capabilities?: Capability[]; restricted_capabilities?: Capability[] };
 type MailItem = { id: string; subject: string; sender: string; preview: string; url: string | null };
 type FileItem = { id: string; drive_id: string; name: string; url: string | null };
@@ -82,6 +82,7 @@ export function Tools({ companyId, language }: { companyId: string; language: La
   }
   const choices = [
     { id: 'mail' as const, title: c.mail, description: c.mailDetail, Icon: Mail },
+    { id: 'calendar_write' as const, title: language === 'fr' ? 'Modifier mon agenda' : 'Update my calendar', description: language === 'fr' ? 'Préparer et enregistrer des rendez-vous selon mes validations.' : 'Prepare and save appointments according to my approvals.', Icon: CalendarDays },
     { id: 'calendar' as const, title: c.calendar, description: c.calendarDetail, Icon: CalendarDays },
     { id: 'files' as const, title: c.files, description: c.filesDetail, Icon: FileSearch },
     { id: 'mail_send' as const, title: c.sendMail, description: c.sendMailDetail, Icon: Mail },

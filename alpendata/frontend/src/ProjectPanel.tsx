@@ -3,11 +3,13 @@ import { Folder, Plus } from 'lucide-react';
 import { api } from './api';
 import { ProjectDialog } from './ProjectDialog';
 import type { Language } from './locale';
+import { ProjectResources } from './ProjectResources';
 
-export interface Project { id: string; name: string; instructions: string }
+export interface Project { id: string; name: string; instructions: string; role?: string; owner_id?: string }
 
-export function ProjectPanel({ base, language, projects, onProjects, selected, onSelect, disabled, onError }: { base: string; language: Language; projects: Project[]; onProjects: (items: Project[]) => void; selected: string; onSelect: (id: string) => void; disabled: boolean; onError: (error: unknown) => void }) {
+export function ProjectPanel({ choose, userId, base, language, projects, onProjects, selected, onSelect, disabled, onError }: { choose?: (prompt: string) => void; userId?: string; base: string; language: Language; projects: Project[]; onProjects: (items: Project[]) => void; selected: string; onSelect: (id: string) => void; disabled: boolean; onError: (error: unknown) => void }) {
   const fr = language === 'fr';
+  const [resources, setResources] = useState(false);
   const [editing, setEditing] = useState<string | null>(null), [name, setName] = useState(''), [instructions, setInstructions] = useState(''), [saving, setSaving] = useState(false);
   useEffect(() => {
     let active = true;
@@ -19,7 +21,8 @@ export function ProjectPanel({ base, language, projects, onProjects, selected, o
   return <div className="project-panel">
     <div className="project-heading"><strong>{fr ? 'Mes projets' : 'My projects'}</strong><button className="icon-button" aria-label={fr ? 'Créer un projet' : 'Create a project'} disabled={disabled || saving} onClick={() => edit()}><Plus size={17} /></button></div>
     {[{ id: '', name: fr ? 'Toutes les discussions' : 'All conversations' }, { id: 'unfiled', name: fr ? 'Sans projet' : 'Unfiled' }, ...projects].map(item => <button className={`conversation-link ${selected === item.id ? 'selected' : ''}`} key={item.id} aria-pressed={selected === item.id} disabled={disabled || saving} onClick={() => onSelect(item.id)}><Folder size={15} /><span>{item.name}</span></button>)}
-    {current && <><p className="subtle">{current.instructions || (fr ? 'Ajoutez le contexte et les consignes de ce projet.' : 'Add context and instructions for this project.')}</p><button className="text-button" disabled={disabled || saving} onClick={() => edit(current)}>{fr ? 'Modifier le projet' : 'Edit project'}</button></>}
+    {current && <><p className="subtle">{current.instructions || (fr ? 'Ajoutez le contexte et les consignes de ce projet.' : 'Add context and instructions for this project.')}</p><button className="text-button" disabled={disabled || saving || current.role === 'reader'} onClick={() => edit(current)}>{fr ? 'Modifier le projet' : 'Edit project'}</button><button className="text-button" onClick={() => setResources(true)}>{fr ? 'Ressources et membres' : 'Resources and members'}</button></>}
+    {resources && current && <ProjectResources choose={choose} userId={userId} base={base} project={current} language={language} close={() => setResources(false)} />}
     {editing !== null && <ProjectDialog language={language} disabled={saving} close={() => setEditing(null)}><form className="project-editor" onSubmit={async event => {
       event.preventDefault(); if (saving) return; setSaving(true);
       try {
@@ -30,7 +33,7 @@ export function ProjectPanel({ base, language, projects, onProjects, selected, o
     }}>
       <label htmlFor="project-name">{fr ? 'Nom du projet' : 'Project name'}</label><input id="project-name" value={name} onChange={event => setName(event.target.value)} required maxLength={160} placeholder={fr ? 'Ex. Client Dupont' : 'E.g. Client Acme'} />
       <label htmlFor="project-instructions">{fr ? 'Contexte et consignes' : 'Context and instructions'}</label><textarea id="project-instructions" value={instructions} onChange={event => setInstructions(event.target.value)} maxLength={8000} rows={4} placeholder={fr ? 'Objectif, public, ton souhaité, points à respecter…' : 'Goal, audience, tone, requirements…'} />
-      <p className="subtle">{fr ? 'Ces consignes accompagnent les nouvelles discussions du projet. Les discussions existantes conservent leur contexte initial. Le projet reste personnel.' : 'These instructions apply to new project conversations. Existing conversations keep their original context. This project stays personal.'}</p>
+      <p className="subtle">{fr ? 'Ces consignes accompagnent les nouvelles discussions du projet. Les discussions existantes conservent leur contexte initial. Le projet est privé par défaut ; seuls les éléments publiés sont accessibles aux membres invités.' : 'These instructions apply to new project conversations. Existing conversations keep their original context. The project is private by default; invited members can only access published resources.'}</p>
       <button className="primary" disabled={saving || !name.trim()}>{fr ? 'Enregistrer le projet' : 'Save project'}</button><button type="button" className="text-button" disabled={saving} onClick={() => setEditing(null)}>{fr ? 'Annuler' : 'Cancel'}</button>
     </form></ProjectDialog>}
   </div>;

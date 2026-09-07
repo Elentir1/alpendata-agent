@@ -10,7 +10,7 @@ from pydantic import Field, field_validator, model_validator
 from sqlalchemy import func, select
 
 from .access import owned
-from .models import Artifact, EmailAttempt, EmailDraft, now
+from .models import Artifact, ChatTurn, Conversation, EmailAttempt, EmailDraft, now
 from .schemas import Input
 
 
@@ -71,6 +71,8 @@ def attempt_view(item):
 
 
 def draft_view(db, draft):
+    turn = db.get(ChatTurn, draft.turn_id)
+    provider = db.get(Conversation, turn.conversation_id).integration_provider
     attempts = db.scalars(
         select(EmailAttempt).where(EmailAttempt.draft_id == draft.id).order_by(EmailAttempt.version)
     ).all()
@@ -83,7 +85,11 @@ def draft_view(db, draft):
             {"id": item.id, "filename": item.filename, "size": item.size}
             for item in attachments(db, draft.organization_id, draft.owner_id, draft.message)
         ],
-        "attempts": [attempt_view(item) for item in attempts],
+        "provider": provider,
+        "attempts": [
+            {**attempt_view(item), **({"can_verify": False} if provider == "infomaniak" else {})}
+            for item in attempts
+        ],
         "updated_at": draft.updated_at,
     }
 

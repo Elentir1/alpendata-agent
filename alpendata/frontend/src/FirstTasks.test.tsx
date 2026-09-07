@@ -8,6 +8,26 @@ import { copy } from './locale';
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+test('the chosen personal provider is retained with an uncertain onboarding request', async () => {
+  const sent: unknown[] = [], open = vi.fn();
+  vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
+    if (path.endsWith('/chat')) return json({ connections: [{ provider: 'microsoft', capabilities: ['mail'] }, { provider: 'infomaniak', capabilities: ['mail', 'calendar'] }] });
+    sent.push(JSON.parse(String(init?.body)));
+    if (sent.length === 1) throw new Error('Response lost');
+    return json({ conversation: { id: 'infomaniak-plan' } }, 202);
+  }));
+  render(<FirstTasks organizationId="my-company" language="en" initialFocus="Prepare tomorrow's appointments" onOpen={open} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Choose tools for this trial' }));
+  await userEvent.selectOptions(await screen.findByLabelText('Connection for this trial'), 'infomaniak');
+  await userEvent.click(screen.getByRole('button', { name: 'Find my first tasks' }));
+  await screen.findByText(/Receipt is not confirmed/);
+  expect(screen.getByLabelText('Connection for this trial')).toHaveProperty('disabled', true);
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  expect(sent[1]).toEqual(sent[0]);
+  expect(sent[0]).toEqual(expect.objectContaining({ integration_provider: 'infomaniak' }));
+  expect(open).toHaveBeenCalledWith('infomaniak-plan');
+});
+
 test('personal onboarding retains the same request and language after an uncertain submission', async () => {
   const sent: unknown[] = [], open = vi.fn();
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {

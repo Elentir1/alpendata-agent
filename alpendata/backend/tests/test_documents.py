@@ -111,6 +111,23 @@ def test_documents_are_private_immutable_and_bound_to_a_live_conversation(routin
     detail = client.get(path, headers=bob[2]).json()
     assert detail["turns"][0]["artifacts"] == [reply["body"]]
     assert "content_base64" not in reply["body"]
+    attachment = client.post(
+        path + "/files/from-artifact", headers=bob[2], json={"artifact_id": reply["body"]["id"]}
+    )
+    assert attachment.status_code == 201, attachment.text
+    assert (
+        client.post(
+            path + "/files/from-artifact", headers=bob[2], json={"artifact_id": reply["body"]["id"]}
+        ).json()["id"]
+        == attachment.json()["id"]
+    )
+    assert len(client.get(path + "/files", headers=bob[2]).json()["files"]) == 1
+    assert (
+        client.post(
+            path + "/files/from-artifact", headers=alice[2], json={"artifact_id": reply["body"]["id"]}
+        ).status_code
+        == 404
+    )
     with app.state.session_factory.begin() as db:
         db.get(Membership, (org, bob[0])).licensed = False
     assert client.get(document, headers=bob[2]).content == content

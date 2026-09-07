@@ -10,7 +10,14 @@ from test_routines import routine_service as routine_service
 
 from alpendata_api.chat_worker import ChatWorker
 from alpendata_api.connections import MicrosoftReader
-from alpendata_api.models import ChatTurn, RoutineOccurrence, RoutineSchedule, now
+from alpendata_api.models import (
+    ChatTurn,
+    Conversation,
+    InfomaniakConnection,
+    RoutineOccurrence,
+    RoutineSchedule,
+    now,
+)
 from alpendata_api.runtime import RuntimeFailure
 from alpendata_api.schedule_time import Cadence, next_occurrence
 from alpendata_api.schedule_worker import ScheduleWorker
@@ -80,6 +87,46 @@ def activation(trial):
 def make_due(app, schedule_id, at):
     with app.state.session_factory.begin() as db:
         db.get(RoutineSchedule, schedule_id).next_run_at = at
+
+
+def test_occurrences_preserve_the_reviewed_connection_and_work_configuration(routine_service, approved_trial):
+    app, client, settings, _, _, org, _, bob = routine_service
+    trial, _ = approved_trial
+    with app.state.session_factory.begin() as db:
+        source = db.get(Conversation, trial["conversation_id"])
+        source.integration_provider = "infomaniak"
+        source.work_settings = {"depth": "quick", "autonomy": "prepare", "sources": ["mail"]}
+        source.service_features = {"research": False, "vision": ""}
+        db.add(
+            InfomaniakConnection(
+                organization_id=org,
+                owner_id=bob[0],
+                email="test@example.com",
+                status="connected",
+                capabilities=["mail"],
+            )
+        )
+    schedule = client.post(f"/api/organizations/{org}/schedules", headers=bob[2], json=activation(trial))
+    assert schedule.status_code == 201, schedule.text
+    make_due(app, schedule.json()["id"], now() - 1)
+    assert ScheduleWorker(settings, app.state.session_factory).tick() == 1
+    with app.state.session_factory() as db:
+        occurrence = db.scalar(
+            select(RoutineOccurrence).where(RoutineOccurrence.schedule_id == schedule.json()["id"])
+        )
+        generated = db.get(Conversation, db.get(ChatTurn, occurrence.turn_id).conversation_id)
+        source = db.get(Conversation, trial["conversation_id"])
+        assert generated.integration_provider == "infomaniak"
+        assert generated.work_settings == source.work_settings
+        assert generated.service_features == source.service_features
+    assert (
+        client.delete(
+            f"/api/organizations/{org}/chat/conversations/" + trial["conversation_id"], headers=bob[2]
+        ).status_code
+        == 204
+    )
+    assert client.get(f"/api/organizations/{org}/schedules", headers=bob[2]).json()["schedules"] == []
+    assert ScheduleWorker(settings, app.state.session_factory).tick() == 0
 
 
 def test_reviewed_schedule_is_private_idempotent_and_suspended_with_access(routine_service, approved_trial):

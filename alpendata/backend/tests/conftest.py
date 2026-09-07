@@ -17,6 +17,8 @@ from alpendata_api.settings import Settings
 
 
 def pytest_addoption(parser):
+    parser.addoption("--collabora-image", help="Pinned local CODE image for real browser/HTTPS/WOPI tests")
+    parser.addoption("--chromium-bin", help="Chromium executable for the optional Collabora recipe")
     parser.addoption(
         "--systemd-user", action="store_true", help="Exercise temporary units in a live user manager"
     )

@@ -2,7 +2,11 @@
 
 Adaptation d’Hermes Agent pour une utilisation simple en entreprise, sous identité AlpenData.
 
-## État au 6 septembre 2026
+## Refonte de l’espace de travail — 7 septembre 2026
+
+Le [suivi de la refonte](docs/ESPACE_TRAVAIL_2026_09.md) décrit les discussions, projets, documents, connecteurs et capacités d’agent développés dans cette branche, leur validation et les fonctions encore en attente d’activation. Il distingue le code livré de la production. La [recette pilote](docs/RECETTE_PILOTE.md) et l’[intégration gratuite Collabora CODE](docs/COLLABORA_CODE.md) accompagnent cette livraison.
+
+## Historique de la mise en place — 6 septembre 2026
 
 - Fork GitHub créé : [Elentir1/alpendata-agent](https://github.com/Elentir1/alpendata-agent), public, issu de NousResearch/hermes-agent.
 - Base examinée : `9dd6634c5635321cf38840cc30e9b51226689128`.

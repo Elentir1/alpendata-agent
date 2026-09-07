@@ -37,8 +37,8 @@ PREFIX = "/api/organizations/{organization_id}/microsoft"
 
 class ConnectInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    capabilities: list[Literal["mail", "calendar", "files", "files_write", "mail_send"]] = Field(
-        min_length=1, max_length=5
+    capabilities: list[Literal["mail", "calendar", "calendar_write", "files", "files_write", "mail_send"]] = (
+        Field(min_length=1, max_length=6)
     )
 
 
@@ -121,6 +121,7 @@ def source_identity(user, stored=None):
 
 class MicrosoftReader:
     def __init__(self, settings: Settings, factory, provider=None, graph=None):
+        self.settings = settings
         self.factory = factory
         self.vault = Vault(settings.credential_keys) if settings.microsoft_enabled else None
         self.provider, self.graph = provider or MicrosoftData(settings), graph or GraphReader()

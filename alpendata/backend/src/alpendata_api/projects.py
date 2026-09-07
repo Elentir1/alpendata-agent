@@ -4,8 +4,8 @@ from fastapi import Request
 from pydantic import Field
 from sqlalchemy import select
 
-from .access import owned
 from .models import Project
+from .project_access import accessible_projects, project_access, project_role
 from .schemas import Input
 
 
@@ -14,8 +14,14 @@ class ProjectInput(Input):
     instructions: str = Field(default="", max_length=8000)
 
 
-def project_view(item):
-    return {"id": item.id, "name": item.name, "instructions": item.instructions}
+def project_view(item, role="owner"):
+    return {
+        "id": item.id,
+        "name": item.name,
+        "instructions": item.instructions,
+        "owner_id": item.owner_id,
+        "role": role,
+    }
 
 
 def attach_project_routes(router, factory, actor):
@@ -29,11 +35,11 @@ def attach_project_routes(router, factory, actor):
                 select(Project)
                 .where(
                     Project.organization_id == organization_id,
-                    Project.owner_id == user.id,
+                    accessible_projects(user.id),
                 )
                 .order_by(Project.name, Project.id)
             ).all()
-            return {"projects": [project_view(item) for item in rows]}
+            return {"projects": [project_view(item, project_role(db, item, user.id)) for item in rows]}
 
     @router.post(prefix, status_code=201)
     def create(organization_id: str, request: Request, body: ProjectInput):
@@ -53,6 +59,10 @@ def attach_project_routes(router, factory, actor):
     def update(organization_id: str, project_id: str, request: Request, body: ProjectInput):
         with factory.begin() as db:
             user = actor(db, request, organization_id)
-            item = owned(db, Project, organization_id, user.id, project_id)
+            item = project_access(db, organization_id, user.id, project_id, write=True)
             item.name, item.instructions = body.name.strip(), body.instructions.strip()
-            return project_view(item)
+            return project_view(item, project_role(db, item, user.id))
+
+    from .project_sharing import attach_sharing_routes
+
+    attach_sharing_routes(router, factory, actor)

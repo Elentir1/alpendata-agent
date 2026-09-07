@@ -4,6 +4,7 @@ import { api, ApiError } from './api';
 import { Notice } from './feedback';
 import { BusinessIdeas } from './BusinessIdeas';
 import type { Language } from './locale';
+import { PersonalSourceChoice } from './PersonalSourceChoice';
 import { RoutineTrialAction } from './RoutineTrialAction';
 import type { EmailDelivery } from './RoutineTrialAction';
 
@@ -49,12 +50,13 @@ function failure(error: unknown, language: Language) {
 export function FirstTasks({ organizationId, language, sector, initialFocus = '', onOpen }: { organizationId: string; language: Language; sector?: string; initialFocus?: string; onOpen: (id: string) => void }) {
   const c = words[language];
   const [refinement, setRefinement] = useState(initialFocus), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null);
-  const pending = useRef<{ request_id: string; language: Language; refinement: string } | null>(null), sending = useRef(false);
+  const [provider, setProvider] = useState('');
+  const pending = useRef<{ request_id: string; language: Language; refinement: string; integration_provider?: string } | null>(null), sending = useRef(false);
   return <section className="first-tasks"><h2>{c.title}</h2><p>{c.intro}</p>
     <BusinessIdeas language={language} sector={sector} disabled={busy || !!pending.current} onChoose={setRefinement} />
     <form onSubmit={async event => {
       event.preventDefault(); if (sending.current) return; sending.current = true; setBusy(true); setError(null);
-      const body = pending.current || { request_id: crypto.randomUUID(), language, refinement: refinement.trim() };
+      const body = pending.current || { request_id: crypto.randomUUID(), language, refinement: refinement.trim(), ...(provider ? { integration_provider: provider } : {}) };
       pending.current = body;
       try {
         const result = await api<{ conversation: { id: string } }>(`/api/organizations/${organizationId}/onboarding/proposals`, body);
@@ -64,6 +66,7 @@ export function FirstTasks({ organizationId, language, sector, initialFocus = ''
         setError(cause);
       } finally { sending.current = false; setBusy(false); }
     }}>
+      <PersonalSourceChoice organizationId={organizationId} language={language} provider={provider} choose={setProvider} disabled={busy || !!pending.current} />
       <label htmlFor="first-task-focus">{c.question}</label>
       <textarea id="first-task-focus" value={refinement} onChange={event => setRefinement(event.target.value)} placeholder={c.placeholder} required maxLength={4000} rows={3} disabled={busy || !!pending.current} />
       <Notice>{error ? failure(error, language) : ''}</Notice>

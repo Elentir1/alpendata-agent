@@ -112,7 +112,7 @@ def test_chat_runs_with_own_microsoft_access_resumes_and_cancels(connected_servi
             )
             assert worker.run_once()
             data = client.get(path, headers=bob[2]).json()
-            assert data["turns"][0]["status"] == "completed", data
+            assert data["turns"][0]["status"] == "completed", json.dumps(data)
             assert data["turns"][0]["response"] == "Bob's private briefing"
             assert client.get(path, headers=alice[2]).status_code == 404
             assert len(graph_http.calls) == 1

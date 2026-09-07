@@ -66,6 +66,11 @@ def block_owner_schedules(db, organization_id, owner_id, reason, *, available=No
 def check_schedule_access(db, settings, schedule):
     turn = db.get(ChatTurn, schedule.reviewed_turn_id)
     conversation = db.get(Conversation, turn.conversation_id)
+    if conversation.deleted_at is not None:
+        raise HTTPException(404, "resource_not_found")
+    from .project_access import conversation_context_access
+
+    conversation_context_access(db, conversation)
     require_allowed(db, schedule.organization_id, conversation.capabilities)
     if conversation.email_send_enabled:
         from .action_policy import require_email_autonomy
@@ -77,10 +82,15 @@ def check_schedule_access(db, settings, schedule):
         raise HTTPException(409, "chat_model_changed")
     if not conversation.capabilities and not conversation.email_send_enabled:
         return conversation
+    from .models import InfomaniakConnection
+
+    connection_model = (
+        InfomaniakConnection if conversation.integration_provider == "infomaniak" else MicrosoftConnection
+    )
     connection = db.scalar(
-        select(MicrosoftConnection).where(
-            MicrosoftConnection.organization_id == schedule.organization_id,
-            MicrosoftConnection.owner_id == schedule.owner_id,
+        select(connection_model).where(
+            connection_model.organization_id == schedule.organization_id,
+            connection_model.owner_id == schedule.owner_id,
         )
     )
     if (

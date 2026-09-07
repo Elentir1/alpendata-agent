@@ -8,7 +8,7 @@ from sqlalchemy import and_, func, or_, select
 from .access import owned
 from .auth import authenticate, request_authorization
 from .connections import lock_member
-from .models import ChatTurn, PersonalNotification, now
+from .models import ChatTurn, Conversation, PersonalNotification, now
 from .schemas import Input
 
 
@@ -47,6 +47,14 @@ def notifications_router(settings, factory):
             scope = (
                 PersonalNotification.organization_id == organization_id,
                 PersonalNotification.owner_id == user.id,
+                or_(
+                    PersonalNotification.turn_id.is_(None),
+                    select(ChatTurn.id)
+                    .join(Conversation, Conversation.id == ChatTurn.conversation_id)
+                    .where(ChatTurn.id == PersonalNotification.turn_id, Conversation.deleted_at.is_(None))
+                    .correlate(PersonalNotification)
+                    .exists(),
+                ),
             )
             unread = db.scalar(
                 select(func.count())
