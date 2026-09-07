@@ -1,6 +1,6 @@
 # Édition Office avec Collabora CODE
 
-Choix validé le 7 septembre 2026 : Collabora CODE remplace ONLYOFFICE Developer dans la refonte. Aucun achat ni contact fournisseur n’a été effectué. Cette intégration est validée sur QA ; elle n’est pas activée sur la production existante.
+Choix validé le 7 septembre 2026 : Collabora CODE remplace ONLYOFFICE Developer dans la refonte. Aucun achat ni contact fournisseur n’a été effectué. Cette intégration est déployée dans le pilote de production depuis le 7 septembre 2026. Elle est activée pour l’entreprise AlpenData ; voir [la fiche de déploiement](DEPLOIEMENT_2026_09_07.md).
 
 ## Comportement
 
@@ -53,4 +53,4 @@ CODE est gratuit ; l’hébergement, l’exploitation et les mises à jour reste
 
 La licence MPL 2.0 permet l’intégration dans un produit plus large, avec ses obligations sur les fichiers couverts et modifiés. Cette intégration ne modifie pas le code Collabora. [Licence du projet](https://github.com/CollaboraOnline/online/blob/main/COPYING), [FAQ MPL](https://www.mozilla.org/en-US/MPL/2.0/FAQ/).
 
-La recette technique utilise des fichiers synthétiques simples. Restent à valider les documents métier complexes, polices, formules avancées, présentations riches, endurance et montée en charge. L’application automatique d’une révision IA dans une sélection, la coédition simultanée et la fidélité parfaite d’une conversion PDF ne sont pas promises par cette livraison. L’activation publique du pilote requiert encore le service durable, son origine HTTPS et la recette opérationnelle de la refonte.
+La recette technique utilise des fichiers synthétiques simples. Restent à valider les documents métier complexes, polices, formules avancées, présentations riches, endurance et montée en charge. L’application automatique d’une révision IA dans une sélection, la coédition simultanée et la fidélité parfaite d’une conversion PDF ne sont pas promises par cette livraison. Le service durable et son origine HTTPS sont en place. Les recettes Office ordinateur/mobile et le chat GLM ont passé les contrôles de production avec des données fictives. La recette administrative avec les comptes métier reste à effectuer.

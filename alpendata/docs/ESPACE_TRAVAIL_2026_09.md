@@ -1,6 +1,6 @@
 # Refonte de l’espace de travail AlpenData
 
-Implémentation en cours du plan validé le 7 septembre 2026. Ce document décrit le code de cette branche, pas les fonctions déjà activées sur `agent.alpendata.ch`. La facturation existante reste indépendante.
+Implémentation en cours du plan validé le 7 septembre 2026. La release `d1ad4e1` est publiée sur `agent.alpendata.ch` pour l’entreprise AlpenData ; les fonctions dépendant de fournisseurs non configurés restent désactivées. Voir [la fiche de déploiement](DEPLOIEMENT_2026_09_07.md). La facturation existante reste indépendante.
 
 ## Fonctionnement implémenté
 
@@ -60,14 +60,14 @@ Validation du socle : 132 tests Linux réussis, aucun échec, six tests ignorés
 
 Restent notamment à terminer et valider avant de déclarer les quatre lots complets :
 
-- déploiement durable de Collabora CODE pour le pilote, fichiers Office métier complexes et application des révisions à une sélection dans l’éditeur ; ouverture/sauvegarde des trois formats, capture vers le brouillon et conflits Word sont validés sur le vrai CODE en QA ;
+- fichiers Office métier complexes, capacité opérationnelle et application des révisions à une sélection dans l’éditeur ; le service durable, l’ouverture/sauvegarde des trois formats, la capture vers le brouillon et les conflits Word sont validés sur le vrai CODE en production pilote ;
 - stockage objet Infomaniak configuré avec renouvellement d’accès opérationnel et vérification des ACL privées ; le stockage privé local du serveur sert actuellement de repli ;
 - écritures et invitations réelles d’agenda, messagerie et fichiers sur les deux comptes de test ; une création CalDAV avec participants exige l’organisateur découvert sur le compte, sans supposer que l’identifiant de synchronisation est une adresse e-mail ;
 - activation de Brave et recette Web réelle ; validation de la vision et dictée sur des cas métier FR/EN après leurs essais techniques réussis ;
 - règles de rétention et cycle de purge physique, en conservant les copies explicitement publiées et les preuves d’actions nécessaires ;
 - activation pilote puis recette des trois parcours du plan avec les coachs et AlpenData.
 
-L’acquisition ONLYOFFICE est suspendue au profit de [Collabora CODE](COLLABORA_CODE.md), choisi par le propriétaire et testé sur QA. Les comptes de test sont disponibles côté propriétaire ; leur connexion et la recette suivent [RECETTE_PILOTE.md](RECETTE_PILOTE.md).
+L’acquisition ONLYOFFICE est suspendue au profit de [Collabora CODE](COLLABORA_CODE.md), choisi par le propriétaire, testé sur QA et déployé dans le pilote de production. Les comptes de test sont disponibles côté propriétaire ; leur connexion et la recette suivent [RECETTE_PILOTE.md](RECETTE_PILOTE.md).
 
 Le dernier contrôle de concurrence a également passé trois tests Linux : un document déposé est analysé par son vrai conteneur alors que les trois places de discussion sont occupées ; le cycle de démarrage et d’arrêt du service reste valide.
 
