@@ -134,7 +134,8 @@ def create_app(
         with factory.begin() as session:
             yield session
 
-    DB = Annotated[Session, Depends(database)]
+    # Commit before sending success: the next request may immediately use new data.
+    DB = Annotated[Session, Depends(database, scope="function")]
 
     def current_user(db: DB, request: Request) -> User:
         return authenticate(db, request_authorization(request, settings))
